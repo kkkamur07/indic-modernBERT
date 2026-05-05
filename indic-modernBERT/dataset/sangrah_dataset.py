@@ -86,7 +86,6 @@ def download_shards(
             revision=revision,
             filename=rel_path,
             local_dir=str(out_dir),
-            local_dir_use_symlinks=False,
         )
         downloaded[lang] = local
         

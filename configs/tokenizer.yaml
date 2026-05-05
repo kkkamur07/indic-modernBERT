@@ -1,0 +1,40 @@
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: logs/${now:%Y-%m-%d}_${now:%H-%M-%S}_${hydra.job.name}
+
+tokenizer:
+  trainer:
+    bpe:
+      data_root: data/sangrah_dataset
+      output_dir: artifacts/tokenizer/bpe
+      text_column: text
+      normalization: hf_basic  # one of: hf_basic, none, indic_nlp
+      vocab_sizes: [32768,50368,65536,98304,131072,196608]  # set multiple for ablations, e.g. [8000, 16000, 24000]
+      min_frequency: 2
+
+  evals:
+    fertility:
+      tokenizer_path: artifacts/tokenizer/bpe/tokenizer.json
+      baseline_tokenizer_names:
+        - ai4bharat/IndicBERTv2-MLM-only
+        - sarvamai/sarvam-1
+      data_root: data/sangrah_dataset
+      text_column: text
+
+    bytes_per_token:
+      tokenizer_path: artifacts/tokenizer/bpe_baseline/tokenizer.json
+      baseline_tokenizer_names:
+        - ai4bharat/IndicBERTv2-MLM-only
+        - sarvamai/sarvam-1
+      data_root: data/sangrah_dataset
+      text_column: text
+
+    parity:
+      tokenizer_path: artifacts/tokenizer/bpe_baseline/tokenizer.json
+      baseline_tokenizer_names:
+        - ai4bharat/IndicBERTv2-MLM-only
+        - sarvamai/sarvam-1
+      data_root: data/sangrah_dataset
+      text_column: text
