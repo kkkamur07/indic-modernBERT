@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Experiments
+Experiments/
+experiments/
+
+# Data
+data/
