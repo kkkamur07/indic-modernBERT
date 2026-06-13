@@ -12,13 +12,8 @@ tokenizer:
 
   trainer:
     # Sangrah verified/hin: 18 random training shards (see dataset/sangrah_dataset.py).
-    bpe:
-      data_root: data/sangrah_dataset
-      output_dir: artifacts/tokenizer/bpe
-      text_column: text
-      vocab_sizes: [32768,50368,65536,98304,131072,196608]
-      min_frequency: 2
-
+    # Standalone BPE omitted — SuperBPE stage 1 trains subword BPE. Use `make train-bpe`
+    # only if you add a `bpe:` block back for pure-BPE ablations.
     superbpe:
       data_root: data/sangrah_dataset
       output_dir: artifacts/tokenizer/superbpe
@@ -29,8 +24,9 @@ tokenizer:
 
   evals:
     # Holdout: 2 Hindi parquets under data/eval/hi/verified/hin/ (held out from training).
+    # Per-vocab outputs: artifacts/tokenizer/superbpe_vs{V}/tokenizer.json
     intrinsic:
-      tokenizer_path: artifacts/tokenizer/superbpe/tokenizer.json
+      tokenizer_path: artifacts/tokenizer/superbpe_vs32768/tokenizer.json
       data_root: data/eval/hi
       text_column: text
       baseline_tokenizer_names:
@@ -44,7 +40,7 @@ tokenizer:
       parallel_reference_column: text_eng
 
     parity:
-      tokenizer_path: artifacts/tokenizer/superbpe/tokenizer.json
+      tokenizer_path: artifacts/tokenizer/superbpe_vs32768/tokenizer.json
       data_root: data/eval/hi
       text_column: text
       baseline_tokenizer_names:

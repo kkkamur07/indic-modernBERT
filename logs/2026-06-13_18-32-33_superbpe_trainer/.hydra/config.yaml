@@ -1,0 +1,42 @@
+tokenizer:
+  pretokenization:
+    use_script_norm: true
+    use_nfkc: true
+    stage: subword
+  trainer:
+    superbpe:
+      data_root: data/sangrah_dataset
+      output_dir: artifacts/tokenizer/superbpe
+      text_column: text
+      vocab_sizes:
+      - 32768
+      - 50368
+      - 65536
+      - 98304
+      - 131072
+      - 196608
+      transition_fraction: 0.9
+      min_frequency: 2
+  evals:
+    intrinsic:
+      tokenizer_path: artifacts/tokenizer/superbpe_vs32768/tokenizer.json
+      data_root: data/eval/hi
+      text_column: text
+      baseline_tokenizer_names:
+      - ai4bharat/IndicBERTv2-MLM-only
+      - sarvamai/sarvam-1
+      reference_tokenizer_name: ai4bharat/IndicBERTv2-MLM-only
+      renyi_alpha: 2.5
+      parallel_hindi_column: text_hi
+      parallel_reference_column: text_eng
+    parity:
+      tokenizer_path: artifacts/tokenizer/superbpe_vs32768/tokenizer.json
+      data_root: data/eval/hi
+      text_column: text
+      baseline_tokenizer_names:
+      - ai4bharat/IndicBERTv2-MLM-only
+      - sarvamai/sarvam-1
+      reference_tokenizer_name: ai4bharat/IndicBERTv2-MLM-only
+      parallel_data_path: data/eval/flores_hi_en.parquet
+      parallel_hindi_column: text_hi
+      parallel_reference_column: text_eng

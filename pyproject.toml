@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "einops",
     "huggingface_hub",
     "hydra-core",
     "indic-nlp-library",
@@ -12,15 +13,29 @@ dependencies = [
     "pyarrow",
     "protobuf",
     "pydantic",
+    "pyyaml",
     "sentencepiece",
     "tqdm",
     "tokenizers",
+    "torch",
     "transformers",
 ]
 
 [tool.uv]
 package = false
 
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
 # Vendored SuperBPE patch: extends merges.txt during stage-2 training.
 [tool.uv.sources]
 tokenizers = { path = "_support_repo/superbpe/tokenizers_superbpe/bindings/python", editable = true }
+torch = { index = "pytorch-cpu" }
+
+[project.optional-dependencies]
+pretrain = [
+    "composer",
+    "torchmetrics",
+]

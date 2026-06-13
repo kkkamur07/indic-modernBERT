@@ -1,0 +1,69 @@
+make[1]: Entering directory '/home/krrish/Desktop/Programming/indic-modernBERT'
+uv run python -m tokenizer.trainer.superbpe_trainer
+<frozen runpy>:128: RuntimeWarning: 'tokenizer.trainer.superbpe_trainer' found in sys.modules after import of package 'tokenizer.trainer', but prior to execution of 'tokenizer.trainer.superbpe_trainer'; this may result in unpredictable behaviour
+18:32:33 | INFO | Starting SuperBPE training | data_root=/home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset | vocab_sizes=[32768, 50368, 65536, 98304, 131072, 196608] | transition_fraction=0.9 | min_freq=2 | use_script_norm=True | use_nfkc=True
+18:32:35 | INFO | SuperBPE S1 vocab=32768 | 1/18 data-11.parquet | 174763 rows
+18:33:14 | INFO | SuperBPE S1 vocab=32768 | 2/18 data-12.parquet | 174763 rows
+18:33:50 | INFO | SuperBPE S1 vocab=32768 | 3/18 data-19.parquet | 174763 rows
+18:34:26 | INFO | SuperBPE S1 vocab=32768 | 4/18 data-20.parquet | 174763 rows
+18:35:00 | INFO | SuperBPE S1 vocab=32768 | 5/18 data-24.parquet | 174763 rows
+18:35:26 | INFO | SuperBPE S1 vocab=32768 | 6/18 data-33.parquet | 174763 rows
+18:35:50 | INFO | SuperBPE S1 vocab=32768 | 7/18 data-34.parquet | 174763 rows
+18:36:19 | INFO | SuperBPE S1 vocab=32768 | 8/18 data-35.parquet | 160929 rows
+18:36:50 | INFO | SuperBPE S1 vocab=32768 | 9/18 data-37.parquet | 174762 rows
+18:37:25 | INFO | SuperBPE S1 vocab=32768 | 10/18 data-40.parquet | 174762 rows
+18:38:00 | INFO | SuperBPE S1 vocab=32768 | 11/18 data-58.parquet | 174763 rows
+18:38:35 | INFO | SuperBPE S1 vocab=32768 | 12/18 data-67.parquet | 174762 rows
+18:39:09 | INFO | SuperBPE S1 vocab=32768 | 13/18 data-71.parquet | 174762 rows
+18:39:43 | INFO | SuperBPE S1 vocab=32768 | 14/18 data-73.parquet | 174763 rows
+18:40:16 | INFO | SuperBPE S1 vocab=32768 | 15/18 data-77.parquet | 174763 rows
+18:40:49 | INFO | SuperBPE S1 vocab=32768 | 16/18 data-79.parquet | 174763 rows
+18:41:21 | INFO | SuperBPE S1 vocab=32768 | 17/18 data-87.parquet | 174763 rows
+18:41:52 | INFO | SuperBPE S1 vocab=32768 | 18/18 data-94.parquet | 174762 rows
+Calling do_train_original()
+
+
+
+18:43:52 | INFO | Completed SuperBPE stage 1 (subword) | pretokenization=subword | target_vocab_size=29440 | vocab_size=29440
+Calling do_train_original()
+Calling do_train_extend()
+In do_train_extend()
+Step 1: Add special tokens
+Step 2: Compute alphabet
+Length of word_to_id: 18
+Printing 5 elements in word_to_id
+Word: [MASK], ID: 4
+Word: ो, ID: 17
+Word: [UNK], ID: 1
+Word: ह, ID: 13
+Word: [CLS], ID: 2
+Word: ै, ID: 16
+Word: र, ID: 11
+Word: [SEP], ID: 3
+Word: ग, ID: 7
+Word: [PAD], ID: 0
+Step 3: Tokenize words
+Step 4: Count pairs in words
+Length of queue: 20
+Step 5: Apply merges
+ not found in word_to_id
+म ें not found in word_to_id
+ not found in word_to_id
+र हते not found in word_to_id
+ not found in word_to_id
+ल ोग not found in word_to_id
+ not found in word_to_id
+ह ैं not found in word_to_id
+Length of merges: 12
+Step 5: Do new merges
+18:43:56 | INFO | SuperBPE S2 vocab=32768 | 1/18 data-11.parquet | 174763 rows
+18:44:26 | INFO | SuperBPE S2 vocab=32768 | 2/18 data-12.parquet | 174763 rows
+18:44:55 | INFO | SuperBPE S2 vocab=32768 | 3/18 data-19.parquet | 174763 rows
+18:45:24 | INFO | SuperBPE S2 vocab=32768 | 4/18 data-20.parquet | 174763 rows
+18:45:52 | INFO | SuperBPE S2 vocab=32768 | 5/18 data-24.parquet | 174763 rows
+18:46:17 | INFO | SuperBPE S2 vocab=32768 | 6/18 data-33.parquet | 174763 rows
+18:46:42 | INFO | SuperBPE S2 vocab=32768 | 7/18 data-34.parquet | 174763 rows
+18:47:12 | INFO | SuperBPE S2 vocab=32768 | 8/18 data-35.parquet | 160929 rows
+18:47:39 | INFO | SuperBPE S2 vocab=32768 | 9/18 data-37.parquet | 174762 rows
+18:48:08 | INFO | SuperBPE S2 vocab=32768 | 10/18 data-40.parquet | 174762 rows
+18:48:38 | INFO | SuperBPE S2 vocab=32768 | 11/18 data-58.parquet | 174763 rows

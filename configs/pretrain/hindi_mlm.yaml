@@ -1,0 +1,22 @@
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: logs/${now:%Y-%m-%d}_${now:%H-%M-%S}_pretrain
+
+pretrain:
+  data_root: data/sangrah_dataset
+  eval_data_root: data/eval/hi
+  tokenizer_path: artifacts/tokenizer/superbpe_vs50368/tokenizer.json
+  output_dir: artifacts/model/modernbert
+  save_folder: artifacts/model/modernbert/checkpoints
+  text_column: text
+  max_seq_len: 1024
+  mlm_probability: 0.3
+  pretrained_model_name: bert-base-uncased
+  arch_config_path: configs/model/modernbert_base.yaml
+  gradient_checkpointing: false
+  disable_train_metrics: true
+  global_train_batch_size: 8
+  device_train_microbatch_size: 2
+  max_duration: 100ba

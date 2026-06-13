@@ -44,6 +44,23 @@ make train-superbpe
 make validate-superbpe
 ```
 
+Long-running ablation (all vocab sizes in `configs/tokenizer.yaml`) — run detached with unbuffered stdout:
+
+```bash
+make train-superbpe-nohup
+tail -f logs/train_superbpe_ablation.log
+```
+
+Or manually (`logs/` must exist first):
+
+```bash
+mkdir -p logs
+PYTHONUNBUFFERED=1 nohup make train-superbpe > logs/train_superbpe_ablation.log 2>&1 &
+tail -f logs/train_superbpe_ablation.log
+```
+
+Progress bars appear per parquet shard while the corpus is streamed (one log line per shard when using `nohup`; live tqdm in an interactive terminal). Stage completion lines also land in the Hydra run log under `logs/<timestamp>_superbpe_trainer/`.
+
 Or without Make:
 
 ```bash
@@ -51,7 +68,64 @@ PYTHONPATH=indic-modernBERT uv run python -m tokenizer.trainer.superbpe_trainer
 cd indic-modernBERT && uv run python scripts/validate_superbpe.py
 ```
 
-Other targets: `train-bpe`, `eval-intrinsic`, `eval-parity`, `pretokenization`.
+Other targets: `train-bpe`, `train-pretrain`, `eval-intrinsic`, `eval-parity`, `pretokenization`, `validate-modernbert`, `export-hf`.
+
+### Project layout
+
+```
+indic-modernBERT/
+├── config/schema.py       # Tokenizer + ModelConfig + PretrainConfig
+├── tokenizer/             # pretokenization, trainer, evals
+├── model/                 # architecture only
+│   ├── modernbert/         # ModernBertConfig, attention, layers, …
+│   ├── factory.py         # create_modernbert_mlm() for Composer
+│   └── export_hf.py       # Composer ckpt → HF save_pretrained
+├── pretrain/              # training orchestration (Composer)
+├── dataset/               # Sangrah download
+└── utils/
+
+configs/
+├── tokenizer.yaml
+├── model/modernbert_base.yaml
+└── pretrain/hindi_mlm.yaml
+
+scripts/                   # thin entry points (repo root)
+├── validate_superbpe.py
+├── validate_modernbert.py
+└── export_hf.py
+
+artifacts/
+├── tokenizer/superbpe_vs{V}/
+└── model/modernbert/      # checkpoints + HF exports
+```
+
+### ModernBERT model
+
+The encoder is ported from `_support_repo/ModernBERT/src/bert_layers/` into `indic-modernBERT/model/modernbert/`.
+
+```bash
+make validate-modernbert   # CPU smoke: 2-layer padded ModernBERT, forward + MLM loss
+```
+
+Configs:
+
+- `configs/model/modernbert_smoke.yaml` — tiny model for import/forward checks (no flash-attn)
+- `configs/model/modernbert_base.yaml` — ModernBERT-base architecture (22 layers, vocab 50368, RoPE + sliding window)
+
+Full pretraining (Composer loop, sequence packing, flash-attn):
+
+```bash
+uv sync --extra pretrain   # GPU recommended; adds composer + torchmetrics
+make train-pretrain
+```
+
+Checkpoints land under `artifacts/model/modernbert/`. Export a Composer `.pt` checkpoint to HF layout:
+
+```bash
+make export-hf ARGS="path/to/checkpoint.pt artifacts/model/modernbert/hf --tokenizer artifacts/tokenizer/superbpe_vs50368/tokenizer.json"
+```
+
+On GPU with `flash-attn` installed, use `modernbert_base.yaml` settings (`padding: unpadded`, `attention_layer: rope`).
 
 ### Eval data
 
@@ -96,7 +170,7 @@ So the `tokenizers_superbpe` **source** must be available after clone, or `uv sy
 **Optional** — reference only, not used by our trainers:
 
 - `_support_repo/superbpe/` scripts and notebooks
-- `_support_repo/ModernBERT/`
+- `_support_repo/ModernBERT/` — reference FlexBERT / Composer training code (ported into `indic-modernBERT/model/`)
 
 Do not `git add _support_repo/` wholesale without checking for nested `.git` directories inside cloned reference repos.
 

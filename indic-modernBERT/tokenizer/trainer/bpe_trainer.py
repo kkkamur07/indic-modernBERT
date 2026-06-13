@@ -38,7 +38,12 @@ def train_bpe(
 
     train_bpe_stage(
         tokenizer,
-        lambda: iter_corpus_texts(data_root, text_column, use_script_norm=use_script_norm),
+        lambda: iter_corpus_texts(
+            data_root,
+            text_column,
+            use_script_norm=use_script_norm,
+            progress_desc=f"BPE vocab={vocab_size}",
+        ),
         pretokenization_stage="subword",
         vocab_size=vocab_size,
         min_frequency=min_frequency,
@@ -53,6 +58,12 @@ def train_bpe(
 def main(cfg: DictConfig) -> None:
 
     config = load_tokenizer_config(cfg)
+    if config.trainer.bpe is None:
+        raise ValueError(
+            "No `tokenizer.trainer.bpe` section in config. "
+            "SuperBPE stage 1 already trains subword BPE; add a bpe block only if you "
+            "need standalone BPE artifacts (not SuperBPE)."
+        )
     bpe_cfg = config.trainer.bpe
     pretok_cfg = config.pretokenization
     run_log = setup_training_run_log(bpe_cfg.data_root, bpe_cfg.vocab_sizes, "bpe")

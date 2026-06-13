@@ -22,6 +22,7 @@ from tokenizer.pretokenization import (
     normalize_text,
 )
 from utils.log_helpers import log_training_stage
+from utils.progress import iter_with_progress
 
 CJK_RE = re.compile(r"[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]")
 EMOJI_AND_SYMBOL_RE = re.compile(
@@ -227,6 +228,8 @@ def make_corpus_iterator(
     text_column: str,
     *,
     use_script_norm: bool = True,
+    show_progress: bool = True,
+    progress_desc: str | None = None,
 ) -> Callable[[], Iterator[str]]:
     """Return a factory that yields a fresh corpus iterator for each training pass."""
 
@@ -235,6 +238,8 @@ def make_corpus_iterator(
             data_root,
             text_column,
             use_script_norm=use_script_norm,
+            show_progress=show_progress,
+            progress_desc=progress_desc,
         )
 
     return fresh_iterator
@@ -246,6 +251,8 @@ def iter_corpus_texts(
     *,
     use_script_norm: bool = True,
     filter_cjk_emoji: bool = True,
+    show_progress: bool = True,
+    progress_desc: str | None = None,
 ) -> Iterator[str]:
 
     parquet_files = sorted(data_root.glob(f"verified/{HINDI_LANG3}/*.parquet"))
@@ -255,11 +262,22 @@ def iter_corpus_texts(
             f"No Hindi parquet files found under: {data_root}/verified/{HINDI_LANG3}"
         )
 
-    for parquet_path in parquet_files:
-        table = pq.read_table(parquet_path, columns=[text_column])
+    label = progress_desc or "Corpus"
+    shard_total = len(parquet_files)
 
-        #! Check this for efficiency, because some methods are faster. 
-        for value in table[text_column].to_pylist():
+    for shard_idx, parquet_path in enumerate(parquet_files, start=1):
+        table = pq.read_table(parquet_path, columns=[text_column])
+        column = table[text_column]
+        values = column.to_pylist()
+        desc = f"{label} | {shard_idx}/{shard_total} {parquet_path.name}"
+        row_iter = iter_with_progress(
+            values,
+            total=len(column),
+            desc=desc,
+            show_progress=show_progress,
+        )
+
+        for value in row_iter:
             if value is None:
                 continue
 

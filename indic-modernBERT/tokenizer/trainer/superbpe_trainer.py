@@ -51,17 +51,24 @@ def train_superbpe(
 
     tokenizer = create_bpe_tokenizer(use_nfkc=use_nfkc)
 
-    corpus_factory = make_corpus_iterator(
+    stage1_factory = make_corpus_iterator(
         data_root,
         text_column,
         use_script_norm=use_script_norm,
+        progress_desc=f"SuperBPE S1 vocab={vocab_size}",
+    )
+    stage2_factory = make_corpus_iterator(
+        data_root,
+        text_column,
+        use_script_norm=use_script_norm,
+        progress_desc=f"SuperBPE S2 vocab={vocab_size}",
     )
     stage1_checkpoint = output_dir / ".stage1_checkpoint"
 
     # Stage 1: full regex pretokenization (words, digits, punctuation, whitespace).
     train_bpe_stage(
         tokenizer,
-        corpus_factory,
+        stage1_factory,
         pretokenization_stage="subword",
         vocab_size=stage1_vocab_size,
         min_frequency=min_frequency,
@@ -73,7 +80,7 @@ def train_superbpe(
     # Stage 2: no pretokenization; extend from merges.txt (reference SuperBPE cwd flow).
     tokenizer = train_superbpe_stage2(
         stage1_checkpoint,
-        corpus_factory,
+        stage2_factory,
         vocab_size=vocab_size,
         min_frequency=min_frequency,
         use_nfkc=use_nfkc,

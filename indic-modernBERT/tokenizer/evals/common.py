@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import sys
 from collections import Counter
 from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pyarrow.parquet as pq
+from loguru import logger
 from tokenizers import Tokenizer
-from tqdm import tqdm
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from constants import HINDI_LANG3
+
+from utils.progress import iter_with_progress
 
 from .metrics import (
     aggregate_parity_ratio,
@@ -83,16 +86,18 @@ def iter_hindi_lines(
         )
 
     label = progress_desc or "Eval"
+    shard_total = len(parquet_files)
 
-    for parquet_path in parquet_files:
+    for shard_idx, parquet_path in enumerate(parquet_files, start=1):
         table = pq.read_table(parquet_path, columns=[text_column])
         column = table[text_column]
         values = column.to_pylist()
-        desc = f"{label} ({parquet_path.name})"
-        row_iter = (
-            tqdm(values, total=len(column), desc=desc, unit="rows")
-            if show_progress
-            else values
+        desc = f"{label} | {shard_idx}/{shard_total} {parquet_path.name}"
+        row_iter = iter_with_progress(
+            values,
+            total=len(column),
+            desc=desc,
+            show_progress=show_progress,
         )
 
         for value in row_iter:
@@ -121,10 +126,14 @@ def iter_parallel_lines(
     reference_values = table[reference_column].to_pylist()
 
     label = progress_desc or "Parity"
-    desc = f"{label} ({parallel_path.name})"
+    desc = f"{label} | {parallel_path.name}"
     pair_iter = zip(hindi_values, reference_values, strict=True)
-    if show_progress:
+    if show_progress and sys.stderr.isatty():
+        from tqdm import tqdm
+
         pair_iter = tqdm(pair_iter, total=len(hindi_values), desc=desc, unit="rows")
+    elif show_progress:
+        logger.info("{} | {} rows", desc, len(hindi_values))
 
     for hindi_value, reference_value in pair_iter:
         if hindi_value is None or reference_value is None:
