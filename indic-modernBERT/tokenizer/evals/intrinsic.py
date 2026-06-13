@@ -6,7 +6,7 @@ import hydra
 from loguru import logger
 from omegaconf import DictConfig
 
-from config import load_eval_config
+from config import load_eval_config, load_tokenizer_config
 from utils.log_helpers import log_hydra_run_log, setup_eval_run_log
 
 from .common import (
@@ -44,6 +44,13 @@ def _log_fertility_comparison(fertility_by_label: dict[str, float]) -> None:
 @hydra.main(version_base=None, config_path="../../../configs", config_name="tokenizer")
 def main(cfg: DictConfig) -> None:
     eval_cfg = load_eval_config(cfg, "intrinsic")
+    tokenizer_cfg = load_tokenizer_config(cfg)
+    use_script_norm = tokenizer_cfg.pretokenization.use_script_norm
+    if eval_cfg.tokenizer_path is None:
+        raise ValueError(
+            "intrinsic eval requires tokenizer.evals.intrinsic.tokenizer_path "
+            "or use make eval-bpe to compare all trained vocabs."
+        )
     run_log = setup_eval_run_log(eval_cfg, "intrinsic")
     fertility_by_label: dict[str, float] = {}
 
@@ -84,6 +91,7 @@ def main(cfg: DictConfig) -> None:
         reference_tokenize_len=ref_len,
         vocab_size=candidate.get_vocab_size(),
         renyi_alpha=eval_cfg.renyi_alpha,
+        use_script_norm=use_script_norm,
         progress_desc="Candidate",
     )
 
@@ -98,6 +106,7 @@ def main(cfg: DictConfig) -> None:
             parallel_path=eval_cfg.parallel_data_path,
             hindi_column=eval_cfg.parallel_hindi_column,
             reference_column=eval_cfg.parallel_reference_column,
+            use_script_norm=use_script_norm,
             progress_desc="Candidate parity",
         )
 

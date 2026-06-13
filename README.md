@@ -90,7 +90,7 @@ configs/
 └── pretrain/hindi_mlm.yaml
 
 scripts/                   # thin entry points (repo root)
-├── validate_superbpe.py
+├── compare_bpe_vocabs.py
 ├── validate_modernbert.py
 └── export_hf.py
 
@@ -115,7 +115,7 @@ Configs:
 Full pretraining (Composer loop, sequence packing, flash-attn):
 
 ```bash
-uv sync --extra pretrain   # GPU recommended; adds composer + torchmetrics
+uv sync --extra pretrain   # adds composer + torchmetrics
 make train-pretrain
 ```
 

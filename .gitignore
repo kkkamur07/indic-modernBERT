@@ -9,6 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
+# Local temp (uv/cargo cache from dev sessions — do not commit)
+.tmp/
+
 # Experiments
 Experiments/
 experiments/
@@ -19,3 +22,4 @@ data/
 # SuperBPE Patch
 _support_repo/**/target/
 _support_repo/**/tokenizer_json/
+artifacts/

@@ -10,7 +10,7 @@ from hydra.core.hydra_config import HydraConfig
 from loguru import logger
 
 if TYPE_CHECKING:
-    from config.schema import BpeTrainerConfig, EvalConfig, PretokenizationConfig, SuperBpeTrainerConfig
+    from config.schema import BpeTrainerConfig, EvalConfig, PretokenizationConfig
     from tokenizer.pretokenization import PretokenizationStage
 
 
@@ -51,7 +51,10 @@ def setup_run_log(log_name: str) -> Path:
 
 
 def setup_eval_run_log(eval_cfg: EvalConfig, prefix: str) -> Path:
-    cand = slug(eval_cfg.tokenizer_path.parent.name or eval_cfg.tokenizer_path.stem)
+    if eval_cfg.tokenizer_path is not None:
+        cand = slug(eval_cfg.tokenizer_path.parent.name or eval_cfg.tokenizer_path.stem)
+    else:
+        cand = "all_bpe"
     base = (
         "multi"
         if len(eval_cfg.baseline_names) > 1
@@ -72,22 +75,6 @@ def log_bpe_training_start(
         bpe_cfg.data_root,
         bpe_cfg.vocab_sizes,
         bpe_cfg.min_frequency,
-        pretok_cfg.use_script_norm,
-        pretok_cfg.use_nfkc,
-    )
-
-
-def log_superbpe_training_start(
-    superbpe_cfg: SuperBpeTrainerConfig,
-    pretok_cfg: PretokenizationConfig,
-) -> None:
-    logger.info(
-        "Starting SuperBPE training | data_root={} | vocab_sizes={} | "
-        "transition_fraction={} | min_freq={} | use_script_norm={} | use_nfkc={}",
-        superbpe_cfg.data_root,
-        superbpe_cfg.vocab_sizes,
-        superbpe_cfg.transition_fraction,
-        superbpe_cfg.min_frequency,
         pretok_cfg.use_script_norm,
         pretok_cfg.use_nfkc,
     )

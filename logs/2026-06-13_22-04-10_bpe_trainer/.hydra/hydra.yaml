@@ -113,7 +113,7 @@ hydra:
     - hydra.mode=RUN
     task: []
   job:
-    name: superbpe_trainer
+    name: bpe_trainer
     chdir: false
     override_dirname: ''
     id: ???
@@ -140,7 +140,7 @@ hydra:
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /home/krrish/Desktop/Programming/indic-modernBERT/logs/2026-06-13_18-32-33_superbpe_trainer
+    output_dir: /home/krrish/Desktop/Programming/indic-modernBERT/logs/2026-06-13_22-04-10_bpe_trainer
     choices:
       hydra/env: default
       hydra/callbacks: null

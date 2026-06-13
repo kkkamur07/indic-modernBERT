@@ -13,6 +13,7 @@ from tokenizers import Tokenizer
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from constants import HINDI_LANG3
+from tokenizer.pretokenization import preprocess_for_tokenizer
 
 from utils.progress import iter_with_progress
 
@@ -35,7 +36,7 @@ def load_candidate_tokenizer(tokenizer_path: str | Path) -> Tokenizer:
     if not path.exists():
         raise FileNotFoundError(
             f"Tokenizer not found at {path.resolve()}. "
-            "Train first (make train-superbpe) or run make eval-intrinsic-smoke."
+            "Train first with make train-bpe."
         )
     return Tokenizer.from_file(str(path))
 
@@ -71,6 +72,7 @@ def iter_hindi_lines(
     data_root: Path,
     text_column: str,
     *,
+    use_script_norm: bool = False,
     show_progress: bool = True,
     progress_desc: str | None = None,
 ) -> Iterator[tuple[str, list[str]]]:
@@ -103,7 +105,10 @@ def iter_hindi_lines(
         for value in row_iter:
             if value is None:
                 continue
-            text = str(value).strip()
+            text = preprocess_for_tokenizer(
+                str(value),
+                use_script_norm=use_script_norm,
+            ).strip()
             if not text:
                 continue
             words = text.split()
@@ -117,6 +122,7 @@ def iter_parallel_lines(
     hindi_column: str,
     reference_column: str,
     *,
+    use_script_norm: bool = False,
     show_progress: bool = True,
     progress_desc: str | None = None,
 ) -> Iterator[tuple[str, str]]:
@@ -139,7 +145,10 @@ def iter_parallel_lines(
         if hindi_value is None or reference_value is None:
             continue
 
-        hindi_text = str(hindi_value).strip()
+        hindi_text = preprocess_for_tokenizer(
+            str(hindi_value),
+            use_script_norm=use_script_norm,
+        ).strip()
         reference_text = str(reference_value).strip()
 
         if not hindi_text or not reference_text:
@@ -157,6 +166,7 @@ def collect_intrinsic_metrics(
     reference_tokenize_len: EncodeLenFn | None = None,
     vocab_size: int | None = None,
     renyi_alpha: float = 2.5,
+    use_script_norm: bool = False,
     show_progress: bool = True,
     progress_desc: str | None = None,
 ) -> IntrinsicMetrics:
@@ -174,6 +184,7 @@ def collect_intrinsic_metrics(
     for text, words in iter_hindi_lines(
         data_root,
         text_column,
+        use_script_norm=use_script_norm,
         show_progress=show_progress,
         progress_desc=progress_desc,
     ):
@@ -219,6 +230,7 @@ def collect_cross_lingual_parity(
     parallel_path: Path,
     hindi_column: str,
     reference_column: str,
+    use_script_norm: bool = False,
     show_progress: bool = True,
     progress_desc: str | None = None,
 ) -> IntrinsicMetrics:
@@ -232,6 +244,7 @@ def collect_cross_lingual_parity(
         parallel_path,
         hindi_column,
         reference_column,
+        use_script_norm=use_script_norm,
         show_progress=show_progress,
         progress_desc=progress_desc,
     ):

@@ -1,4 +1,4 @@
-"""Train a Hindi BPE tokenizer (MUTANT stage 1 / subword-only)."""
+"""Train a Hindi BPE tokenizer."""
 
 from __future__ import annotations
 
@@ -14,6 +14,8 @@ from utils.log_helpers import (
     log_vocab_training_complete,
     setup_training_run_log,
 )
+
+from tokenizer.pretokenization import PretokenizationStage
 
 from .common import (
     attach_cls_sep_processor,
@@ -31,6 +33,7 @@ def train_bpe(
     vocab_size: int,
     min_frequency: int,
     *,
+    pretokenization_stage: PretokenizationStage = "subword",
     use_script_norm: bool = True,
     use_nfkc: bool = True,
 ) -> Path:
@@ -44,7 +47,7 @@ def train_bpe(
             use_script_norm=use_script_norm,
             progress_desc=f"BPE vocab={vocab_size}",
         ),
-        pretokenization_stage="subword",
+        pretokenization_stage=pretokenization_stage,
         vocab_size=vocab_size,
         min_frequency=min_frequency,
         stage_name="BPE",
@@ -58,12 +61,6 @@ def train_bpe(
 def main(cfg: DictConfig) -> None:
 
     config = load_tokenizer_config(cfg)
-    if config.trainer.bpe is None:
-        raise ValueError(
-            "No `tokenizer.trainer.bpe` section in config. "
-            "SuperBPE stage 1 already trains subword BPE; add a bpe block only if you "
-            "need standalone BPE artifacts (not SuperBPE)."
-        )
     bpe_cfg = config.trainer.bpe
     pretok_cfg = config.pretokenization
     run_log = setup_training_run_log(bpe_cfg.data_root, bpe_cfg.vocab_sizes, "bpe")
@@ -77,6 +74,7 @@ def main(cfg: DictConfig) -> None:
             text_column=bpe_cfg.text_column,
             vocab_size=run.vocab_size,
             min_frequency=bpe_cfg.min_frequency,
+            pretokenization_stage=pretok_cfg.stage,
             use_script_norm=pretok_cfg.use_script_norm,
             use_nfkc=pretok_cfg.use_nfkc,
         )

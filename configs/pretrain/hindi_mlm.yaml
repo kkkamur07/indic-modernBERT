@@ -7,7 +7,7 @@ hydra:
 pretrain:
   data_root: data/sangrah_dataset
   eval_data_root: data/eval/hi
-  tokenizer_path: artifacts/tokenizer/superbpe_vs50368/tokenizer.json
+  tokenizer_path: artifacts/tokenizer/bpe_vs50368/tokenizer.json
   output_dir: artifacts/model/modernbert
   save_folder: artifacts/model/modernbert/checkpoints
   text_column: text

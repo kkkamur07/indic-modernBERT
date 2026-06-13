@@ -1,7 +1,7 @@
 [project]
 name = "indic-modernbert"
 version = "0.1.0"
-description = "Add your description here"
+description = "Extending ModernBERT to Other Indic Languages."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -14,25 +14,14 @@ dependencies = [
     "protobuf",
     "pydantic",
     "pyyaml",
-    "sentencepiece",
     "tqdm",
-    "tokenizers",
+    "tokenizers>=0.23.1",
     "torch",
     "transformers",
 ]
 
 [tool.uv]
 package = false
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-# Vendored SuperBPE patch: extends merges.txt during stage-2 training.
-[tool.uv.sources]
-tokenizers = { path = "_support_repo/superbpe/tokenizers_superbpe/bindings/python", editable = true }
-torch = { index = "pytorch-cpu" }
 
 [project.optional-dependencies]
 pretrain = [
