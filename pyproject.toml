@@ -13,3 +13,6 @@ dependencies = [
     "tokenizers",
     "transformers",
 ]
+
+[tool.uv]
+package = false

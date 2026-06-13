@@ -1,4 +1,4 @@
-"""Evaluate bytes-per-token compression efficiency."""
+"""Evaluate bytes-per-token compression efficiency on Hindi text."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from omegaconf import DictConfig
 from tokenizers import Tokenizer
 from transformers import AutoTokenizer
 
-from common import collect_stats, get_baseline_names, setup_eval_run_log
+from .common import collect_stats, get_baseline_names, setup_eval_run_log
 
 
 @hydra.main(version_base=None, config_path="../../../configs", config_name="tokenizer")
@@ -27,8 +27,8 @@ def main(cfg: DictConfig) -> None:
         text_column=eval_cfg.text_column,
     )
 
-    cand = candidate["overall"]["bytes_per_token"]
-    logger.info("Candidate overall bytes/token: {:.6f}", cand)
+    cand = candidate["bytes_per_token"]
+    logger.info("Candidate Hindi bytes/token: {:.6f}", cand)
 
     baseline_names = get_baseline_names(eval_cfg)
 
@@ -46,21 +46,8 @@ def main(cfg: DictConfig) -> None:
             text_column=eval_cfg.text_column,
         )
 
-        base = baseline["overall"]["bytes_per_token"]
-
-        logger.info("Baseline [{}] overall bytes/token: {:.6f}", baseline_name, base)
-        logger.info("Per-language bytes/token (candidate vs baseline [{}]):", baseline_name)
-
-        for lang in sorted(candidate["per_language"]):
-            cand_lang = candidate["per_language"][lang]["bytes_per_token"]
-            base_lang = baseline["per_language"].get(lang, {}).get("bytes_per_token", 0.0)
-            
-            logger.info(
-                "{} | candidate={:.6f} | baseline={:.6f}",
-                lang,
-                cand_lang,
-                base_lang,
-            )
+        base = baseline["bytes_per_token"]
+        logger.info("Baseline [{}] Hindi bytes/token: {:.6f}", baseline_name, base)
 
     logger.info("Higher bytes/token is better.")
     logger.info("Hydra experiment log: {}", run_log.resolve())
