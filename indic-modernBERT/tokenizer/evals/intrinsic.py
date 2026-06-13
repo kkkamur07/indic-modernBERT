@@ -32,10 +32,20 @@ def _log_intrinsic(label: str, metrics: dict[str, float | int]) -> None:
     )
 
 
+def _short_name(model_name: str) -> str:
+    return model_name.split("/")[-1]
+
+
+def _log_fertility_comparison(fertility_by_label: dict[str, float]) -> None:
+    parts = [f"{label}={value:.4f}" for label, value in fertility_by_label.items()]
+    logger.info("Fertility comparison | {} | lower is better", " | ".join(parts))
+
+
 @hydra.main(version_base=None, config_path="../../../configs", config_name="tokenizer")
 def main(cfg: DictConfig) -> None:
     eval_cfg = load_eval_config(cfg, "intrinsic")
     run_log = setup_eval_run_log(eval_cfg, "intrinsic")
+    fertility_by_label: dict[str, float] = {}
 
     candidate = load_candidate_tokenizer(eval_cfg.tokenizer_path)
     cand_len, cand_tokens = fast_encode_fns(candidate)
@@ -46,7 +56,25 @@ def main(cfg: DictConfig) -> None:
         else None
     )
 
-    ref_len = hf_encode_fns(reference)[0] if reference is not None else None
+    ref_len = None
+    if reference is not None:
+        assert eval_cfg.reference_tokenizer_name is not None
+        ref_name = eval_cfg.reference_tokenizer_name
+        logger.info("Loading reference tokenizer: {}", ref_name)
+        ref_len, ref_tokens = hf_encode_fns(reference)
+
+        reference_metrics = collect_intrinsic_metrics(
+            tokenize_len=ref_len,
+            tokenize_tokens=ref_tokens,
+            data_root=eval_cfg.data_root,
+            text_column=eval_cfg.text_column,
+            vocab_size=reference.vocab_size,
+            renyi_alpha=eval_cfg.renyi_alpha,
+            progress_desc=f"Reference [{_short_name(ref_name)}]",
+        )
+        reference_label = f"Reference [{_short_name(ref_name)}]"
+        _log_intrinsic(reference_label, reference_metrics)
+        fertility_by_label[reference_label] = float(reference_metrics["fertility"])
 
     candidate_metrics = collect_intrinsic_metrics(
         tokenize_len=cand_len,
@@ -56,9 +84,11 @@ def main(cfg: DictConfig) -> None:
         reference_tokenize_len=ref_len,
         vocab_size=candidate.get_vocab_size(),
         renyi_alpha=eval_cfg.renyi_alpha,
+        progress_desc="Candidate",
     )
 
     _log_intrinsic("Candidate", candidate_metrics)
+    fertility_by_label["Candidate"] = float(candidate_metrics["fertility"])
 
     if eval_cfg.parallel_data_path is not None and reference is not None and ref_len is not None:
 
@@ -68,6 +98,7 @@ def main(cfg: DictConfig) -> None:
             parallel_path=eval_cfg.parallel_data_path,
             hindi_column=eval_cfg.parallel_hindi_column,
             reference_column=eval_cfg.parallel_reference_column,
+            progress_desc="Candidate parity",
         )
 
         logger.info(
@@ -78,8 +109,13 @@ def main(cfg: DictConfig) -> None:
         )
 
     for baseline_name in eval_cfg.baseline_names:
+        if baseline_name == eval_cfg.reference_tokenizer_name:
+            continue
+
+        logger.info("Loading baseline tokenizer: {}", baseline_name)
         baseline = load_hf_tokenizer(baseline_name)
         base_len, base_tokens = hf_encode_fns(baseline)
+        baseline_label = f"Baseline [{_short_name(baseline_name)}]"
 
         baseline_metrics = collect_intrinsic_metrics(
             tokenize_len=base_len,
@@ -88,9 +124,13 @@ def main(cfg: DictConfig) -> None:
             text_column=eval_cfg.text_column,
             vocab_size=baseline.vocab_size,
             renyi_alpha=eval_cfg.renyi_alpha,
+            progress_desc=baseline_label,
         )
 
-        _log_intrinsic(f"Baseline [{baseline_name}]", baseline_metrics)
+        _log_intrinsic(baseline_label, baseline_metrics)
+        fertility_by_label[baseline_label] = float(baseline_metrics["fertility"])
+
+    _log_fertility_comparison(fertility_by_label)
 
     logger.info(
         "Metric guide | fertility ↓ | bytes/token ↑ | NSL ↓ | Rényi efficiency ↑ | parity ≈ 1"

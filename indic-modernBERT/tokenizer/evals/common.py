@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pyarrow.parquet as pq
 from tokenizers import Tokenizer
+from tqdm import tqdm
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from constants import HINDI_LANG3
@@ -27,7 +28,13 @@ EncodeTokensFn = Callable[[str], list[str]]
 
 
 def load_candidate_tokenizer(tokenizer_path: str | Path) -> Tokenizer:
-    return Tokenizer.from_file(str(tokenizer_path))
+    path = Path(tokenizer_path)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Tokenizer not found at {path.resolve()}. "
+            "Train first (make train-superbpe) or run make eval-intrinsic-smoke."
+        )
+    return Tokenizer.from_file(str(path))
 
 
 def load_hf_tokenizer(model_name: str) -> PreTrainedTokenizerBase:
@@ -60,6 +67,9 @@ def hf_encode_fns(tokenizer: PreTrainedTokenizerBase) -> tuple[EncodeLenFn, Enco
 def iter_hindi_lines(
     data_root: Path,
     text_column: str,
+    *,
+    show_progress: bool = True,
+    progress_desc: str | None = None,
 ) -> Iterator[tuple[str, list[str]]]:
     sangrah_layout = sorted(data_root.glob(f"verified/{HINDI_LANG3}/*.parquet"))
     eval_layout = sorted(data_root.glob("*.parquet"))
@@ -72,10 +82,20 @@ def iter_hindi_lines(
             f"or {data_root}/*.parquet (eval holdout layout)."
         )
 
+    label = progress_desc or "Eval"
+
     for parquet_path in parquet_files:
         table = pq.read_table(parquet_path, columns=[text_column])
+        column = table[text_column]
+        values = column.to_pylist()
+        desc = f"{label} ({parquet_path.name})"
+        row_iter = (
+            tqdm(values, total=len(column), desc=desc, unit="rows")
+            if show_progress
+            else values
+        )
 
-        for value in table[text_column].to_pylist():
+        for value in row_iter:
             if value is None:
                 continue
             text = str(value).strip()
@@ -91,15 +111,22 @@ def iter_parallel_lines(
     parallel_path: Path,
     hindi_column: str,
     reference_column: str,
+    *,
+    show_progress: bool = True,
+    progress_desc: str | None = None,
 ) -> Iterator[tuple[str, str]]:
 
     table = pq.read_table(parallel_path, columns=[hindi_column, reference_column])
+    hindi_values = table[hindi_column].to_pylist()
+    reference_values = table[reference_column].to_pylist()
 
-    for hindi_value, reference_value in zip(
-        table[hindi_column].to_pylist(),
-        table[reference_column].to_pylist(),
-        strict=True,
-    ):
+    label = progress_desc or "Parity"
+    desc = f"{label} ({parallel_path.name})"
+    pair_iter = zip(hindi_values, reference_values, strict=True)
+    if show_progress:
+        pair_iter = tqdm(pair_iter, total=len(hindi_values), desc=desc, unit="rows")
+
+    for hindi_value, reference_value in pair_iter:
         if hindi_value is None or reference_value is None:
             continue
 
@@ -121,6 +148,8 @@ def collect_intrinsic_metrics(
     reference_tokenize_len: EncodeLenFn | None = None,
     vocab_size: int | None = None,
     renyi_alpha: float = 2.5,
+    show_progress: bool = True,
+    progress_desc: str | None = None,
 ) -> IntrinsicMetrics:
 
     totals = {
@@ -133,7 +162,12 @@ def collect_intrinsic_metrics(
 
     token_counts: Counter[str] = Counter()
 
-    for text, words in iter_hindi_lines(data_root, text_column):
+    for text, words in iter_hindi_lines(
+        data_root,
+        text_column,
+        show_progress=show_progress,
+        progress_desc=progress_desc,
+    ):
         tokens = tokenize_len(text)
         totals["rows"] += 1
         totals["words"] += len(words)
@@ -176,6 +210,8 @@ def collect_cross_lingual_parity(
     parallel_path: Path,
     hindi_column: str,
     reference_column: str,
+    show_progress: bool = True,
+    progress_desc: str | None = None,
 ) -> IntrinsicMetrics:
 
     ratios: list[float] = []
@@ -187,6 +223,8 @@ def collect_cross_lingual_parity(
         parallel_path,
         hindi_column,
         reference_column,
+        show_progress=show_progress,
+        progress_desc=progress_desc,
     ):
         hi_count = hindi_tokenize_len(hindi_text)
         ref_count = reference_lang_tokenize_len(reference_text)

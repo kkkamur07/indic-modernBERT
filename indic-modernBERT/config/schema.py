@@ -9,7 +9,7 @@ from omegaconf import DictConfig, OmegaConf
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from constants import validate_vocab_size
-from utils.paths import resolve_vocab_output_dir
+from utils.paths import resolve_from_cwd, resolve_vocab_output_dir
 
 
 class PretokenizationConfig(BaseModel):
@@ -33,6 +33,11 @@ class BpeTrainerConfig(BaseModel):
     text_column: str
     vocab_sizes: list[int]
     min_frequency: int = Field(ge=1)
+
+    @field_validator("data_root", "output_dir", mode="before")
+    @classmethod
+    def resolve_paths(cls, value: Path | str) -> Path:
+        return resolve_from_cwd(value)
 
     @field_validator("vocab_sizes")
     @classmethod
@@ -69,6 +74,11 @@ class SuperBpeTrainerConfig(BaseModel):
     min_frequency: int = Field(ge=1)
     transition_fraction: float = Field(default=0.9, gt=0.0, lt=1.0)
     transition_vocab_sizes: list[int] | None = None
+
+    @field_validator("data_root", "output_dir", mode="before")
+    @classmethod
+    def resolve_paths(cls, value: Path | str) -> Path:
+        return resolve_from_cwd(value)
 
     @field_validator("vocab_sizes", "transition_vocab_sizes")
     @classmethod
@@ -146,6 +156,13 @@ class EvalConfig(BaseModel):
     parallel_data_path: Path | None = None
     parallel_hindi_column: str = "text_hi"
     parallel_reference_column: str = "text_eng"
+
+    @field_validator("tokenizer_path", "data_root", "parallel_data_path", mode="before")
+    @classmethod
+    def resolve_paths(cls, value: Path | str | None) -> Path | None:
+        if value is None:
+            return None
+        return resolve_from_cwd(value)
 
     @model_validator(mode="after")
     def validate_baselines(self) -> EvalConfig:

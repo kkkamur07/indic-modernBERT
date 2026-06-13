@@ -10,7 +10,10 @@ dependencies = [
     "indic-nlp-library",
     "loguru",
     "pyarrow",
+    "protobuf",
     "pydantic",
+    "sentencepiece",
+    "tqdm",
     "tokenizers",
     "transformers",
 ]

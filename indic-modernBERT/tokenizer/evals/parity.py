@@ -39,6 +39,7 @@ def main(cfg: DictConfig) -> None:
         parallel_path=parallel_path,
         hindi_column=eval_cfg.parallel_hindi_column,
         reference_column=eval_cfg.parallel_reference_column,
+        progress_desc="Parity",
     )
 
     logger.info(

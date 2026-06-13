@@ -1,1 +1,1 @@
-"""Shared utilities for indic_modernBert."""
+"""Shared utilities for indic-modernBERT."""

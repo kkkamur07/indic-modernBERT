@@ -36,7 +36,7 @@ BPE should only merge inside the pertoken chunck and super, one stage is with pr
 
 ## Running
 
-Run from the **repo root** (`indic-modernBERT/`). Source code is in `indic-modernBert/` — flat imports, not an installable package.
+Run from the **repo root** (`indic-modernBERT/`). Source code is in `indic-modernBERT/` — flat imports, not an installable package.
 
 ```bash
 uv sync
@@ -47,8 +47,8 @@ make validate-superbpe
 Or without Make:
 
 ```bash
-PYTHONPATH=indic-modernBert uv run python -m tokenizer.trainer.superbpe_trainer
-cd indic-modernBert && uv run python scripts/validate_superbpe.py
+PYTHONPATH=indic-modernBERT uv run python -m tokenizer.trainer.superbpe_trainer
+cd indic-modernBERT && uv run python scripts/validate_superbpe.py
 ```
 
 Other targets: `train-bpe`, `eval-intrinsic`, `eval-parity`, `pretokenization`.
@@ -67,7 +67,7 @@ SuperBPE uses a vendored `tokenizers` patch (merge extension in Rust, under `_su
 
 ## `_support_repo` and git
 
-`_support_repo/` holds reference code and the **vendored SuperBPE `tokenizers` patch**. Our training pipeline lives in `indic-modernBert/` — we do not run the reference SuperBPE shell scripts.
+`_support_repo/` holds reference code and the **vendored SuperBPE `tokenizers` patch**. Our training pipeline lives in `indic-modernBERT/` — we do not run the reference SuperBPE shell scripts.
 
 `pyproject.toml` pins the patch:
 
@@ -82,6 +82,11 @@ So the `tokenizers_superbpe` **source** must be available after clone, or `uv sy
 **Required** — commit this or SuperBPE won't build after clone:
 
 - `_support_repo/superbpe/tokenizers_superbpe/` — the vendored `tokenizers` patch source
+
+**Local modifications we carry** (see `LEARNINGS.md` → *merges.txt leading-space parsing*):
+
+- `model.rs` / `trainer.rs` — `parse_bpe_merge_line()` for Hindi word-initial merges (`"  क"`).
+  Re-verify after any submodule bump.
 
 **Do not commit** — already in `.gitignore`:
 

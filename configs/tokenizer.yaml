@@ -11,6 +11,7 @@ tokenizer:
     stage: subword  # subword | superword
 
   trainer:
+    # Sangrah verified/hin: 18 random training shards (see dataset/sangrah_dataset.py).
     bpe:
       data_root: data/sangrah_dataset
       output_dir: artifacts/tokenizer/bpe
@@ -27,7 +28,7 @@ tokenizer:
       min_frequency: 2
 
   evals:
-    # Hindi holdout parquets: data/eval/hi/*.parquet (or verified/hin/ subtree like Sangrah).
+    # Holdout: 2 Hindi parquets under data/eval/hi/verified/hin/ (held out from training).
     intrinsic:
       tokenizer_path: artifacts/tokenizer/superbpe/tokenizer.json
       data_root: data/eval/hi

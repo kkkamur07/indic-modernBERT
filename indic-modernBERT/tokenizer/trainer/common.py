@@ -152,7 +152,16 @@ def train_superbpe_stage2(
     min_frequency: int,
     use_nfkc: bool = True,
 ) -> Tokenizer:
-    """Extend a stage-1 checkpoint using ``merges.txt`` (SuperBPE stage 2)."""
+    """Extend a stage-1 checkpoint using ``merges.txt`` (SuperBPE stage 2).
+
+    Depends on the vendored ``tokenizers`` fork. Stage 2 changes cwd to the
+    checkpoint dir (where ``merges.txt`` lives); config paths must be absolute
+    (see ``resolve_from_cwd`` in ``config/schema.py``).
+
+    The fork must parse word-initial merge lines like ``"  क"`` correctly — see
+    ``LEARNINGS.md`` (*merges.txt leading-space parsing*) if stage 2 panics or
+    logs ``not found in word_to_id`` for blank tokens.
+    """
     require_superbpe_extend()
     validate_vocab_size(vocab_size)
 
