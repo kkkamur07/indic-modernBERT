@@ -8,16 +8,12 @@ from typing import Literal
 from indicnlp.normalize.indic_normalize import IndicNormalizerFactory
 from tokenizers import Regex, pre_tokenizers
 
-from ... import HINDI_LANG2
+from constants import HINDI_LANG2
 
-from .patterns import SUBWORD_SPLIT_PATTERN, SUPERWORD_SPLIT_PATTERN
+from .patterns import SUBWORD_SPLIT_PATTERN
 
 PretokenizationStage = Literal["subword", "superword"]
 
-_STAGE_TO_PATTERN: dict[PretokenizationStage, str] = {
-    "subword": SUBWORD_SPLIT_PATTERN,
-    "superword": SUPERWORD_SPLIT_PATTERN,
-}
 
 _hindi_normalizer = IndicNormalizerFactory().get_normalizer(HINDI_LANG2, remove_nuktas=False)
 
@@ -44,11 +40,13 @@ def normalize_text(
     return text
 
 
-def build_pre_tokenizer(stage: PretokenizationStage = "subword") -> pre_tokenizers.PreTokenizer:
+def build_pre_tokenizer(
+    stage: PretokenizationStage = "subword",
+) -> pre_tokenizers.PreTokenizer | None:
+    if stage == "superword":
+        return None
 
-    pattern = _STAGE_TO_PATTERN[stage]
-
-    return pre_tokenizers.Split(Regex(pattern), behavior="isolated")
+    return pre_tokenizers.Split(Regex(SUBWORD_SPLIT_PATTERN), behavior="isolated")
 
 
 def describe_splits(
@@ -61,5 +59,8 @@ def describe_splits(
 
     text = normalize_text(text, use_script_norm=use_script_norm, use_nfkc=use_nfkc)
 
-    # Using hugging face tokenizers to build the pre-tokenizer
-    return build_pre_tokenizer(stage).pre_tokenize_str(text)
+    pre_tokenizer = build_pre_tokenizer(stage)
+    if pre_tokenizer is None:
+        return [(text, (0, len(text)))]
+
+    return pre_tokenizer.pre_tokenize_str(text)

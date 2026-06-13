@@ -10,9 +10,14 @@ dependencies = [
     "indic-nlp-library",
     "loguru",
     "pyarrow",
+    "pydantic",
     "tokenizers",
     "transformers",
 ]
 
 [tool.uv]
 package = false
+
+# Vendored SuperBPE patch: extends merges.txt during stage-2 training.
+[tool.uv.sources]
+tokenizers = { path = "_support_repo/superbpe/tokenizers_superbpe/bindings/python", editable = true }

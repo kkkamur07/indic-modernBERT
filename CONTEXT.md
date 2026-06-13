@@ -43,3 +43,5 @@ _Avoid_: Token (tokens are produced later by BPE)
 ## Flagged ambiguities
 
 - "Regex normalization" was used to mean **Pre-tokenization** — resolved: NFKC is **Normalization**; regex splitting is **Pre-tokenization**.
+- For any problems you can evaluate modernBERT repo in `_support_repo` to understand better. 
+

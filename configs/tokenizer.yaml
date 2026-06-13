@@ -15,22 +15,42 @@ tokenizer:
       data_root: data/sangrah_dataset
       output_dir: artifacts/tokenizer/bpe
       text_column: text
-      vocab_sizes: [32768,50368,65536,98304,131072,196608]  # set multiple for ablations, e.g. [8000, 16000, 24000]
+      vocab_sizes: [32768,50368,65536,98304,131072,196608]
+      min_frequency: 2
+
+    superbpe:
+      data_root: data/sangrah_dataset
+      output_dir: artifacts/tokenizer/superbpe
+      text_column: text
+      vocab_sizes: [65536, 131072, 196608]
+      # MUTANT uses ~90% of |V| for stage-1 subword learning (Table 13).
+      transition_fraction: 0.9
+      # Optional per-run override; must align 1:1 with vocab_sizes when set.
+      # transition_vocab_sizes: [58982, 117965, 176947]
       min_frequency: 2
 
   evals:
-    fertility:
-      tokenizer_path: artifacts/tokenizer/bpe/tokenizer.json
+    intrinsic:
+      tokenizer_path: artifacts/tokenizer/superbpe/tokenizer.json
+      data_root: data/sangrah_dataset
+      text_column: text
       baseline_tokenizer_names:
         - ai4bharat/IndicBERTv2-MLM-only
         - sarvamai/sarvam-1
-      data_root: data/sangrah_dataset
-      text_column: text
+      reference_tokenizer_name: meta-llama/Llama-3.2-1B
+      renyi_alpha: 2.5
+      # parallel_data_path: data/eval/flores_hi_en.parquet
+      parallel_hindi_column: text_hi
+      parallel_reference_column: text_eng
 
-    bytes_per_token:
-      tokenizer_path: artifacts/tokenizer/bpe_baseline/tokenizer.json
+    parity:
+      tokenizer_path: artifacts/tokenizer/superbpe/tokenizer.json
+      data_root: data/sangrah_dataset
+      text_column: text
       baseline_tokenizer_names:
         - ai4bharat/IndicBERTv2-MLM-only
         - sarvamai/sarvam-1
-      data_root: data/sangrah_dataset
-      text_column: text
+      reference_tokenizer_name: meta-llama/Llama-3.2-1B
+      parallel_data_path: data/eval/flores_hi_en.parquet
+      parallel_hindi_column: text_hi
+      parallel_reference_column: text_eng

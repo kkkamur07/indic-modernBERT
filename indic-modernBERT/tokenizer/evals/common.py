@@ -1,55 +1,72 @@
-"""Shared utilities for tokenizer evaluation scripts."""
+"""Shared utilities for tokenizer evaluation."""
 
 from __future__ import annotations
 
+from collections import Counter
+from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Callable
 
 import pyarrow.parquet as pq
-from omegaconf import DictConfig
+from tokenizers import Tokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
-from ... import HINDI_LANG3
-from ...utils.log_helpers import setup_run_log, slug
+from constants import HINDI_LANG3
 
+from .metrics import (
+    aggregate_parity_ratio,
+    bytes_per_token,
+    fertility,
+    normalized_sequence_length,
+    parity_ratio_cross_lingual,
+    renyi_efficiency,
+)
 
-def setup_eval_run_log(eval_cfg: DictConfig, prefix: str) -> Path:
-    cand = slug(Path(eval_cfg.tokenizer_path).parent.name or Path(eval_cfg.tokenizer_path).stem)
-    base_names = get_baseline_names(eval_cfg)
-    base = "multi" if len(base_names) > 1 else slug(str(base_names[0]).split("/")[-1])
-    data = slug(Path(eval_cfg.data_root).name)
-    log_name = f"{prefix}__cand-{cand}__base-{base}__data-{data}.log"
-    return setup_run_log(log_name)
-
-
-def get_baseline_names(eval_cfg: DictConfig) -> list[str]:
-    names = eval_cfg.get("baseline_tokenizer_names")
-
-    if names is not None:
-        return [str(name) for name in names]
-
-    fallback = eval_cfg.get("baseline_tokenizer_name")
-
-    if fallback is not None:
-        return [str(fallback)]
-
-    raise ValueError(
-        "Expected one of `baseline_tokenizer_names` or `baseline_tokenizer_name` in eval config."
-    )
+IntrinsicMetrics = dict[str, float | int]
+EncodeLenFn = Callable[[str], int]
+EncodeTokensFn = Callable[[str], list[str]]
 
 
-def collect_stats(
-    tokenize_len: Callable[[str], int],
+def load_candidate_tokenizer(tokenizer_path: str | Path) -> Tokenizer:
+    return Tokenizer.from_file(str(tokenizer_path))
+
+
+def load_hf_tokenizer(model_name: str) -> PreTrainedTokenizerBase:
+    return AutoTokenizer.from_pretrained(model_name, use_fast=True)
+
+
+def fast_encode_fns(tokenizer: Tokenizer) -> tuple[EncodeLenFn, EncodeTokensFn]:
+
+    def tokenize_len(text: str) -> int:
+        return len(tokenizer.encode(text, add_special_tokens=False).ids)
+
+    def tokenize_tokens(text: str) -> list[str]:
+        return tokenizer.encode(text, add_special_tokens=False).tokens
+
+    return tokenize_len, tokenize_tokens
+
+
+def hf_encode_fns(tokenizer: PreTrainedTokenizerBase) -> tuple[EncodeLenFn, EncodeTokensFn]:
+
+    def tokenize_len(text: str) -> int:
+        return len(tokenizer(text, add_special_tokens=False)["input_ids"])
+
+    def tokenize_tokens(text: str) -> list[str]:
+        token_ids = tokenizer(text, add_special_tokens=False)["input_ids"]
+        return tokenizer.convert_ids_to_tokens(token_ids)
+
+    return tokenize_len, tokenize_tokens
+
+
+def iter_hindi_lines(
     data_root: Path,
     text_column: str,
-) -> dict[str, float]:
+) -> Iterator[tuple[str, list[str]]]:
     parquet_files = sorted(data_root.glob(f"verified/{HINDI_LANG3}/*.parquet"))
 
     if not parquet_files:
         raise FileNotFoundError(
             f"No Hindi parquet files found under: {data_root}/verified/{HINDI_LANG3}"
         )
-
-    stats = {"rows": 0, "words": 0, "tokens": 0, "chars": 0, "bytes": 0}
 
     for parquet_path in parquet_files:
         table = pq.read_table(parquet_path, columns=[text_column])
@@ -63,18 +80,121 @@ def collect_stats(
             words = text.split()
             if not words:
                 continue
+            yield text, words
 
-            stats["rows"] += 1
-            stats["words"] += len(words)
-            stats["tokens"] += tokenize_len(text)
-            stats["chars"] += len(text)
-            stats["bytes"] += len(text.encode("utf-8"))
 
-    tokens = stats["tokens"]
-    words = stats["words"]
+def iter_parallel_lines(
+    parallel_path: Path,
+    hindi_column: str,
+    reference_column: str,
+) -> Iterator[tuple[str, str]]:
+
+    table = pq.read_table(parallel_path, columns=[hindi_column, reference_column])
+
+    for hindi_value, reference_value in zip(
+        table[hindi_column].to_pylist(),
+        table[reference_column].to_pylist(),
+        strict=True,
+    ):
+        if hindi_value is None or reference_value is None:
+            continue
+
+        hindi_text = str(hindi_value).strip()
+        reference_text = str(reference_value).strip()
+
+        if not hindi_text or not reference_text:
+            continue
+
+        yield hindi_text, reference_text
+
+
+def collect_intrinsic_metrics(
+    *,
+    tokenize_len: EncodeLenFn,
+    tokenize_tokens: EncodeTokensFn,
+    data_root: Path,
+    text_column: str,
+    reference_tokenize_len: EncodeLenFn | None = None,
+    vocab_size: int | None = None,
+    renyi_alpha: float = 2.5,
+) -> IntrinsicMetrics:
+
+    totals = {
+        "rows": 0,
+        "words": 0,
+        "tokens": 0,
+        "reference_tokens": 0,
+        "bytes": 0,
+    }
+
+    token_counts: Counter[str] = Counter()
+
+    for text, words in iter_hindi_lines(data_root, text_column):
+        tokens = tokenize_len(text)
+        totals["rows"] += 1
+        totals["words"] += len(words)
+        totals["tokens"] += tokens
+        totals["bytes"] += len(text.encode("utf-8"))
+        token_counts.update(tokenize_tokens(text))
+
+        if reference_tokenize_len is not None:
+            totals["reference_tokens"] += reference_tokenize_len(text)
+
+    renyi_entropy_value = 0.0
+    renyi_efficiency_value = 0.0
+
+    if vocab_size is not None and vocab_size > 0:
+        renyi_entropy_value, renyi_efficiency_value = renyi_efficiency(
+            token_counts,
+            vocab_size=vocab_size,
+            alpha=renyi_alpha,
+        )
 
     return {
-        **stats,
-        "fertility": (tokens / words) if words else 0.0,
-        "bytes_per_token": (stats["bytes"] / tokens) if tokens else 0.0,
+        **totals,
+        "fertility": fertility(totals["tokens"], totals["words"]),
+        "bytes_per_token": bytes_per_token(totals["bytes"], totals["tokens"]),
+        "nsl": (
+            normalized_sequence_length(totals["tokens"], totals["reference_tokens"])
+            if reference_tokenize_len is not None
+            else 0.0
+        ),
+        "renyi_entropy": renyi_entropy_value,
+        "renyi_efficiency": renyi_efficiency_value,
+        "unique_tokens_observed": len(token_counts),
+    }
+
+
+def collect_cross_lingual_parity(
+    *,
+    hindi_tokenize_len: EncodeLenFn,
+    reference_lang_tokenize_len: EncodeLenFn,
+    parallel_path: Path,
+    hindi_column: str,
+    reference_column: str,
+) -> IntrinsicMetrics:
+
+    ratios: list[float] = []
+    hindi_tokens = 0
+    reference_tokens = 0
+    rows = 0
+
+    for hindi_text, reference_text in iter_parallel_lines(
+        parallel_path,
+        hindi_column,
+        reference_column,
+    ):
+        hi_count = hindi_tokenize_len(hindi_text)
+        ref_count = reference_lang_tokenize_len(reference_text)
+        ratios.append(parity_ratio_cross_lingual(hi_count, ref_count))
+        hindi_tokens += hi_count
+        reference_tokens += ref_count
+        rows += 1
+
+    return {
+        "rows": rows,
+        "parity_ratio": aggregate_parity_ratio(ratios),
+        "parity_ratio_micro": parity_ratio_cross_lingual(hindi_tokens, reference_tokens),
+        "hindi_tokens": hindi_tokens,
+        "reference_lang_tokens": reference_tokens,
     }
