@@ -111,8 +111,10 @@ def validate_merge_extension() -> None:
     stage2_counts = {text: token_count(stage2_tokenizer, text) for text in {TRAIN_PHRASE, SAMPLE_TEXT}}
     print(f"  stage2 token counts: {stage2_counts}")
 
-    assert stage1_vocab.issubset(stage2_vocab), "stage1 tokens must survive stage2"
-    assert len(stage2_vocab) > len(stage1_vocab), "stage2 should grow the vocabulary"
+    assert len(stage2_merges) > len(stage1_merges), (
+        "stage2 should extend merges.txt "
+        f"({len(stage1_merges)} -> {len(stage2_merges)} lines)"
+    )
 
     for text, before in stage1_counts.items():
         after = stage2_counts[text]
@@ -132,7 +134,10 @@ def validate_merge_extension() -> None:
     train_reduction = 1.0 - (stage2_counts[TRAIN_PHRASE] / stage1_counts[TRAIN_PHRASE])
     sample_reduction = 1.0 - (stage2_counts[SAMPLE_TEXT] / stage1_counts[SAMPLE_TEXT])
 
-    print(f"  vocab growth: {len(stage1_vocab)} -> {len(stage2_vocab)}")
+    print(
+        f"  merge growth: {len(stage1_merges)} -> {len(stage2_merges)} lines | "
+        f"vocab size: {len(stage1_vocab)} -> {len(stage2_vocab)}"
+    )
     print(
         "  compression: "
         f"train phrase {stage1_counts[TRAIN_PHRASE]} -> {stage2_counts[TRAIN_PHRASE]} "

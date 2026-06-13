@@ -61,11 +61,15 @@ def iter_hindi_lines(
     data_root: Path,
     text_column: str,
 ) -> Iterator[tuple[str, list[str]]]:
-    parquet_files = sorted(data_root.glob(f"verified/{HINDI_LANG3}/*.parquet"))
+    sangrah_layout = sorted(data_root.glob(f"verified/{HINDI_LANG3}/*.parquet"))
+    eval_layout = sorted(data_root.glob("*.parquet"))
+    parquet_files = sangrah_layout or eval_layout
 
     if not parquet_files:
         raise FileNotFoundError(
-            f"No Hindi parquet files found under: {data_root}/verified/{HINDI_LANG3}"
+            "No Hindi eval parquet files found. Expected either "
+            f"{data_root}/verified/{HINDI_LANG3}/*.parquet (Sangrah layout) "
+            f"or {data_root}/*.parquet (eval holdout layout)."
         )
 
     for parquet_path in parquet_files:

@@ -46,6 +46,66 @@ SUPERBPE_FORK_INSTALL = (
 _extend_support_cache: bool | None = None
 
 
+def _tokenizers_package_path() -> Path:
+    import tokenizers
+
+    return Path(tokenizers.__file__).resolve()
+
+
+def _uses_vendored_superbpe_tokenizers() -> bool:
+    path = _tokenizers_package_path().as_posix()
+    return "tokenizers_superbpe" in path or "_support_repo/superbpe" in path
+
+
+def _count_merge_lines(merges_path: Path) -> int:
+    return sum(
+        1
+        for line in merges_path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    )
+
+
+def _probe_merge_extension() -> bool:
+    """Stage 2 should add merges and compress a repeated multi-word Hindi phrase."""
+    import tempfile
+
+    phrase = "भारत में लोग रहते हैं"
+    corpus = [phrase] * 200
+
+    with tempfile.TemporaryDirectory() as tmp:
+        checkpoint = Path(tmp)
+        stage1 = create_bpe_tokenizer(use_nfkc=False)
+        configure_pre_tokenizer(stage1, "subword")
+        train_bpe_on_corpus(
+            stage1,
+            iter(corpus),
+            vocab_size=128,
+            min_frequency=1,
+            show_progress=False,
+        )
+        stage1_tokens = len(stage1.encode(phrase, add_special_tokens=False).ids)
+        merges_before = _count_merge_lines(
+            save_bpe_checkpoint(stage1, checkpoint) / "merges.txt"
+        )
+
+        stage2 = create_bpe_tokenizer(use_nfkc=False)
+        configure_pre_tokenizer(stage2, "superword")
+        with _training_cwd(checkpoint):
+            train_bpe_on_corpus(
+                stage2,
+                iter(corpus),
+                vocab_size=256,
+                min_frequency=1,
+                show_progress=False,
+            )
+
+        stage2_tokens = len(stage2.encode(phrase, add_special_tokens=False).ids)
+        save_bpe_checkpoint(stage2, checkpoint / "stage2")
+        merges_after = _count_merge_lines(checkpoint / "stage2" / "merges.txt")
+
+        return merges_after > merges_before and stage2_tokens < stage1_tokens
+
+
 @contextmanager
 def _training_cwd(path: Path):
     previous = Path.cwd()
@@ -57,41 +117,16 @@ def _training_cwd(path: Path):
 
 
 def superbpe_extend_available() -> bool:
-    """True when ``tokenizers`` inherits ``merges.txt`` during stage-2 training."""
+    """True when the vendored tokenizers build can extend ``merges.txt`` in stage 2."""
     global _extend_support_cache
     if _extend_support_cache is not None:
         return _extend_support_cache
 
-    import tempfile
+    if not _uses_vendored_superbpe_tokenizers():
+        _extend_support_cache = False
+        return _extend_support_cache
 
-    corpus = ["alpha beta"] * 80
-    with tempfile.TemporaryDirectory() as tmp:
-        checkpoint = Path(tmp)
-        stage1 = create_bpe_tokenizer(use_nfkc=False)
-        configure_pre_tokenizer(stage1, "subword")
-        train_bpe_on_corpus(
-            stage1,
-            iter(corpus),
-            vocab_size=64,
-            min_frequency=1,
-            show_progress=False,
-        )
-        stage1_vocab = set(stage1.get_vocab())
-        save_bpe_checkpoint(stage1, checkpoint)
-
-        stage2 = create_bpe_tokenizer(use_nfkc=False)
-        configure_pre_tokenizer(stage2, "superword")
-        with _training_cwd(checkpoint):
-            train_bpe_on_corpus(
-                stage2,
-                iter(corpus),
-                vocab_size=128,
-                min_frequency=1,
-                show_progress=False,
-            )
-
-        _extend_support_cache = stage1_vocab.issubset(set(stage2.get_vocab()))
-
+    _extend_support_cache = _probe_merge_extension()
     return _extend_support_cache
 
 

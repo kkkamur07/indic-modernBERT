@@ -22,22 +22,21 @@ tokenizer:
       data_root: data/sangrah_dataset
       output_dir: artifacts/tokenizer/superbpe
       text_column: text
-      vocab_sizes: [65536, 131072, 196608]
-      # MUTANT uses ~90% of |V| for stage-1 subword learning (Table 13).
-      transition_fraction: 0.9
-      # Optional per-run override; must align 1:1 with vocab_sizes when set.
-      # transition_vocab_sizes: [58982, 117965, 176947]
+      vocab_sizes: [32768,50368,65536,98304,131072,196608]
+      transition_fraction: 0.9 # MUTANT uses ~90% of |V| for stage-1 subword learning (Table 13).
       min_frequency: 2
 
   evals:
+    # Hindi holdout parquets: data/eval/hi/*.parquet (or verified/hin/ subtree like Sangrah).
     intrinsic:
       tokenizer_path: artifacts/tokenizer/superbpe/tokenizer.json
-      data_root: data/sangrah_dataset
+      data_root: data/eval/hi
       text_column: text
       baseline_tokenizer_names:
         - ai4bharat/IndicBERTv2-MLM-only
         - sarvamai/sarvam-1
-      reference_tokenizer_name: meta-llama/Llama-3.2-1B
+      # NSL reference: tokenize the same Hindi eval text with this model.
+      reference_tokenizer_name: ai4bharat/IndicBERTv2-MLM-only
       renyi_alpha: 2.5
       # parallel_data_path: data/eval/flores_hi_en.parquet
       parallel_hindi_column: text_hi
@@ -45,12 +44,12 @@ tokenizer:
 
     parity:
       tokenizer_path: artifacts/tokenizer/superbpe/tokenizer.json
-      data_root: data/sangrah_dataset
+      data_root: data/eval/hi
       text_column: text
       baseline_tokenizer_names:
         - ai4bharat/IndicBERTv2-MLM-only
         - sarvamai/sarvam-1
-      reference_tokenizer_name: meta-llama/Llama-3.2-1B
+      reference_tokenizer_name: ai4bharat/IndicBERTv2-MLM-only
       parallel_data_path: data/eval/flores_hi_en.parquet
       parallel_hindi_column: text_hi
       parallel_reference_column: text_eng

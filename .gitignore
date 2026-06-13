@@ -15,3 +15,7 @@ experiments/
 
 # Data
 data/
+
+# SuperBPE Patch
+_support_repo/**/target/
+_support_repo/**/tokenizer_json/
