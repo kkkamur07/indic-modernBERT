@@ -1,4 +1,5 @@
 # Run from repo root. Source: indic-modernBERT/ (flat imports, package = false).
+SHELL := /bin/bash
 export PYTHONPATH := indic-modernBERT
 TMPDIR_ENV := TMPDIR=$(PWD)/.tmp TORCHINDUCTOR_CACHE_DIR=$(PWD)/.tmp/torchinductor
 
@@ -34,7 +35,7 @@ train-pretrain:
 train-smoke-50ba:
 	mkdir -p .tmp logs/smoke_50ba
 	rm -rf artifacts/model/modernbert/checkpoints/smoke_50ba artifacts/model/modernbert/tensorboard/smoke_50ba
-	set -o pipefail; script -q -e -f logs/smoke_50ba/train.log -c "$(TMPDIR_ENV) TRAIN_PROGRESS_BAR=1 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 uv run --extra pretrain python scripts/run_pretrain.py --config-name hindi_mlm_smoke_50ba"
+	script -q -e -f logs/smoke_50ba/train.log -c "$(TMPDIR_ENV) TRAIN_PROGRESS_BAR=1 TRAIN_STEP_LOG=0 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 uv run --extra pretrain python scripts/run_pretrain.py --config-name hindi_mlm_smoke_50ba"
 
 train-smoke-50ba-nohup:
 	mkdir -p logs/smoke_50ba .tmp
@@ -43,7 +44,7 @@ train-smoke-50ba-nohup:
 # Optuna LR sweep — same stack as hindi_mlm_phase1 (modernbert_base, micro=8, 500M warmup).
 lr-sweep:
 	mkdir -p .tmp logs/lr_sweep
-	$(TMPDIR_ENV) PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 \
+	$(TMPDIR_ENV) TRAIN_STEP_LOG=0 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 \
 	  uv run --extra pretrain --extra sweep python scripts/run_pretrain.py \
 	  --config-path ../configs/sweep --config-name hindi_mlm_lr_sweep -m
 

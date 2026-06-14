@@ -30,12 +30,19 @@ pretrain:
   # RTX 4090: micro=8 ≈ 3–4GB VRAM; micro=16 ≈ 10–12GB (+ compile headroom).
   device_train_microbatch_size: 8
   device_eval_microbatch_size: 8
-  # Smoke: workers=0 avoids forked processes each mmap-ing shards; notebook e2e uses 0 too.
-  num_workers: 0
-  eval_num_workers: 0
+  # RTX 4090 dataloader sweep (packed path, 2 shards): 2 workers × prefetch 4 beats workers=0
+  # (~5.6 ms/batch vs ~14 ms). w≥4 OOM'd with mmap parquet. See logs/dataloader_sweep.json.
+  num_workers: 2
+  dataloader_prefetch_factor: 4
+  eval_num_workers: 3
+  packing_prefetch_factor: 5
   # Smoke is ~26M tokens — disable phase-1 500M packer warmup so batch is full from step 0.
   batch_size_warmup_tokens: null
   batch_size_warmup_min_size: null
+  callbacks:
+    train_step_logger:
+      log_microbatches: false
+      log_eval_batches: true
   loggers:
     tensorboard:
       log_dir: artifacts/model/modernbert/tensorboard/smoke_50ba

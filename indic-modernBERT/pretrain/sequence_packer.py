@@ -220,6 +220,16 @@ class SequencePacker(ABC):
                         # print("Not adding, because of max_items_to_fetch")
                         break
                 incoming_batch = next(self.src_iterator)
+                from pretrain.step_log import bump, should_log_detail, step_log
+
+                n = bump("raw_loader_batch")
+                if should_log_detail("raw_loader_batch", first_n=10):
+                    n_seqs = sum(1 for item in incoming_batch if len(item.get("input_ids", [])) > 0)
+                    step_log(
+                        "data",
+                        f"raw batch loaded | #{n} | collated_seqs={len(incoming_batch)} "
+                        f"nonempty={n_seqs} (parquet read + tokenize in DataLoader)",
+                    )
                 assert (
                     len(incoming_batch) <= self.src_batch_size
                 ), f"expected {len(incoming_batch)=} <= {self.src_batch_size=}"
@@ -272,12 +282,17 @@ class SequencePacker(ABC):
                     "attention_mask": torch.from_numpy(np.where(batch == self.pad_token_id, 0, 1)),
                 }
                 self._token_count += yieldval["attention_mask"].sum().item()
-            # # assert isinstance(yieldval[0], torch.Tensor), f"Unexpected {type(yieldval[0])=}"
-            # if not self.suppress_masking:
-            #     assert isinstance(yieldval[1], torch.Tensor), f"Unexpected {type(yieldval[1])=}"
-            # assert isinstance(yieldval[2], list), f"Unexpected {type(yieldval[2])=}"
-            # if yieldval[2]:
-            #     assert isinstance(yieldval[2][0], torch.Tensor), f"Unexpected {type(yieldval[2][0])=}"
+            from pretrain.step_log import bump, should_log_detail, step_log
+
+            n = bump("packer_yield")
+            if should_log_detail("packer_yield", first_n=10):
+                n_tokens = int(yieldval["attention_mask"].sum()) if yieldval.get("attention_mask") is not None else 0
+                n_micro = len(yieldval["input_ids"]) if isinstance(yieldval["input_ids"], torch.Tensor) else 0
+                step_log(
+                    "data",
+                    f"packer yield | #{n} | packed_rows={n_micro} tokens={n_tokens} "
+                    f"mlm_masked={int((yieldval['labels'] != -100).sum()) if yieldval.get('labels') is not None else 0}",
+                )
             yield yieldval
 
     @staticmethod
@@ -517,18 +532,32 @@ class BufferedIterator(Generic[T]):
         return self
 
     def __next__(self) -> T:
+        from pretrain.step_log import bump, should_log_detail, step_log
+
         while True:
             if not self.buffer:
                 if self.exhausted:
                     # We've exhausted the iterator and the buffer so we're done
                     raise StopIteration
                 else:
+                    n = bump("buffer_wait")
+                    if should_log_detail("buffer_wait", first_n=5):
+                        step_log(
+                            "data",
+                            f"train loop waiting | packed batch not ready yet | wait#{n} "
+                            f"(packer thread: parquet -> tokenize -> pack)",
+                        )
                     # The buffer is empty but the iterator is not exhausted yet.
                     # Let's give the filler thread a chance to add items to the buffer
                     time.sleep(0.01)
             else:
                 with self.lock:
-                    return self.buffer.popleft()
+                    item = self.buffer.popleft()
+                    n = bump("buffer_dequeue")
+                    if should_log_detail("buffer_dequeue", first_n=10) and isinstance(item, dict):
+                        shape = tuple(item["input_ids"].shape) if "input_ids" in item else "n/a"
+                        step_log("data", f"train loop | packed batch dequeued | #{n} | input_ids={shape}")
+                    return item
 
 
 def split_packed_batch(batch: Any, microbatch_size: Union[int, float], padding_tolerance=1.0) -> Sequence:

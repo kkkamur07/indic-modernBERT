@@ -120,7 +120,7 @@ Practical warmups (round numbers, close to upstream %): **50M** LR warmup, **500
 |------|--------|
 | Format | Parquet (`text` column) under `data/sangrah_dataset/verified/hin/*.parquet` |
 | Download | `indic-modernBERT/dataset/sangrah_dataset.py` (HF `ai4bharat/sangraha`) |
-| Loaders | `ParquetMLMMapDataset` (packed pretrain), `ParquetMLMDataset` (iterable / eval) in `pretrain/parquet_mlm.py` |
+| Loaders | `ParquetMLMDataset` + `TokenizeCollator` / `MLMCollator` in `pretrain/parquet_mlm.py`; packed train via `build_parquet_train_dataloader` |
 | Eval holdout | `data/eval/hi/` via `holdout_manifest.txt` |
 | Tokenization | Always on-the-fly from `text` (no pretokenized shards) |
 
@@ -130,7 +130,8 @@ Practical warmups (round numbers, close to upstream %): **50M** LR warmup, **500
 - **No streaming / remote object store** — local parquet only.
 - **Sangraha splits** — `verified/hin`, `unverified/hin`, `synthetic/hin_*` (same globs as `measure_corpus_tokens.py`).
 - **Separate eval tree** vs upstream validation split from same MDS root.
-- Parquet row reads may be slower than mmap'd MDS at very large scale.
+- **Parquet read path (fixed 2026-06-14):** `ParquetMLMDataset` uses mmap'd row-group reads and per-row `.as_py()` — **not** `Column.to_pylist()` or full-shard `pq.read_table()` on training shards (OOM with workers). Details: `LEARNINGS.md` § Parquet DataLoader memory fixes.
+- Parquet row reads may be slower than mmap'd MDS at very large scale (mitigated by row-group reads and a small LRU cache).
 
 **File pairs to diff:** `src/text_data.py` ↔ `pretrain/dataloader.py` + `pretrain/parquet_mlm.py`
 
@@ -155,7 +156,7 @@ Practical warmups (round numbers, close to upstream %): **50M** LR warmup, **500
 ### Differences
 
 - Hindi-specific pretokenization pipeline (no upstream equivalent).
-- **Train (packed):** `ParquetMLMMapDataset` tokenizes with `padding=False`; packer emits `cu_seqlens` for unpadded FA — **this is the production path** and matches upstream packing behavior.
+- **Train (packed):** `TokenizeCollator` tokenizes with `padding=False`; packer emits `cu_seqlens` for unpadded FA — **this is the production path** and matches upstream packing behavior.
 - **Eval / probe:** `MLMCollator` uses `padding="max_length"` — padded batches. Upstream eval is also padded (`sequence_packing: false`); acceptable for held-out loss/accuracy, but compute is less efficient than packed train.
 
 ### `ConcatenatedSequenceCollatorWrapper` vs packing

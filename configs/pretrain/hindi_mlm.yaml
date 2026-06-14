@@ -61,3 +61,7 @@ pretrain:
       batch_log_interval: 10
     packing_efficiency:
       log_interval: 10
+    train_step_logger:
+      log_every_micro: false
+      micro_log_interval: 16
+      log_eval_batches: true

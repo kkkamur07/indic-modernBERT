@@ -23,6 +23,7 @@ from pretrain.callbacks.dataloader_speed import DataloaderSpeedMonitor
 from pretrain.callbacks.log_grad_norm import LogGradNorm
 from pretrain.callbacks.packing_efficiency import PackingEfficency
 from pretrain.callbacks.save_best_checkpoints import SaveBestCheckpoints
+from pretrain.callbacks.train_step_logger import TrainStepLogger
 from pretrain.dataloader import (
     build_eval_dataloader,
     build_parquet_train_dataloader,
@@ -71,6 +72,13 @@ def build_callback(name: str, kwargs: dict[str, Any]):
         return PackingEfficency(log_interval=kwargs.get("log_interval", 10))
     if name == "save_best_checkpoints":
         return SaveBestCheckpoints(**kwargs)
+    if name == "train_step_logger":
+        return TrainStepLogger(
+            log_microbatches=kwargs.get("log_microbatches", True),
+            log_every_micro=kwargs.get("log_every_micro", True),
+            micro_log_interval=kwargs.get("micro_log_interval", 1),
+            log_eval_batches=kwargs.get("log_eval_batches", True),
+        )
     raise ValueError(f"Not sure how to build callback: {name}")
 
 

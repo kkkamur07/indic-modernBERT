@@ -15,18 +15,19 @@ def find_repo_root(start: Path | None = None) -> Path | None:
 
 
 def resolve_from_cwd(path: Path | str) -> Path:
-    """Resolve a relative config path from cwd, then from detected repo root."""
+    """Resolve config paths from the repo root when running inside this project."""
     resolved = Path(path)
     if resolved.is_absolute():
         return resolved
 
     cwd = Path.cwd()
-    for base in (cwd, find_repo_root(cwd)):
-        if base is None:
-            continue
-        candidate = (base / resolved).resolve()
-        if candidate.exists():
-            return candidate
+    repo_root = find_repo_root(cwd)
+    if repo_root is not None:
+        return (repo_root / resolved).resolve()
+
+    candidate = (cwd / resolved).resolve()
+    if candidate.exists():
+        return candidate
     return (cwd / resolved).resolve()
 
 

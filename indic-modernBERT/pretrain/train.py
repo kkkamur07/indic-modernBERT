@@ -138,15 +138,45 @@ def run_mlm_pretrain(pretrain_cfg: PretrainConfig) -> float:
     )
     _validate_production_kernels(pretrain_cfg, model)
 
+    arch = pretrain_cfg.load_arch()
+    if arch.compile_model:
+        from pretrain.step_log import step_log
+
+        n_layers = arch.num_hidden_layers
+        step_log(
+            "model",
+            f"compile_model=true | {n_layers} compiled layers + compiled embeddings/head | "
+            f"torch.compile runs on first forward",
+            always=True,
+        )
+
     train_loader = build_train_dataloader(pretrain_cfg, model.tokenizer, device)
+    from pretrain.step_log import step_log
+
+    if pretrain_cfg.sequence_packing:
+        step_log(
+            "data",
+            "train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> "
+            "GreedyBestFitSequencePacker -> BufferedIterable",
+            always=True,
+        )
+    else:
+        step_log(
+            "data",
+            "train dataloader ready | ParquetMLMDataset -> MLMCollator (tokenize+pad+mlm)",
+            always=True,
+        )
     eval_evaluator = build_eval_evaluator(pretrain_cfg, model.tokenizer, device)
     optimizer = build_optimizer(pretrain_cfg.optimizer, model)
     scheduler = build_scheduler(pretrain_cfg.scheduler)
     callbacks = []
     for name, kwargs in pretrain_cfg.callbacks.items():
+        if kwargs.get("enabled") is False:
+            continue
         if name == "packing_efficiency" and not pretrain_cfg.sequence_packing:
             continue
         cb_kwargs = dict(kwargs)
+        cb_kwargs.pop("enabled", None)
         if name == "save_best_checkpoints" and "save_folder" not in cb_kwargs:
             cb_kwargs["save_folder"] = pretrain_cfg.save_folder
         callbacks.append(build_callback(name, cb_kwargs))
@@ -205,10 +235,12 @@ def run_mlm_pretrain(pretrain_cfg: PretrainConfig) -> float:
 
     logger.info(
         "Starting trainer.fit() | progress_bar={} | log_to_console={} | "
-        "console_log_interval={} — first batch may take 1–3 min (torch.compile + grad accum)",
+        "console_log_interval={} | train_step_logger={} — "
+        "first batch may take minutes (torch.compile + grad accum)",
         progress_bar,
         pretrain_cfg.log_to_console,
         pretrain_cfg.console_log_interval,
+        "train_step_logger" in pretrain_cfg.callbacks,
     )
     trainer.fit(**fit_kwargs)
     eval_loss = _best_eval_loss(pretrain_cfg, trainer)

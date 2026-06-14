@@ -15,7 +15,7 @@ Each pipeline stage is two cells:
 
 - **0 — Environment** — CUDA + flash-attn
 - **1 — Configs** — YAML extends, Hydra job, Pydantic validation, dataloader settings
-- **2 — Data** — pretokenization + parquet + production DataLoaders (raw / packed / eval)
+- **2 — Data** — pretokenization + parquet + production DataLoaders (raw / packed / eval); mmap row-group reads ([`LEARNINGS.md`](../LEARNINGS.md) § Parquet DataLoader memory fixes)
 - **3 — Tokenizer** — `make train-bpe`
 - **4 — GPU batch** — `position_ids`, bf16 autocast
 - **5 — Model smoke** — 22L `modernbert_base` forward + MLM loss

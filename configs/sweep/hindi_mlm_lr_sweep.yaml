@@ -37,7 +37,7 @@ pretrain:
   save_overwrite: true
   autoresume: false
   progress_bar: false
-  log_to_console: true
+  log_to_console: false
 
   # Compact shard index + row-group reads (see ParquetMLMDataset).
   num_workers: 2
@@ -49,5 +49,7 @@ pretrain:
     tensorboard:
       log_dir: artifacts/model/modernbert/tensorboard/lr_sweep
   callbacks:
+    train_step_logger:
+      enabled: false
     save_best_checkpoints:
       num_checkpoints: 1

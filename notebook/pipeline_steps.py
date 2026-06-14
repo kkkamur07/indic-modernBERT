@@ -262,6 +262,21 @@ def _load_production_cfg(ctx: PipelineContext):
     return cfg
 
 
+def _fresh_tokenizer(ctx: PipelineContext) -> PreTrainedTokenizerFast:
+    """Load a new tokenizer instance (Rust backend is not thread-safe across loaders)."""
+    from utils.paths import resolve_hf_tokenizer_dir
+
+    tok_dir = resolve_hf_tokenizer_dir(ctx.tokenizer_path)
+    return PreTrainedTokenizerFast.from_pretrained(str(tok_dir))
+
+
+def _teardown_dataloader(loader) -> None:
+    import gc
+
+    del loader
+    gc.collect()
+
+
 def _production_microbatch(batch: dict[str, torch.Tensor], micro: int) -> dict[str, torch.Tensor]:
     """Slice a production dataloader batch to device microbatch size (Composer-style)."""
     return {key: value[:micro] for key, value in batch.items()}
@@ -279,7 +294,7 @@ def _validate_production_dataloaders(ctx: PipelineContext, cfg) -> dict[str, str
     from pretrain.parquet_mlm import ParquetMLMDataset, TokenizeCollator
     from torch.utils.data import DataLoader
 
-    tokenizer = _ensure_tokenizer(ctx)
+    decode_tokenizer = _ensure_tokenizer(ctx)
     device = _sync_device(ctx)
     device_batch_size = cfg.global_train_batch_size // dist.get_world_size()
 
@@ -288,7 +303,6 @@ def _validate_production_dataloaders(ctx: PipelineContext, cfg) -> dict[str, str
         cfg.text_column,
         max_shards=cfg.max_train_shards,
     )
-    collator = TokenizeCollator(tokenizer, max_seq_len=cfg.max_seq_len)
     sampler = DistributedSamplerPCG64DXSM(
         dataset,
         num_replicas=dist.get_world_size(),
@@ -305,34 +319,43 @@ def _validate_production_dataloaders(ctx: PipelineContext, cfg) -> dict[str, str
         shuffle=False,
         sampler=sampler,
     )
-    raw_loader = DataLoader(dataset, collate_fn=collator, **raw_kwargs)
+    raw_loader = DataLoader(
+        dataset,
+        collate_fn=TokenizeCollator(_fresh_tokenizer(ctx), max_seq_len=cfg.max_seq_len),
+        **raw_kwargs,
+    )
     raw_batch = next(iter(raw_loader))
     assert raw_batch and "input_ids" in raw_batch[0]
+    _teardown_dataloader(raw_loader)
+
+    # Eval before packed: BufferedIterable keeps a background filler thread that
+    # tokenizes via worker processes — sharing one tokenizer → RuntimeError: Already borrowed.
+    eval_loader = build_eval_dataloader(cfg, _fresh_tokenizer(ctx), device)
+    assert eval_loader.num_workers == cfg.eval_num_workers
+    eval_batch = next(iter(eval_loader))
+    assert "input_ids" in eval_batch and "labels" in eval_batch and "attention_mask" in eval_batch
+    _teardown_dataloader(eval_loader)
 
     packed = build_parquet_train_dataloader(
         cfg,
-        tokenizer,
+        _fresh_tokenizer(ctx),
         device,
         device_batch_size=device_batch_size,
     )
     packed_batch = next(iter(packed))
     assert "input_ids" in packed_batch
+    _teardown_dataloader(packed)
 
-    eval_loader = build_eval_dataloader(cfg, tokenizer, device)
-    assert eval_loader.num_workers == cfg.eval_num_workers
-    eval_batch = next(iter(eval_loader))
-    assert "input_ids" in eval_batch and "labels" in eval_batch and "attention_mask" in eval_batch
-
-    raw_row = _summarize_raw_row(tokenizer, raw_batch[0])
-    eval_row = _summarize_mlm_row(tokenizer, eval_batch, row=0)
-    packed_row = _summarize_mlm_row(tokenizer, packed_batch, row=0)
+    raw_row = _summarize_raw_row(decode_tokenizer, raw_batch[0])
+    eval_row = _summarize_mlm_row(decode_tokenizer, eval_batch, row=0)
+    packed_row = _summarize_mlm_row(decode_tokenizer, packed_batch, row=0)
 
     return {
         "pretrain_config": "hindi_mlm_smoke_50ba",
-        "train_workers": str(raw_loader.num_workers),
+        "train_workers": str(raw_kwargs["num_workers"]),
         "train_prefetch": str(raw_kwargs.get("prefetch_factor", "n/a")),
         "persistent_workers": str(raw_kwargs.get("persistent_workers", False)),
-        "eval_workers": str(eval_loader.num_workers),
+        "eval_workers": str(cfg.eval_num_workers),
         "packing_prefetch": str(cfg.packing_prefetch_factor),
         "raw_batch": f"n={len(raw_batch)} first_len={len(raw_batch[0]['input_ids'])}",
         "packed_batch": f"shape={tuple(packed_batch['input_ids'].shape)}",
@@ -394,6 +417,10 @@ def validate_config(ctx: PipelineContext) -> dict[str, str]:
     p = load_pretrain_config(hydra_cfg)
     ctx.pretrain_cfg = p
     assert str(p.arch_config_path).endswith("modernbert_base.yaml")
+    assert p.num_workers == 2
+    assert p.dataloader_prefetch_factor == 4
+    assert p.eval_num_workers == 3
+    assert p.packing_prefetch_factor == 5
 
     prod = _load_production_cfg(ctx)
     assert prod.num_workers == 2
@@ -408,7 +435,10 @@ def validate_config(ctx: PipelineContext) -> dict[str, str]:
         "vocab": str(base_cfg.vocab_size),
         "phase1": f"lr={p.optimizer.lr} global_batch={p.global_train_batch_size} max_seq={p.max_seq_len}",
         "production": "hindi_mlm_smoke_50ba",
-        "workers": f"train={prod.num_workers} prefetch={prod.dataloader_prefetch_factor} eval={prod.eval_num_workers}",
+        "workers": (
+            f"train={prod.num_workers} prefetch={prod.dataloader_prefetch_factor} "
+            f"eval={prod.eval_num_workers} packing_prefetch={prod.packing_prefetch_factor}"
+        ),
         "packing": f"enabled prefetch={prod.packing_prefetch_factor} micro={prod.device_train_microbatch_size}",
     }
 
@@ -759,6 +789,14 @@ def validate_trace(ctx: PipelineContext) -> dict[str, str]:
 _NOTEBOOK_E2E_STEPS = 3
 
 
+def _log_progress(message: str) -> None:
+    """Print immediately in Jupyter (long steps otherwise look hung)."""
+    import sys
+
+    print(message, flush=True)
+    sys.stdout.flush()
+
+
 def _load_notebook_e2e_cfg(ctx: PipelineContext):
     """Notebook mini-run: production stack from smoke yaml, tiny batch + 1 shard."""
     from config import load_pretrain_config
@@ -804,6 +842,11 @@ def _run_notebook_train_loop(ctx: PipelineContext, cfg, *, num_steps: int) -> di
 
     device = _sync_device(ctx)
     tokenizer = _ensure_tokenizer(ctx)
+    _log_progress(
+        f"Step 9 | device={device} | global_batch={cfg.global_train_batch_size} "
+        f"micro={cfg.device_train_microbatch_size} | {num_steps} train steps + eval"
+    )
+    _log_progress("Step 9 | loading 22L model (bert-base init + tokenizer vocab)...")
     composer_model = create_modernbert_mlm(
         pretrained_model_name=cfg.pretrained_model_name,
         model_config=cfg.load_arch(),
@@ -811,6 +854,7 @@ def _run_notebook_train_loop(ctx: PipelineContext, cfg, *, num_steps: int) -> di
         gradient_checkpointing=cfg.gradient_checkpointing,
         disable_train_metrics=cfg.disable_train_metrics,
     )
+    _log_progress("Step 9 | validating production kernels (FA2, compile, loss fn)...")
     _validate_production_kernels(cfg, composer_model)
     model = composer_model.model
     model.to(device)
@@ -818,6 +862,7 @@ def _run_notebook_train_loop(ctx: PipelineContext, cfg, *, num_steps: int) -> di
 
     optimizer = build_optimizer(cfg.optimizer, model)
     device_batch_size = cfg.global_train_batch_size // dist.get_world_size()
+    _log_progress("Step 9 | building packed train + eval dataloaders (workers=0)...")
     train_loader = build_parquet_train_dataloader(
         cfg,
         tokenizer,
@@ -833,14 +878,24 @@ def _run_notebook_train_loop(ctx: PipelineContext, cfg, *, num_steps: int) -> di
     last_masked_n = 0
 
     for step in range(num_steps):
+        _log_progress(f"Step 9 | train step {step + 1}/{num_steps}: fetching packed batch...")
         packed_batch = next(train_iter)
         last_packed_shape = str(tuple(packed_batch["input_ids"].shape))
         microbatches = split_packed_batch(packed_batch, cfg.device_train_microbatch_size)
         assert microbatches, f"step {step}: empty microbatch split"
+        n_seqs = get_num_samples_in_packed_batch(packed_batch)
+        _log_progress(
+            f"Step 9 | train step {step + 1}/{num_steps}: "
+            f"packed={last_packed_shape} seqs={n_seqs} microbatches={len(microbatches)}"
+        )
 
         optimizer.zero_grad(set_to_none=True)
         micro_losses: list[float] = []
         for micro_idx, micro in enumerate(microbatches):
+            if step == 0 and micro_idx == 0:
+                _log_progress(
+                    "Step 9 | first forward+backward (torch.compile may take 1–3 min)..."
+                )
             micro = move_batch_to_device(micro, device)
             with training_autocast(device):
                 out = model(**micro)
@@ -851,18 +906,26 @@ def _run_notebook_train_loop(ctx: PipelineContext, cfg, *, num_steps: int) -> di
                 labels = micro["labels"]
                 last_masked_n = int((labels != -100).sum())
                 last_micro_logits = str(tuple(out.logits.shape))
+            _log_progress(
+                f"Step 9 | train step {step + 1}/{num_steps}: "
+                f"micro {micro_idx + 1}/{len(microbatches)} loss={micro_losses[-1]:.4f}"
+            )
 
         grads = [p.grad for p in model.parameters() if p.grad is not None]
         assert grads and all(torch.isfinite(g).all() for g in grads)
         optimizer.step()
-
-        n_seqs = get_num_samples_in_packed_batch(packed_batch)
+        mean_loss = sum(micro_losses) / len(micro_losses)
         step_summaries.append(
             f"step{step + 1}: micros={len(microbatches)} seqs={n_seqs} "
-            f"loss={sum(micro_losses) / len(micro_losses):.4f} grads={len(grads)}"
+            f"loss={mean_loss:.4f} grads={len(grads)}"
+        )
+        _log_progress(
+            f"Step 9 | train step {step + 1}/{num_steps}: "
+            f"optimizer.step() mean_loss={mean_loss:.4f}"
         )
 
     eval_micro = cfg.device_eval_microbatch_size or cfg.device_train_microbatch_size
+    _log_progress(f"Step 9 | eval forward (micro={eval_micro})...")
     eval_batch = _prepare_batch(_production_microbatch(next(iter(eval_loader)), eval_micro), device)
     model.eval()
     with torch.no_grad(), training_autocast(device):
@@ -871,7 +934,12 @@ def _run_notebook_train_loop(ctx: PipelineContext, cfg, *, num_steps: int) -> di
     eval_acc = masked_accuracy(eval_out.logits, eval_batch["labels"])
     assert eval_out.loss is not None
     assert tuple(eval_out.logits.shape) == (eval_masked_n, model.config.vocab_size)
+    _log_progress(
+        f"Step 9 | eval forward: loss={float(eval_out.loss):.4f} "
+        f"masked={eval_masked_n} acc={eval_acc:.4f}"
+    )
 
+    _log_progress("Step 9 | evaluate_mlm (2 batches)...")
     metrics = evaluate_mlm(
         model,
         eval_loader,
@@ -880,6 +948,10 @@ def _run_notebook_train_loop(ctx: PipelineContext, cfg, *, num_steps: int) -> di
         microbatch_size=eval_micro,
     )
     assert metrics.steps > 0 and metrics.tokens > 0
+    _log_progress(
+        f"Step 9 | eval loop: loss={metrics.loss:.4f} "
+        f"acc={metrics.masked_accuracy:.4f} tokens={metrics.tokens}"
+    )
 
     return {
         "steps": " | ".join(step_summaries),
