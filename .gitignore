@@ -16,6 +16,10 @@ wheels/
 Experiments/
 experiments/
 
+# Run output (Hydra, nohup, inductor cache)
+logs/
+multirun/
+
 # Data
 data/
 

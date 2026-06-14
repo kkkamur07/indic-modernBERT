@@ -2,31 +2,35 @@
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_SRC_ROOT = _REPO_ROOT / "indic-modernBERT"
+if str(_SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SRC_ROOT))
+
 import hydra
 from loguru import logger
 from omegaconf import DictConfig
 
 from config import load_eval_config, load_tokenizer_config
-from utils.log_helpers import log_hydra_run_log, setup_eval_run_log
 from tokenizer.evals.common import (
     collect_intrinsic_metrics,
     fast_encode_fns,
     hf_encode_fns,
     load_candidate_tokenizer,
     load_hf_tokenizer,
+    log_fertility_comparison,
+    log_intrinsic_metrics,
+    short_tokenizer_name,
 )
-from tokenizer.evals.intrinsic import (
-    _log_fertility_comparison,
-    _log_intrinsic,
-    _short_name,
-)
+from utils.log_helpers import log_hydra_run_log, setup_eval_run_log
 
 
 def _log_comparison_table(rows: list[tuple[str, dict]]) -> None:
     logger.info("--- vocab comparison (eval holdout) ---")
-    logger.info(
-        "label | fertility | bytes/token | NSL | Rényi eff | vocab"
-    )
+    logger.info("label | fertility | bytes/token | NSL | Rényi eff | vocab")
     for label, m in rows:
         logger.info(
             "{} | {:.4f} | {:.4f} | {:.4f} | {:.4f} | {}",
@@ -70,10 +74,10 @@ def main(cfg: DictConfig) -> None:
             text_column=eval_cfg.text_column,
             vocab_size=reference.vocab_size,
             renyi_alpha=eval_cfg.renyi_alpha,
-            progress_desc=f"Reference [{_short_name(ref_name)}]",
+            progress_desc=f"Reference [{short_tokenizer_name(ref_name)}]",
         )
-        reference_label = f"Reference [{_short_name(ref_name)}]"
-        _log_intrinsic(reference_label, reference_metrics)
+        reference_label = f"Reference [{short_tokenizer_name(ref_name)}]"
+        log_intrinsic_metrics(reference_label, reference_metrics)
 
         fertility_by_label[reference_label] = float(reference_metrics["fertility"])
         row = dict(reference_metrics)
@@ -103,7 +107,7 @@ def main(cfg: DictConfig) -> None:
             use_script_norm=use_script_norm,
             progress_desc=label,
         )
-        _log_intrinsic(label, metrics)
+        log_intrinsic_metrics(label, metrics)
 
         fertility_by_label[label] = float(metrics["fertility"])
         row = dict(metrics)
@@ -117,7 +121,7 @@ def main(cfg: DictConfig) -> None:
         logger.info("Loading baseline tokenizer: {}", baseline_name)
         baseline = load_hf_tokenizer(baseline_name)
         base_len, base_tokens = hf_encode_fns(baseline)
-        baseline_label = f"Baseline [{_short_name(baseline_name)}]"
+        baseline_label = f"Baseline [{short_tokenizer_name(baseline_name)}]"
 
         baseline_metrics = collect_intrinsic_metrics(
             tokenize_len=base_len,
@@ -129,7 +133,7 @@ def main(cfg: DictConfig) -> None:
             progress_desc=baseline_label,
         )
 
-        _log_intrinsic(baseline_label, baseline_metrics)
+        log_intrinsic_metrics(baseline_label, baseline_metrics)
         fertility_by_label[baseline_label] = float(baseline_metrics["fertility"])
         row = dict(baseline_metrics)
         row["vocab_size"] = baseline.vocab_size
@@ -139,11 +143,9 @@ def main(cfg: DictConfig) -> None:
         _log_comparison_table(table_rows)
 
     if fertility_by_label:
-        _log_fertility_comparison(fertility_by_label)
+        log_fertility_comparison(fertility_by_label)
 
-    logger.info(
-        "Metric guide | fertility ↓ | bytes/token ↑ | NSL ↓ | Rényi efficiency ↑"
-    )
+    logger.info("Metric guide | fertility ↓ | bytes/token ↑ | NSL ↓ | Rényi efficiency ↑")
 
     log_hydra_run_log(run_log)
 

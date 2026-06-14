@@ -55,18 +55,18 @@ class FlexBertConfig(TransformersBertConfig):
         embedding_layer: str = "absolute_pos",
         encoder_layer: str = "base",
         loss_function: str = "cross_entropy",
-        loss_kwargs: dict = {},
+        loss_kwargs: dict | None = None,
         mlp_dropout_prob: float = 0.0,
         mlp_in_bias: bool = False,
         mlp_layer: str = "mlp",
         mlp_out_bias: bool = False,
-        norm_kwargs: dict = {},
+        norm_kwargs: dict | None = None,
         normalization: str = "rmsnorm",
         padding: str = "unpadded",
         head_class_act: str = "silu",
         head_class_bias: bool = False,
         head_class_dropout: float = 0.0,
-        head_class_norm: str = False,
+        head_class_norm: bool = False,
         head_pred_act: str = "silu",
         head_pred_bias: bool = False,
         head_pred_dropout: float = 0.0,
@@ -125,7 +125,7 @@ class FlexBertConfig(TransformersBertConfig):
             head_class_act (str): Activation function for classification head.
             head_class_bias (bool): Use bias in classification head linear layer(s).
             head_class_dropout (float): Dropout probability for classification head.
-            head_class_norm (str): Normalization type for classification head.
+            head_class_norm (bool): Apply normalization in the classification head.
             head_pred_act (str): Activation function for prediction head.
             head_pred_bias (bool): Use bias in prediction head linear layer(s).
             head_pred_dropout (float): Dropout probability for prediction head.
@@ -159,6 +159,8 @@ class FlexBertConfig(TransformersBertConfig):
             **kwargs: Additional keyword arguments.
         """
         super().__init__(attention_probs_dropout_prob=attention_probs_dropout_prob, **kwargs)
+        resolved_loss_kwargs = dict(loss_kwargs or {})
+        resolved_norm_kwargs = dict(norm_kwargs or {})
         self.attention_layer = attention_layer
         self.attn_out_bias = attn_out_bias
         self.attn_out_dropout_prob = attn_out_dropout_prob
@@ -171,12 +173,12 @@ class FlexBertConfig(TransformersBertConfig):
         self.embedding_layer = embedding_layer
         self.encoder_layer = encoder_layer
         self.loss_function = loss_function
-        self.loss_kwargs = loss_kwargs
+        self.loss_kwargs = resolved_loss_kwargs
         self.mlp_dropout_prob = mlp_dropout_prob
         self.mlp_in_bias = mlp_in_bias
         self.mlp_layer = mlp_layer
         self.mlp_out_bias = mlp_out_bias
-        self.norm_kwargs = norm_kwargs
+        self.norm_kwargs = resolved_norm_kwargs
         self.normalization = normalization
         self.padding = padding
         self.head_class_act = head_class_act
@@ -214,14 +216,14 @@ class FlexBertConfig(TransformersBertConfig):
         self.compile_model = compile_model
         self.masked_prediction = masked_prediction
 
-        if loss_kwargs.get("return_z_loss", False):
+        if resolved_loss_kwargs.get("return_z_loss", False):
             if loss_function != "fa_cross_entropy":
                 raise ValueError("loss_function must be 'fa_cross_entropy' when return_z_loss is True")
-            if loss_kwargs.get("lse_square_scale", 0) <= 0:
+            if resolved_loss_kwargs.get("lse_square_scale", 0) <= 0:
                 raise ValueError(
                     "lse_square_scale must be passed to `loss_kwargs` and must be greater than 0 for z_loss"
                 )
-        if loss_kwargs.get("inplace_backward", False):
+        if resolved_loss_kwargs.get("inplace_backward", False):
             self.loss_kwargs["inplace_backward"] = False
             warnings.warn("`inplace_backward=True` will cause incorrect metrics. Automatically setting to False.")
 

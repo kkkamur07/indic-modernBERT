@@ -15,16 +15,28 @@ dependencies = [
     "pydantic",
     "pyyaml",
     "tqdm",
-    "tokenizers>=0.23.1",
+    "tokenizers>=0.22.0,<=0.23.0",
     "torch",
-    "transformers",
+    "transformers>=4.57.1",
 ]
 
 [tool.uv]
 package = false
 
 [project.optional-dependencies]
+viz = [
+    "matplotlib",
+]
+sweep = [
+    "hydra-optuna-sweeper",
+]
 pretrain = [
     "composer",
+    "numba",
+    "tensorboard",
+    "torch-optimi",
     "torchmetrics",
+    # flash-attn: unpadded RoPE + FA2 varlen (install manually if uv sync fails to build):
+    #   mkdir -p .tmp && TMPDIR=$PWD/.tmp uv pip install 'flash-attn>=2.6.3' --no-build-isolation
+    # Verify: make verify-attention
 ]

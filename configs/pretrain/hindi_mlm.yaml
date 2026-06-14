@@ -1,3 +1,5 @@
+# Shared hydra config for all pretrain configs.
+
 hydra:
   job:
     chdir: false
@@ -7,16 +9,55 @@ hydra:
 pretrain:
   data_root: data/sangrah_dataset
   eval_data_root: data/eval/hi
-  tokenizer_path: artifacts/tokenizer/bpe_vs50368/tokenizer.json
+  tokenizer_path: artifacts/tokenizer/bpe_vs50368
   output_dir: artifacts/model/modernbert
   save_folder: artifacts/model/modernbert/checkpoints
   text_column: text
+  # Phase-1 pretrain length (ModernBERT upstream also starts at 1024; extend to 8192 later).
   max_seq_len: 1024
   mlm_probability: 0.3
+  eval_mlm_probability: 0.15
   pretrained_model_name: bert-base-uncased
   arch_config_path: configs/model/modernbert_base.yaml
   gradient_checkpointing: false
   disable_train_metrics: true
   global_train_batch_size: 8
   device_train_microbatch_size: 2
+  num_workers: 2
+  dataloader_prefetch_factor: 4
+  eval_num_workers: 3
   max_duration: 100ba
+  sequence_packing: true
+  eval_sequence_packing: false
+  count_padding_tokens: false
+  packing_prefetch_factor: 5
+  batch_size_warmup_min_size: ${pretrain.device_train_microbatch_size}
+  shuffle_seed: 42
+  drop_last: true
+  seed: 17
+  precision: amp_bf16
+  log_to_console: true
+  console_log_interval: 100ba
+  # Phase-1 optimizer — modernbert-base-pretrain.yaml (decoupled_stableadamw).
+  optimizer:
+    name: decoupled_stableadamw
+    lr: 8e-4
+    beta1: 0.9
+    beta2: 0.98
+    eps: 1.0e-6
+    weight_decay: 1.0e-5
+    filter_bias_norm_wd: true
+    log_grad_norm: true
+  scheduler:
+    name: warmup_stable_decay
+    t_warmup: 100ba
+    alpha_f: 0.0
+    t_decay: 0tok
+  callbacks:
+    speed_monitor:
+      window_size: 100
+    lr_monitor: {}
+    log_grad_norm:
+      batch_log_interval: 10
+    packing_efficiency:
+      log_interval: 10

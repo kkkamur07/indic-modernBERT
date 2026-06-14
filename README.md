@@ -1,202 +1,171 @@
 ## Indic Modern BERT
 
-The goal of the project is to extend the ModernBERT paper ([arxiv:2412.13663](https://arxiv.org/abs/2412.13663)) to 15 Indic languages so that people can benefit from higher retrieval quality as a consequence of better sequence length.
+Hindi-first port of [ModernBERT](https://arxiv.org/abs/2412.13663) (22L encoder, 8192 context, retrieval-focused). Goal: scale to 15 Indic languages once the Hindi recipe works.
 
-The first approach is to train a good tokenizer for Hindi only. Once that recipe works, we can extend it to other Indic languages and combine tokenizers if required.
+Run everything from the **repo root**. Python package lives in `indic-modernBERT/` (flat imports, not pip-installable).
 
-## Vocabulary size design
-
-Tokenizer vocabulary size is not chosen only for linguistic coverage — it must also align with how the embedding and softmax layers map onto GPU execution. ModernBERT uses **50,368** tokens for this reason: a base BPE vocabulary plus special tokens and reserved `[unused*]` slots, rounded to a hardware-friendly size.
-
-When picking or padding `vocab_size`, aim for alignment with three GPU-level constraints:
-
-- **Tensor** — divisible by **64** (clean FP16 tensor-core loads; no wasted tail in embedding/softmax matmuls)
-- **Tile** — friendly to **128 × 256** GEMM blocks (better occupancy on the vocab projection)
-- **Wave** — divisible across **SMs** (fewer idle lanes at the end of a wave)
-
-**Practical rule:** choose `vocab_size % 64 == 0` (enforced in Pydantic config validation). If BPE + special tokens land slightly below a good target — e.g. 50,285 merges + 5 specials = 50,290 — pad with reserved `[unused0]` … `[unusedN]` tokens (ModernBERT uses 83 unused slots, IDs 50285–50367) until you hit the aligned size (50,368).
-
-### ModernBERT special tokens (reference)
-
-Released ModernBERT tokenizers (`answerdotai/ModernBERT-base`) append these after the base BPE vocabulary:
-
-- `[UNK]` — 50280
-- `[CLS]` — 50281
-- `[SEP]` — 50282
-- `[PAD]` — 50283
-- `[MASK]` — 50284
-- `[unused0]` … `[unused82]` — 50285–50367
-
-`[CLS]` / `[SEP]` also serve as BOS/EOS in the model config. Our Hindi tokenizer trainers use the same five functional specials and can pad with `[unused*]` to reach an aligned `vocab_size`.
-
-
-### BPE + SuperBPE
-
-BPE should only merge inside the pertoken chunck and super, one stage is with pretok and one stage is without pretok. So that tokens can be learned beyond the boundaries as well, which are created by **pre-tok**.
-
-## Running
-
-Run from the **repo root** (`indic-modernBERT/`). Source code is in `indic-modernBERT/` — flat imports, not an installable package.
+## Quick start
 
 ```bash
 uv sync
-make train-superbpe
-make validate-superbpe
+uv run python -m dataset.sangrah_dataset --count 20 --eval-count 1
+make train-bpe
+make eval-bpe
 ```
 
-Long-running ablation (all vocab sizes in `configs/tokenizer.yaml`) — run detached with unbuffered stdout:
+- **Train Hindi BPE** (all vocab sizes): `make train-bpe` or `make train-bpe-nohup`
+- **Tokenizer eval:** `make eval-bpe`
+- **Tokenizer eval plots:** `make visualize-bpe-eval` → `docs/bpe_vocab_eval.png` (see [Eval visualization](#eval-visualization))
+- **LR sweep (Optuna, full pretrain):** `uv sync --extra pretrain --extra sweep && make lr-sweep`
+- **Full pretrain (Composer):** `uv sync --extra pretrain && make train-pretrain`
+- **Phase 1 / context extension:** see [Training](#training) below
+- **Model smoke test:** `make validate-modernbert`
+- **HF export:** `make export-hf ARGS="ckpt.pt out/dir --tokenizer artifacts/tokenizer/bpe_vs50368"`
+
+Artifacts: `artifacts/tokenizer/bpe_vs{V}/`, `artifacts/model/modernbert/`.
+
+## Tokenizer
+
+- **BPE** on Sangrah Hindi: script norm (`indic-nlp`) → NFKC + regex pre-tokenize → BPE (`tokenizers` lib).
+- **Target vocab:** **50,368** (same as upstream: BPE + specials + `[unused*]`, padded to ÷64 for tensor cores).
+- Use `preprocess_for_tokenizer()` at inference so train/eval/inference match.
+- Config: `configs/tokenizer.yaml`. Intrinsic eval holdout: `data/eval/hi/`.
+
+Hardware vocab notes (tensor vs tile vs wave): `artifacts/ablations/hardware_alignment/README.md`.
+
+### Eval visualization
+
+`make eval-bpe` writes a comparison table to `logs/eval_bpe.log`. Plot it with:
 
 ```bash
-make train-superbpe-nohup
-tail -f logs/train_superbpe_ablation.log
+uv sync --extra viz
+make visualize-bpe-eval
 ```
 
-Or manually (`logs/` must exist first):
+Output: `docs/bpe_vocab_eval.png` (refreshed from the log; commit when results change). Script: `scripts/visualize_bpe_eval.py`.
+
+| Metric | Better |
+|--------|--------|
+| Fertility | lower |
+| Bytes/token | higher |
+| NSL | lower |
+| Rényi efficiency | higher |
+
+Latest Hindi holdout run (174k rows, `data/eval/hi/`):
+
+| Tokenizer | Fertility | Bytes/token | NSL | Rényi eff | Vocab |
+|-----------|-----------|-------------|-----|-----------|-------|
+| IndicBERTv2 (reference) | 1.233 | 10.534 | 0.000 | 0.380 | 250k |
+| BPE 32k | 1.260 | 10.310 | 1.022 | 0.469 | 32k |
+| **BPE 50k** | **1.224** | **10.608** | **0.993** | **0.447** | **50k** |
+| BPE 65k | 1.208 | 10.751 | 0.980 | 0.434 | 65k |
+| BPE 98k | 1.188 | 10.927 | 0.964 | 0.417 | 98k |
+| BPE 131k | 1.178 | 11.025 | 0.955 | 0.405 | 131k |
+| BPE 196k | 1.166 | 11.135 | 0.946 | 0.390 | 196k |
+| sarvam-1 | 1.471 | 8.829 | 0.000 | 0.452 | 68k |
+| gemma-4 | 1.389 | 9.348 | 0.000 | 0.396 | 262k |
+| Llama-4 Scout | 1.730 | 7.507 | 0.000 | 0.434 | 200k |
+
+![BPE vocab intrinsic metrics on Hindi eval holdout](docs/bpe_vocab_eval.png)
+
+**50k** is the production target: fertility matches IndicBERT (1.224 vs 1.233) with slightly higher bytes/token; larger BPE vocabs trade Rényi efficiency for lower fertility and longer tokens.
+
+Custom paths: `make visualize-bpe-eval ARGS="--log logs/eval_bpe.log --out docs/bpe_vocab_eval.png"`
+
+## Model
+
+Encoder ported from `_support_repo/ModernBERT/` → `indic-modernBERT/model/modernbert/`.
+
+| Config | Use |
+|--------|-----|
+| `configs/model/modernbert_base.yaml` | 22L production |
+| `configs/model/modernbert_tiny.yaml` | 4L GPU smoke |
+
+Key settings: RoPE, unpadded + sequence packing, FA3/FA2 global + FA2 local attention, `init_method: full_megatron`, `vocab_size: 50368`.
+
+Pipeline walkthrough: `notebook/pipeline_map.ipynb`.
+
+## Training
+
+ModernBERT trains in **three phases** (~2T tokens total). Published ratios from the paper — **we will rescale for Hindi** (corpus size, batch, duration).
+
+1. **MLM pretrain** — seq 1024, RoPE 10k / 10k, **1.719T** tokens (upstream); Hindi phase 1 uses **1e-4** LR (see [LR sweep](#learning-rate-sweep)), WSD warmup → flat
+2. **Context extension** — seq 8192, RoPE 160k / 10k, **250B** tokens, LR **3e-4**, flat
+3. **LR decay @ 8k** — seq 8192, RoPE 160k / 10k, **50B** tokens, LR **3e-4**, 1−√ decay
+
+Also: **30%** MLM mask (train), **15%** (eval); **StableAdamW** (β=(0.9,0.98), ε=1e-6, WD=1e-5); batch ramp **768→4608** over **50B** tokens (base).
+
+**Our configs:**
 
 ```bash
-mkdir -p logs
-PYTHONUNBUFFERED=1 nohup make train-superbpe > logs/train_superbpe_ablation.log 2>&1 &
-tail -f logs/train_superbpe_ablation.log
+# Smoke defaults
+uv run python scripts/run_pretrain.py --config-name hindi_mlm
+
+# Paper phase-1 ratios (LR + batch warmup; override max_duration for prod)
+uv run python scripts/run_pretrain.py --config-name hindi_mlm_phase1
+
+# Phase 2 — needs phase-1 checkpoint
+uv run python scripts/run_pretrain.py --config-name hindi_mlm_context_extension
 ```
 
-Progress bars appear per parquet shard while the corpus is streamed (one log line per shard when using `nohup`; live tqdm in an interactive terminal). Stage completion lines also land in the Hydra run log under `logs/<timestamp>_superbpe_trainer/`.
+| Yaml | Role |
+|------|------|
+| `configs/pretrain/hindi_mlm.yaml` | dev / smoke |
+| `configs/pretrain/hindi_mlm_phase1.yaml` | phase 1 targets |
+| `configs/pretrain/hindi_mlm_context_extension.yaml` | 8192 + resume from phase 1 |
 
-Or without Make:
+Full tables (large model, microbatches, rollback): **`learning.md`**. Parity notes (packing, FA, parquet vs MDS): same file.
+
+### Learning rate (sweep)
+
+Upstream ModernBERT pretrain uses peak LR **8e-4** at global batch **4608**. Run an Optuna sweep on the **same phase-1 stack** as production (`hindi_mlm_phase1` → `modernbert_base`, micro=8, 500M packer warmup, `fa_cross_entropy`):
 
 ```bash
-PYTHONPATH=indic-modernBERT uv run python -m tokenizer.trainer.superbpe_trainer
-cd indic-modernBERT && uv run python scripts/validate_superbpe.py
+uv sync --extra pretrain --extra sweep
+make lr-sweep
 ```
 
-Other targets: `train-bpe`, `train-pretrain`, `eval-intrinsic`, `eval-parity`, `pretokenization`, `validate-modernbert`, `export-hf`.
+8 trials, log-uniform **3e-5–3e-4**, **1000 batches/trial** (~524M tokens — enough to finish packer warmup). Artifacts: `artifacts/model/modernbert/lr_sweep/`.
+Each trial writes `sweep_summary.json` with `eval_loss` and `lr`. Optuna minimizes best eval MLM loss from `save_best_checkpoints`.
 
-### Project layout
+### DataLoader (workers / prefetch)
+
+Tuned on **RTX 4090** with `make profile-dataloader` (data-only batch fetch + H2D, no model forward). Full results: `logs/dataloader_sweep.json`.
+
+Production (`hindi_mlm.yaml`, `sequence_packing=true`) uses the **packed-path** winner from a partial sweep (2 shards; full 8-shard grid OOM'd workers at w≥4):
+
+| Setting | Value |
+|---------|-------|
+| Train `num_workers` | **2** |
+| Train `prefetch_factor` | **4** |
+| Eval `num_workers` | **3** |
+| `packing_prefetch_factor` | **5** |
+
+**5.64 ms/batch** (177.3 batches/s) vs **14.12 ms** with `workers=0`.
+
+Padded eval path (seq 512, no packing) was faster at w=8/pf=2 (2.98 ms) in an older profile, but production follows packed-path RAM limits. Re-run dataloader profiling after changing batch size, shard count, or model depth.
+
+## Data
+
+**Training:** `data/sangrah_dataset/verified/hin/*.parquet` (~12.6B Hindi tokens).
+
+**Eval holdout:** `data/eval/hi/` — create with `dataset.sangrah_dataset --eval-count N`.
+
+**Candidates for scale-up:** Sangrah unverified Hindi, IndicCorp V2/V1 — see `data/README.md`.
+
+## Layout
 
 ```
-indic-modernBERT/
-├── config/schema.py       # Tokenizer + ModelConfig + PretrainConfig
-├── tokenizer/             # pretokenization, trainer, evals
-├── model/                 # architecture only
-│   ├── modernbert/         # ModernBertConfig, attention, layers, …
-│   ├── factory.py         # create_modernbert_mlm() for Composer
-│   └── export_hf.py       # Composer ckpt → HF save_pretrained
-├── pretrain/              # training orchestration (Composer)
-├── dataset/               # Sangrah download
-└── utils/
-
-configs/
-├── tokenizer.yaml
-├── model/modernbert_base.yaml
-└── pretrain/hindi_mlm.yaml
-
-scripts/                   # thin entry points (repo root)
-├── compare_bpe_vocabs.py
-├── validate_modernbert.py
-└── export_hf.py
-
-artifacts/
-├── tokenizer/superbpe_vs{V}/
-└── model/modernbert/      # checkpoints + HF exports
+indic-modernBERT/     # config/, model/, pretrain/, tokenizer/, dataset/
+configs/              # tokenizer, model, pretrain, sweep yamls
+scripts/              # run_pretrain.py, visualize_bpe_eval.py, export_hf.py, …
+docs/                 # README figures (e.g. bpe_vocab_eval.png)
+artifacts/            # tokenizers, checkpoints, ablations
+_support_repo/        # upstream ModernBERT reference (do not commit blindly)
 ```
 
-### ModernBERT model
+## Reference
 
-The encoder is ported from `_support_repo/ModernBERT/src/bert_layers/` into `indic-modernBERT/model/modernbert/`.
-
-```bash
-make validate-modernbert   # CPU smoke: 2-layer padded ModernBERT, forward + MLM loss
-```
-
-Configs:
-
-- `configs/model/modernbert_smoke.yaml` — tiny model for import/forward checks (no flash-attn)
-- `configs/model/modernbert_base.yaml` — ModernBERT-base architecture (22 layers, vocab 50368, RoPE + sliding window)
-
-Full pretraining (Composer loop, sequence packing, flash-attn):
-
-```bash
-uv sync --extra pretrain   # adds composer + torchmetrics
-make train-pretrain
-```
-
-Checkpoints land under `artifacts/model/modernbert/`. Export a Composer `.pt` checkpoint to HF layout:
-
-```bash
-make export-hf ARGS="path/to/checkpoint.pt artifacts/model/modernbert/hf --tokenizer artifacts/tokenizer/superbpe_vs50368/tokenizer.json"
-```
-
-On GPU with `flash-attn` installed, use `modernbert_base.yaml` settings (`padding: unpadded`, `attention_layer: rope`).
-
-### Eval data
-
-Training reads `data/sangrah_dataset/verified/hin/*.parquet`. Evals use a **holdout** under `data/eval/hi/` (see `configs/tokenizer.yaml`):
-
-- Intrinsic metrics (fertility, bytes/token, NSL, Rényi): `make eval-intrinsic`
-  - Hindi parquets in `data/eval/hi/*.parquet` with a `text` column
-  - NSL reference: `ai4bharat/IndicBERTv2-MLM-only` (same Hindi text, both tokenizers)
-- Parity (optional): `make eval-parity`
-  - Parallel corpus at `data/eval/flores_hi_en.parquet` (`text_hi`, `text_eng`)
-
-SuperBPE uses a vendored `tokenizers` patch (merge extension in Rust, under `_support_repo/`). `uv sync` installs it automatically. Requires Rust if no prebuilt wheel matches your platform.
-
-## `_support_repo` and git
-
-`_support_repo/` holds reference code and the **vendored SuperBPE `tokenizers` patch**. Our training pipeline lives in `indic-modernBERT/` — we do not run the reference SuperBPE shell scripts.
-
-`pyproject.toml` pins the patch:
-
-```toml
-tokenizers = { path = "_support_repo/superbpe/tokenizers_superbpe/bindings/python", editable = true }
-```
-
-So the `tokenizers_superbpe` **source** must be available after clone, or `uv sync` / SuperBPE stage 2 will fail.
-
-### What to version
-
-**Required** — commit this or SuperBPE won't build after clone:
-
-- `_support_repo/superbpe/tokenizers_superbpe/` — the vendored `tokenizers` patch source
-
-**Local modifications we carry** (see `LEARNINGS.md` → *merges.txt leading-space parsing*):
-
-- `model.rs` / `trainer.rs` — `parse_bpe_merge_line()` for Hindi word-initial merges (`"  क"`).
-  Re-verify after any submodule bump.
-
-**Do not commit** — already in `.gitignore`:
-
-- `_support_repo/**/target/` — Rust build cache
-- `_support_repo/**/tokenizer_json/` — example English tokenizer artifacts
-
-**Optional** — reference only, not used by our trainers:
-
-- `_support_repo/superbpe/` scripts and notebooks
-- `_support_repo/ModernBERT/` — reference FlexBERT / Composer training code (ported into `indic-modernBERT/model/`)
-
-Do not `git add _support_repo/` wholesale without checking for nested `.git` directories inside cloned reference repos.
-
-### Recommended setup (submodule)
-
-Cleanest for collaborators — track only the fork, not the full ~600MB clone:
-
-```bash
-git submodule add https://github.com/alisawuffles/tokenizers-superbpe \
-  _support_repo/superbpe/tokenizers_superbpe
-```
-
-After clone:
-
-```bash
-git submodule update --init --recursive
-uv sync
-```
-
-### Fresh clone checklist
-
-```bash
-git clone <repo-url>
-cd indic-modernBERT
-git submodule update --init --recursive   # if using submodules
-uv sync
-make validate-superbpe                   # optional smoke test
-make train-superbpe
-```
+- Paper: [arxiv:2412.13663](https://arxiv.org/abs/2412.13663)
+- Deep dives: `learning.md`, `configs/model/README.md`, `data/README.md`
+- DataLoader sweep (RTX 4090): `logs/dataloader_sweep.json`

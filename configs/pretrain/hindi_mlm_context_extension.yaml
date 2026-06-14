@@ -1,0 +1,29 @@
+# Phase-2 context extension — mirrors upstream modernbert-base-context-extension.yaml
+defaults:
+  - hindi_mlm
+  - _self_
+
+pretrain:
+  max_seq_len: 8192
+  arch_config_path: configs/model/modernbert_context_extension.yaml
+  save_folder: artifacts/model/modernbert/checkpoints/context_extension
+  max_duration: 3434730220tok
+  load_path: artifacts/model/modernbert/checkpoints/phase1/latest-rank0.pt
+  reset_time: true
+  restart_override: true
+  sequence_packing: true
+  eval_sequence_packing: false
+  scheduler:
+    name: constant_with_warmup
+    t_warmup: 0tok
+    alpha_f: 0.0
+    t_decay: 0tok
+  optimizer:
+    name: decoupled_stableadamw
+    lr: 3.0e-4
+    beta1: 0.9
+    beta2: 0.98
+    eps: 1.0e-6
+    weight_decay: 1.0e-5
+    filter_bias_norm_wd: true
+    log_grad_norm: true

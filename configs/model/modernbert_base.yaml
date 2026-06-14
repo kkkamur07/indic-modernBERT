@@ -38,5 +38,11 @@ model_config:
   sliding_window: 128
   global_attn_every_n_layers: 3
   unpad_embeddings: true
-  compile_model: false
+  compile_model: true
   masked_prediction: true
+  use_fa2: true
+  hardware_alignment:
+    enforce: false
+    tile_m: 128
+    tile_n: 256
+    tensor_align: 64

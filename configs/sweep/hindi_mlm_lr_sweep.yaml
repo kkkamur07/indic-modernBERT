@@ -1,0 +1,53 @@
+# Optuna LR sweep on the same stack as phase-1 pretrain:
+# modernbert_base (22L), FA2, torch.compile, fa_cross_entropy, packed unpadded,
+# global_batch=512, micro=8, 500M packer warmup, WSD scheduler — only duration,
+# artifact paths, and optimizer.lr differ.
+#
+# Run: uv sync --extra pretrain --extra sweep && make lr-sweep
+defaults:
+  - hindi_mlm_phase1
+  - override hydra/sweeper: optuna
+  - _self_
+
+hydra:
+  searchpath:
+    - file:///${oc.env:PWD}/configs/pretrain
+  run:
+    dir: logs/lr_sweep/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    subdir: ${hydra.job.num}
+  sweeper:
+    sampler:
+      _target_: optuna.samplers.TPESampler
+    direction: minimize
+    study_name: hindi_mlm_lr
+    n_trials: 8
+    n_jobs: 1
+    params:
+      pretrain.optimizer.lr: tag(log, interval(1e-6, 1e-2))
+
+pretrain:
+  output_dir: artifacts/model/modernbert/lr_sweep
+  save_folder: artifacts/model/modernbert/checkpoints/lr_sweep
+  # ~524M tokens/trial @ global 512 — finishes 500M packer warmup, then a short stable tail.
+  max_duration: 1000ba
+  eval_interval: 100ba
+  save_interval: 1000ba
+  save_num_checkpoints_to_keep: 0
+  save_overwrite: true
+  autoresume: false
+  progress_bar: false
+  log_to_console: true
+
+  # Compact shard index + row-group reads (see ParquetMLMDataset).
+  num_workers: 2
+  eval_num_workers: 3
+  packing_prefetch_factor: 5
+  dataloader_prefetch_factor: 4
+
+  loggers:
+    tensorboard:
+      log_dir: artifacts/model/modernbert/tensorboard/lr_sweep
+  callbacks:
+    save_best_checkpoints:
+      num_checkpoints: 1

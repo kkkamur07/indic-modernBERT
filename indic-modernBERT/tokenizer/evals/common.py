@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from collections import Counter
 from collections.abc import Callable, Iterator
 from pathlib import Path
@@ -13,22 +12,42 @@ from tokenizers import Tokenizer
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from constants import HINDI_LANG3
-from tokenizer.pretokenization import preprocess_for_tokenizer
+from tokenizer.pretokenization import preprocess_for_eval
 
 from utils.progress import iter_with_progress
 
 from .metrics import (
-    aggregate_parity_ratio,
     bytes_per_token,
     fertility,
     normalized_sequence_length,
-    parity_ratio_cross_lingual,
     renyi_efficiency,
 )
 
 IntrinsicMetrics = dict[str, float | int]
 EncodeLenFn = Callable[[str], int]
 EncodeTokensFn = Callable[[str], list[str]]
+
+
+def short_tokenizer_name(model_name: str) -> str:
+    return model_name.split("/")[-1]
+
+
+def log_intrinsic_metrics(label: str, metrics: IntrinsicMetrics) -> None:
+    logger.info(
+        "{} | fertility={:.6f} | bytes/token={:.6f} | NSL={:.6f} | "
+        "Rényi entropy={:.6f} | Rényi efficiency={:.6f}",
+        label,
+        metrics["fertility"],
+        metrics["bytes_per_token"],
+        metrics["nsl"],
+        metrics["renyi_entropy"],
+        metrics["renyi_efficiency"],
+    )
+
+
+def log_fertility_comparison(fertility_by_label: dict[str, float]) -> None:
+    parts = [f"{label}={value:.4f}" for label, value in fertility_by_label.items()]
+    logger.info("Fertility comparison | {} | lower is better", " | ".join(parts))
 
 
 def load_candidate_tokenizer(tokenizer_path: str | Path) -> Tokenizer:
@@ -73,12 +92,18 @@ def iter_hindi_lines(
     text_column: str,
     *,
     use_script_norm: bool = False,
+    use_nfkc: bool = False,
+    max_shards: int | None = None,
     show_progress: bool = True,
     progress_desc: str | None = None,
 ) -> Iterator[tuple[str, list[str]]]:
+
     sangrah_layout = sorted(data_root.glob(f"verified/{HINDI_LANG3}/*.parquet"))
     eval_layout = sorted(data_root.glob("*.parquet"))
     parquet_files = sangrah_layout or eval_layout
+
+    if max_shards is not None:
+        parquet_files = parquet_files[:max_shards]
 
     if not parquet_files:
         raise FileNotFoundError(
@@ -95,6 +120,7 @@ def iter_hindi_lines(
         column = table[text_column]
         values = column.to_pylist()
         desc = f"{label} | {shard_idx}/{shard_total} {parquet_path.name}"
+
         row_iter = iter_with_progress(
             values,
             total=len(column),
@@ -105,56 +131,22 @@ def iter_hindi_lines(
         for value in row_iter:
             if value is None:
                 continue
-            text = preprocess_for_tokenizer(
+
+            text = preprocess_for_eval(
                 str(value),
                 use_script_norm=use_script_norm,
+                use_nfkc=use_nfkc,
             ).strip()
+
             if not text:
                 continue
+
             words = text.split()
+
             if not words:
                 continue
+
             yield text, words
-
-
-def iter_parallel_lines(
-    parallel_path: Path,
-    hindi_column: str,
-    reference_column: str,
-    *,
-    use_script_norm: bool = False,
-    show_progress: bool = True,
-    progress_desc: str | None = None,
-) -> Iterator[tuple[str, str]]:
-
-    table = pq.read_table(parallel_path, columns=[hindi_column, reference_column])
-    hindi_values = table[hindi_column].to_pylist()
-    reference_values = table[reference_column].to_pylist()
-
-    label = progress_desc or "Parity"
-    desc = f"{label} | {parallel_path.name}"
-    pair_iter = zip(hindi_values, reference_values, strict=True)
-    if show_progress and sys.stderr.isatty():
-        from tqdm import tqdm
-
-        pair_iter = tqdm(pair_iter, total=len(hindi_values), desc=desc, unit="rows")
-    elif show_progress:
-        logger.info("{} | {} rows", desc, len(hindi_values))
-
-    for hindi_value, reference_value in pair_iter:
-        if hindi_value is None or reference_value is None:
-            continue
-
-        hindi_text = preprocess_for_tokenizer(
-            str(hindi_value),
-            use_script_norm=use_script_norm,
-        ).strip()
-        reference_text = str(reference_value).strip()
-
-        if not hindi_text or not reference_text:
-            continue
-
-        yield hindi_text, reference_text
 
 
 def collect_intrinsic_metrics(
@@ -167,6 +159,8 @@ def collect_intrinsic_metrics(
     vocab_size: int | None = None,
     renyi_alpha: float = 2.5,
     use_script_norm: bool = False,
+    use_nfkc: bool = False,
+    max_shards: int | None = None,
     show_progress: bool = True,
     progress_desc: str | None = None,
 ) -> IntrinsicMetrics:
@@ -185,6 +179,8 @@ def collect_intrinsic_metrics(
         data_root,
         text_column,
         use_script_norm=use_script_norm,
+        use_nfkc=use_nfkc,
+        max_shards=max_shards,
         show_progress=show_progress,
         progress_desc=progress_desc,
     ):
@@ -220,45 +216,4 @@ def collect_intrinsic_metrics(
         "renyi_entropy": renyi_entropy_value,
         "renyi_efficiency": renyi_efficiency_value,
         "unique_tokens_observed": len(token_counts),
-    }
-
-
-def collect_cross_lingual_parity(
-    *,
-    hindi_tokenize_len: EncodeLenFn,
-    reference_lang_tokenize_len: EncodeLenFn,
-    parallel_path: Path,
-    hindi_column: str,
-    reference_column: str,
-    use_script_norm: bool = False,
-    show_progress: bool = True,
-    progress_desc: str | None = None,
-) -> IntrinsicMetrics:
-
-    ratios: list[float] = []
-    hindi_tokens = 0
-    reference_tokens = 0
-    rows = 0
-
-    for hindi_text, reference_text in iter_parallel_lines(
-        parallel_path,
-        hindi_column,
-        reference_column,
-        use_script_norm=use_script_norm,
-        show_progress=show_progress,
-        progress_desc=progress_desc,
-    ):
-        hi_count = hindi_tokenize_len(hindi_text)
-        ref_count = reference_lang_tokenize_len(reference_text)
-        ratios.append(parity_ratio_cross_lingual(hi_count, ref_count))
-        hindi_tokens += hi_count
-        reference_tokens += ref_count
-        rows += 1
-
-    return {
-        "rows": rows,
-        "parity_ratio": aggregate_parity_ratio(ratios),
-        "parity_ratio_micro": parity_ratio_cross_lingual(hindi_tokens, reference_tokens),
-        "hindi_tokens": hindi_tokens,
-        "reference_lang_tokens": reference_tokens,
     }

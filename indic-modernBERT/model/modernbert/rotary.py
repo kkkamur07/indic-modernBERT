@@ -4,9 +4,16 @@
 # Copyright (c) 2023, Tri Dao.
 # License: Apache-2.0
 
+try:
+    from flash_attn.ops.triton.rotary import apply_rotary
+except ImportError as exc:
+    raise ImportError(
+        "flash-attn is required for unpadded RoPE. Install with: "
+        "TMPDIR=$PWD/.tmp uv pip install 'flash-attn>=2.6.3' --no-build-isolation"
+    ) from exc
+
 import torch
 from einops import rearrange
-from flash_attn.ops.triton.rotary import apply_rotary
 
 from typing import Optional, Tuple, Union
 

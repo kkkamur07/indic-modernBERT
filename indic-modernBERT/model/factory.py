@@ -6,12 +6,14 @@ import copy
 from pathlib import Path
 from typing import Any
 
+import torch
 import transformers
 from omegaconf import DictConfig, OmegaConf
 
 from config import ModernBertArchConfig, load_modernbert_arch_config
 from model.modernbert.configuration import FlexBertConfig
 from model.modernbert.model import FlexBertForMaskedLM
+from utils.paths import resolve_hf_tokenizer_dir
 
 try:
     from composer.devices import DeviceCPU
@@ -83,6 +85,8 @@ if TorchMetric is not object and HuggingFaceModel is not None:
             self.add_state("total_items", default=__import__("torch").tensor(0), dist_reduce_fx="sum")
 
         def update(self, loss):
+            if isinstance(loss, torch.Tensor):
+                loss = loss.detach().to(self.sum_loss.device)
             self.sum_loss += loss
             self.total_items += 1
 
@@ -153,7 +157,8 @@ def create_modernbert_mlm(
         model.gradient_checkpointing_enable()  # type: ignore[operator]
 
     if tokenizer_path:
-        tokenizer = transformers.PreTrainedTokenizerFast.from_pretrained(tokenizer_path)
+        tokenizer_dir = resolve_hf_tokenizer_dir(tokenizer_path)
+        tokenizer = transformers.PreTrainedTokenizerFast.from_pretrained(str(tokenizer_dir))
     elif tokenizer_name:
         tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_name)
     else:

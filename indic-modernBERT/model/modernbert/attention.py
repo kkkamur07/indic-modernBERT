@@ -31,16 +31,16 @@ IMPL_USE_FLASH3 = False
 IMPL_USE_FLASH2 = False
 try:
     from flash_attn_interface import flash_attn_varlen_func
-
     IMPL_USE_FLASH3 = True
 except ImportError:
     pass
 # Import Flash Attention 2, which supports ALiBi https://github.com/Dao-AILab/flash-attention
 try:
     from flash_attn import flash_attn_varlen_qkvpacked_func, flash_attn_qkvpacked_func  # type: ignore
+    from packaging.version import Version
 
-    installed_version = importlib.metadata.version("flash_attn")  # type: ignore
-    if installed_version < "2.5.7":
+    installed_version = Version(importlib.metadata.version("flash_attn"))  # type: ignore
+    if installed_version < Version("2.5.7"):
         raise ImportError("newer version of flash_attn required (>= 2.5.7)")
     IMPL_USE_FLASH2 = True
 except ImportError:
@@ -760,7 +760,10 @@ class FlexBertUnpadRopeAttention(FlexBertAttentionBase):
             if config.local_attn_rotary_emb_dim is not None:
                 rotary_dim = config.local_attn_rotary_emb_dim
 
-        assert UnpaddedRotaryEmbedding is not None, "rotary_emb is not installed"
+        assert UnpaddedRotaryEmbedding is not None, (
+            "flash-attn is required for unpadded RoPE (install flash-attn>=2.6.3; "
+            "see scripts/verify_attention.py)"
+        )
         self.rotary_emb = UnpaddedRotaryEmbedding(
             dim=rotary_dim,
             base=rotary_base,
@@ -984,7 +987,10 @@ class FlexBertPaddedRopeAttention(FlexBertAttentionBase):
             if config.local_attn_rotary_emb_dim is not None:
                 rotary_dim = config.local_attn_rotary_emb_dim
 
-        assert RotaryEmbedding is not None, "rotary_emb is not installed"
+        assert RotaryEmbedding is not None, (
+            "flash-attn is required for RoPE (install flash-attn>=2.6.3; "
+            "see scripts/verify_attention.py)"
+        )
         self.rotary_emb = RotaryEmbedding(
             dim=rotary_dim,
             base=rotary_base,
@@ -1133,7 +1139,10 @@ class FlexBertUnpadRopeParallelAttention(FlexBertAttentionBase):
             if config.local_attn_rotary_emb_dim is not None:
                 rotary_dim = config.local_attn_rotary_emb_dim
 
-        assert UnpaddedRotaryEmbedding is not None, "rotary_emb is not installed"
+        assert UnpaddedRotaryEmbedding is not None, (
+            "flash-attn is required for unpadded RoPE (install flash-attn>=2.6.3; "
+            "see scripts/verify_attention.py)"
+        )
         self.rotary_emb = UnpaddedRotaryEmbedding(
             dim=rotary_dim,
             base=rotary_base,
@@ -1316,7 +1325,10 @@ class FlexBertPaddedRopeParallelAttention(FlexBertAttentionBase):
             if config.local_attn_rotary_emb_dim is not None:
                 rotary_dim = config.local_attn_rotary_emb_dim
 
-        assert RotaryEmbedding is not None, "rotary_emb is not installed"
+        assert RotaryEmbedding is not None, (
+            "flash-attn is required for RoPE (install flash-attn>=2.6.3; "
+            "see scripts/verify_attention.py)"
+        )
         self.rotary_emb = RotaryEmbedding(
             dim=rotary_dim,
             base=rotary_base,
