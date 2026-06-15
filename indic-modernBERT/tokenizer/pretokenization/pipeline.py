@@ -40,6 +40,21 @@ def normalize_text(
     return text
 
 
+def preprocess_for_tokenizer(text: str, *, use_script_norm: bool = True) -> str:
+    """Prepare raw text for our BPE tokenizer (NFKC is applied inside ``tokenizer.json``)."""
+    return normalize_text(text, use_script_norm=use_script_norm, use_nfkc=False)
+
+
+def preprocess_for_eval(
+    text: str,
+    *,
+    use_script_norm: bool = True,
+    use_nfkc: bool = True,
+) -> str:
+    """Prepare raw text for intrinsic eval (same normalization for every tokenizer)."""
+    return normalize_text(text, use_script_norm=use_script_norm, use_nfkc=use_nfkc)
+
+
 def build_pre_tokenizer(
     stage: PretokenizationStage = "subword",
 ) -> pre_tokenizers.PreTokenizer | None:

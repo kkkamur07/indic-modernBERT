@@ -8,6 +8,8 @@ from .pipeline import (
     build_pre_tokenizer,
     describe_splits,
     normalize_text,
+    preprocess_for_eval,
+    preprocess_for_tokenizer,
 )
 
 __all__ = [
@@ -18,4 +20,6 @@ __all__ = [
     "build_pre_tokenizer",
     "describe_splits",
     "normalize_text",
+    "preprocess_for_eval",
+    "preprocess_for_tokenizer",
 ]

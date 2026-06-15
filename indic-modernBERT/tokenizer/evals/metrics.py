@@ -1,10 +1,9 @@
-"""Intrinsic tokenizer metric definitions (MUTANT / Zouhar et al. / Petrov et al.)."""
+"""Intrinsic tokenizer metric definitions (MUTANT / Zouhar et al.)."""
 
 from __future__ import annotations
 
 import math
 from collections import Counter
-from typing import Iterable
 
 
 def fertility(tokens: int, words: int) -> float:
@@ -23,18 +22,6 @@ def normalized_sequence_length(candidate_tokens: int, reference_tokens: int) -> 
     c_{λ/β} = Σ|t_λ(x_i)| / Σ|t_β(x_i)|  (Dagan et al., 2024; MUTANT §3.4)
     """
     return (candidate_tokens / reference_tokens) if reference_tokens else 0.0
-
-
-def parity_ratio_cross_lingual(hindi_tokens: int, reference_lang_tokens: int) -> float:
-    """Per-sentence |t(hi)| / |t(ref)| (Petrov et al., 2023). Closer to 1 is better."""
-    return (hindi_tokens / reference_lang_tokens) if reference_lang_tokens else 0.0
-
-
-def aggregate_parity_ratio(per_line_ratios: Iterable[float]) -> float:
-    ratios = list(per_line_ratios)
-    if not ratios:
-        return 0.0
-    return sum(ratios) / len(ratios)
 
 
 def renyi_entropy(probabilities: list[float], *, alpha: float) -> float:

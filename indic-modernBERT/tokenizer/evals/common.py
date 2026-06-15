@@ -7,18 +7,19 @@ from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pyarrow.parquet as pq
+from loguru import logger
 from tokenizers import Tokenizer
-from tqdm import tqdm
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from constants import HINDI_LANG3
+from tokenizer.pretokenization import preprocess_for_eval
+
+from utils.progress import iter_with_progress
 
 from .metrics import (
-    aggregate_parity_ratio,
     bytes_per_token,
     fertility,
     normalized_sequence_length,
-    parity_ratio_cross_lingual,
     renyi_efficiency,
 )
 
@@ -27,12 +28,34 @@ EncodeLenFn = Callable[[str], int]
 EncodeTokensFn = Callable[[str], list[str]]
 
 
+def short_tokenizer_name(model_name: str) -> str:
+    return model_name.split("/")[-1]
+
+
+def log_intrinsic_metrics(label: str, metrics: IntrinsicMetrics) -> None:
+    logger.info(
+        "{} | fertility={:.6f} | bytes/token={:.6f} | NSL={:.6f} | "
+        "Rényi entropy={:.6f} | Rényi efficiency={:.6f}",
+        label,
+        metrics["fertility"],
+        metrics["bytes_per_token"],
+        metrics["nsl"],
+        metrics["renyi_entropy"],
+        metrics["renyi_efficiency"],
+    )
+
+
+def log_fertility_comparison(fertility_by_label: dict[str, float]) -> None:
+    parts = [f"{label}={value:.4f}" for label, value in fertility_by_label.items()]
+    logger.info("Fertility comparison | {} | lower is better", " | ".join(parts))
+
+
 def load_candidate_tokenizer(tokenizer_path: str | Path) -> Tokenizer:
     path = Path(tokenizer_path)
     if not path.exists():
         raise FileNotFoundError(
             f"Tokenizer not found at {path.resolve()}. "
-            "Train first (make train-superbpe) or run make eval-intrinsic-smoke."
+            "Train first with make train-bpe."
         )
     return Tokenizer.from_file(str(path))
 
@@ -68,75 +91,59 @@ def iter_hindi_lines(
     data_root: Path,
     text_column: str,
     *,
+    use_script_norm: bool = False,
+    use_nfkc: bool = False,
+    max_shards: int | None = None,
     show_progress: bool = True,
     progress_desc: str | None = None,
 ) -> Iterator[tuple[str, list[str]]]:
-    sangrah_layout = sorted(data_root.glob(f"verified/{HINDI_LANG3}/*.parquet"))
-    eval_layout = sorted(data_root.glob("*.parquet"))
-    parquet_files = sangrah_layout or eval_layout
+
+    # Just get all the parquet files under the data root.
+    parquet_files = sorted(data_root.glob("**/*.parquet"))
+
+    if max_shards is not None:
+        parquet_files = parquet_files[:max_shards]
 
     if not parquet_files:
         raise FileNotFoundError(
-            "No Hindi eval parquet files found. Expected either "
-            f"{data_root}/verified/{HINDI_LANG3}/*.parquet (Sangrah layout) "
-            f"or {data_root}/*.parquet (eval holdout layout)."
+            f"No Hindi eval parquet files found under {data_root}."
         )
 
     label = progress_desc or "Eval"
+    shard_total = len(parquet_files)
 
-    for parquet_path in parquet_files:
+    for shard_idx, parquet_path in enumerate(parquet_files, start=1):
         table = pq.read_table(parquet_path, columns=[text_column])
         column = table[text_column]
         values = column.to_pylist()
-        desc = f"{label} ({parquet_path.name})"
-        row_iter = (
-            tqdm(values, total=len(column), desc=desc, unit="rows")
-            if show_progress
-            else values
+        desc = f"{label} | {shard_idx}/{shard_total} {parquet_path.name}"
+
+        row_iter = iter_with_progress(
+            values,
+            total=len(column),
+            desc=desc,
+            show_progress=show_progress,
         )
 
         for value in row_iter:
             if value is None:
                 continue
-            text = str(value).strip()
+
+            text = preprocess_for_eval(
+                str(value),
+                use_script_norm=use_script_norm,
+                use_nfkc=use_nfkc,
+            ).strip()
+
             if not text:
                 continue
+
             words = text.split()
+
             if not words:
                 continue
+
             yield text, words
-
-
-def iter_parallel_lines(
-    parallel_path: Path,
-    hindi_column: str,
-    reference_column: str,
-    *,
-    show_progress: bool = True,
-    progress_desc: str | None = None,
-) -> Iterator[tuple[str, str]]:
-
-    table = pq.read_table(parallel_path, columns=[hindi_column, reference_column])
-    hindi_values = table[hindi_column].to_pylist()
-    reference_values = table[reference_column].to_pylist()
-
-    label = progress_desc or "Parity"
-    desc = f"{label} ({parallel_path.name})"
-    pair_iter = zip(hindi_values, reference_values, strict=True)
-    if show_progress:
-        pair_iter = tqdm(pair_iter, total=len(hindi_values), desc=desc, unit="rows")
-
-    for hindi_value, reference_value in pair_iter:
-        if hindi_value is None or reference_value is None:
-            continue
-
-        hindi_text = str(hindi_value).strip()
-        reference_text = str(reference_value).strip()
-
-        if not hindi_text or not reference_text:
-            continue
-
-        yield hindi_text, reference_text
 
 
 def collect_intrinsic_metrics(
@@ -148,6 +155,9 @@ def collect_intrinsic_metrics(
     reference_tokenize_len: EncodeLenFn | None = None,
     vocab_size: int | None = None,
     renyi_alpha: float = 2.5,
+    use_script_norm: bool = False,
+    use_nfkc: bool = False,
+    max_shards: int | None = None,
     show_progress: bool = True,
     progress_desc: str | None = None,
 ) -> IntrinsicMetrics:
@@ -165,6 +175,9 @@ def collect_intrinsic_metrics(
     for text, words in iter_hindi_lines(
         data_root,
         text_column,
+        use_script_norm=use_script_norm,
+        use_nfkc=use_nfkc,
+        max_shards=max_shards,
         show_progress=show_progress,
         progress_desc=progress_desc,
     ):
@@ -200,43 +213,4 @@ def collect_intrinsic_metrics(
         "renyi_entropy": renyi_entropy_value,
         "renyi_efficiency": renyi_efficiency_value,
         "unique_tokens_observed": len(token_counts),
-    }
-
-
-def collect_cross_lingual_parity(
-    *,
-    hindi_tokenize_len: EncodeLenFn,
-    reference_lang_tokenize_len: EncodeLenFn,
-    parallel_path: Path,
-    hindi_column: str,
-    reference_column: str,
-    show_progress: bool = True,
-    progress_desc: str | None = None,
-) -> IntrinsicMetrics:
-
-    ratios: list[float] = []
-    hindi_tokens = 0
-    reference_tokens = 0
-    rows = 0
-
-    for hindi_text, reference_text in iter_parallel_lines(
-        parallel_path,
-        hindi_column,
-        reference_column,
-        show_progress=show_progress,
-        progress_desc=progress_desc,
-    ):
-        hi_count = hindi_tokenize_len(hindi_text)
-        ref_count = reference_lang_tokenize_len(reference_text)
-        ratios.append(parity_ratio_cross_lingual(hi_count, ref_count))
-        hindi_tokens += hi_count
-        reference_tokens += ref_count
-        rows += 1
-
-    return {
-        "rows": rows,
-        "parity_ratio": aggregate_parity_ratio(ratios),
-        "parity_ratio_micro": parity_ratio_cross_lingual(hindi_tokens, reference_tokens),
-        "hindi_tokens": hindi_tokens,
-        "reference_lang_tokens": reference_tokens,
     }

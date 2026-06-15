@@ -1,128 +1,247 @@
-## Indic Modern BERT
+![Indic ModernBERT — Architecture Overview](docs/architecture.png)
 
-The goal of the project is to extend the ModernBERT paper ([arxiv:2412.13663](https://arxiv.org/abs/2412.13663)) to 15 Indic languages so that people can benefit from higher retrieval quality as a consequence of better sequence length.
+# Indic ModernBERT
 
-The first approach is to train a good tokenizer for Hindi only. Once that recipe works, we can extend it to other Indic languages and combine tokenizers if required.
+A Hindi-first extension of [ModernBERT](https://arxiv.org/abs/2412.13663) — a state-of-the-art masked language model with 22 transformer layers, 8192-token context, and retrieval-focused design. The goal is to build a strong Hindi encoder first, then scale to all 15 major Indic languages once the recipe is proven.
 
-## Vocabulary size design
+Why only 15 languages ? Because for them only substantial dataset ( > 5B tokens ) are available.
 
-Tokenizer vocabulary size is not chosen only for linguistic coverage — it must also align with how the embedding and softmax layers map onto GPU execution. ModernBERT uses **50,368** tokens for this reason: a base BPE vocabulary plus special tokens and reserved `[unused*]` slots, rounded to a hardware-friendly size.
+---
 
-When picking or padding `vocab_size`, aim for alignment with three GPU-level constraints:
+## What is ModernBERT?
 
-- **Tensor** — divisible by **64** (clean FP16 tensor-core loads; no wasted tail in embedding/softmax matmuls)
-- **Tile** — friendly to **128 × 256** GEMM blocks (better occupancy on the vocab projection)
-- **Wave** — divisible across **SMs** (fewer idle lanes at the end of a wave)
+BERT-style encoders read text bidirectionally (every token attends to every other token) and are trained with Masked Language Modelling (MLM): randomly mask ~30% of tokens, predict them. This makes them excellent at understanding tasks — classification, NER, retrieval, question answering — but they don't generate text.
 
-**Practical rule:** choose `vocab_size % 64 == 0` (enforced in Pydantic config validation). If BPE + special tokens land slightly below a good target — e.g. 50,285 merges + 5 specials = 50,290 — pad with reserved `[unused0]` … `[unusedN]` tokens (ModernBERT uses 83 unused slots, IDs 50285–50367) until you hit the aligned size (50,368).
+ModernBERT is a 2024 redesign of BERT that incorporates everything learned from the GPT generation: rotary position embeddings (RoPE) for long contexts, Flash Attention for memory-efficient training, alternating global+local attention layers for efficiency, and a much larger training corpus. It achieves state-of-the-art results on retrieval benchmarks while remaining fast to fine-tune.
 
-### ModernBERT special tokens (reference)
+We port it to Hindi by replacing the tokenizer and training from scratch on Sangraha Hindi text (~23B tokens).
 
-Released ModernBERT tokenizers (`answerdotai/ModernBERT-base`) append these after the base BPE vocabulary:
+ModernBERT focuses on two things : 
+1. Efficiency : Designing the model as per the hardware 
+2. Long context retrieval : Due to extended context length because of **ROPE** and **Alternating Attention**
 
-- `[UNK]` — 50280
-- `[CLS]` — 50281
-- `[SEP]` — 50282
-- `[PAD]` — 50283
-- `[MASK]` — 50284
-- `[unused0]` … `[unused82]` — 50285–50367
+---
 
-`[CLS]` / `[SEP]` also serve as BOS/EOS in the model config. Our Hindi tokenizer trainers use the same five functional specials and can pad with `[unused*]` to reach an aligned `vocab_size`.
-
-
-### BPE + SuperBPE
-
-BPE should only merge inside the pertoken chunck and super, one stage is with pretok and one stage is without pretok. So that tokens can be learned beyond the boundaries as well, which are created by **pre-tok**.
-
-## Running
-
-Run from the **repo root** (`indic-modernBERT/`). Source code is in `indic-modernBERT/` — flat imports, not an installable package.
+## Quick start
 
 ```bash
+# 1. Install dependencies
 uv sync
-make train-superbpe
-make validate-superbpe
+
+# 2. Download ~20 training shards + 1 eval shard from Sangraha
+# We donwloaded around 270 shards. 
+uv run python -m dataset.sangrah_dataset --count 20 --eval-count 1
+
+# 3. Train a Hindi BPE tokenizer (vocab size 50k) - after the abalations. 
+make train-bpe
+
+# 4. Evaluate the tokenizer against baselines
+make eval-bpe
 ```
 
-Or without Make:
+After that, the main commands are:
+
+| What you want to do | Command |
+|---|---|
+| Smoke-test the full training pipeline (50 batches) | `make train-smoke-50ba` |
+| Run an Optuna LR sweep to find the best learning rate | `make lr-sweep` |
+| Full phase-1 pretrain | `uv sync --extra pretrain && make train-pretrain` |
+| Export a checkpoint to HuggingFace format | `make export-hf ARGS="ckpt.pt out/ --tokenizer artifacts/tokenizer/bpe_vs50368"` |
+| Explore the pipeline interactively ( Debugging purposes as well ) | open `notebook/pipeline_map.ipynb` |
+
+Artifacts are written to `artifacts/tokenizer/bpe_vs{V}/` and `artifacts/model/modernbert/`.
+
+---
+
+## Tokenizer
+
+We train a BPE tokenizer directly on Hindi text. The pipeline is:
+
+```
+raw text → script normalisation (indic-nlp) → NFKC → regex pre-tokenise → BPE
+```
+
+Yes, each step is necessary — skip one and the tokenizer silently degrades.
+
+**Script normalisation** is the most critical step for Devanagari. The same word can be encoded in multiple byte-level ways that look pixel-identical on screen but are different strings to a computer. For example, the Hindi word for "Kumar" (कुमार) can be written with the vowel sign `ु` composed into the consonant, or as a separate combining character — same glyph, different bytes. Without normalisation, BPE treats these as two different words and wastes two vocabulary slots on the same meaning. Multiply this across thousands of common words and you lose a huge chunk of your 50k vocabulary to duplicates.
+
+```
+# Same word, two byte sequences — both look like "कुमार" on screen:
+"क\u0941म\u093Eर"   ← composed form  (4 codepoints)
+"क\u0941म\u093Eर"   ← decomposed form (5 codepoints, nukta separate)
+
+# After ScriptNormalization → both become the same canonical string
+# → BPE sees one word, not two
+```
+
+**NFKC** handles Unicode compatibility characters that aren't Devanagari-specific. Examples:
+
+```
+"１२३"  (fullwidth digits, common in web-scraped text)  →  "123"
+"ﬁ"    (fi ligature)                                    →  "fi"
+"²"    (superscript 2)                                  →  "2"
+```
+
+Without NFKC, the model learns `123` and `１２３` as completely separate sequences even though they mean the same thing.
+
+**Regex pre-tokeniser** draws hard boundaries before BPE merges begin. See the image at the top of this page for a side-by-side example. It splits on whitespace and punctuation, so BPE can never create a token that straddles a word boundary. Without it you'd get tokens like `"है।"` (word + full-stop fused together) — useful in some contexts but inconsistent, and it bloats the vocabulary with punctuation-suffixed variants of every common word.
+
+**Target vocab size: 50,368** — same as upstream ModernBERT. This is divisible by 64 (required for GPU tensor-core alignment) and matches the upstream embedding weight dimensions exactly, which simplifies initialising from pretrained weights later.
+
+Always use `preprocess_for_tokenizer()` at inference time. Training and inference must go through the same normalisation pipeline or the same Hindi word will tokenize differently at inference than it did during training.
+
+### Tokenizer eval results
+
+Latest run on the Hindi holdout (174k rows):
+
+| Tokenizer | Fertility ↓ | Bytes/token ↑ | NSL ↓ | Rényi eff ↑ | Vocab |
+|---|---|---|---|---|---|
+| IndicBERTv2 (reference) | 1.233 | 10.534 | 0.000 | 0.380 | 250k |
+| BPE 32k | 1.260 | 10.310 | 1.022 | 0.469 | 32k |
+| **BPE 50k** | **1.224** | **10.608** | **0.993** | **0.447** | **50k** |
+| BPE 65k | 1.208 | 10.751 | 0.980 | 0.434 | 65k |
+| sarvam-1 | 1.471 | 8.829 | 0.000 | 0.452 | 68k |
+| gemma-4 | 1.389 | 9.348 | 0.000 | 0.396 | 262k |
+
+![BPE vocab comparison](docs/bpe_vocab_eval.png)
+
+**50k is the production target.** It matches IndicBERTv2's fertility (fewer splits per Hindi word) while encoding more bytes per token than smaller vocabs. Larger vocabs improve fertility further but at the cost of Rényi efficiency — the vocab becomes dominated by rare tokens.
+
+Config: `configs/tokenizer.yaml`. Eval holdout: `data/eval/hi/`.
+
+---
+
+## Model
+
+The encoder is ported from `_support_repo/ModernBERT/` into `indic-modernBERT/model/modernbert/`.
+
+Key architectural choices:
+
+- **RoPE** (rotary position embeddings) instead of learned absolute positions — generalises better to longer sequences
+- **Alternating attention:** every 3rd layer attends to the full sequence (global), other layers use a 128-token sliding window (local). Local attention is O(n) in sequence length instead of O(n²), making 8192-token training feasible
+- **Flash Attention:** FA3 on global layers (H100), FA2 on local layers and as fallback on consumer GPUs. Both are memory-fused implementations that avoid materialising the full attention matrix
+- **Sequence packing:** training sequences are packed end-to-end into fixed-length tensors with no padding between them, then unpadded inside the model. This wastes almost no compute on padding tokens
+- **`init_method: full_megatron`** weight initialisation, scaled by layer depth — prevents activations from exploding in deep networks
+
+| Config file | Use |
+|---|---|
+| `configs/model/modernbert_base.yaml` | 22 layers, production |
+| `configs/model/modernbert_tiny.yaml` | 4 layers, fast GPU smoke tests |
+
+
+> Note for alternating attention : We are only using FA2 because FA3 support is not available on RTX4090 ( Ampere class ) only available on Hoppers i.e. H100s and also the H100s we have don't have the storage to support 100GBs of memory. 
+
+---
+
+## Training
+
+ModernBERT is trained in **three phases**, progressively extending context length. We rescale durations for our Hindi corpus size.
+
+### Phase 1 — Pretrain at 1024 tokens
+
+The model learns language from scratch. 30% of tokens are masked and the model must predict them. We use:
+
+- **StableAdamW** optimiser: like AdamW but divides the per-parameter learning rate by the gradient RMS, preventing unstable steps when gradients spike early in training
+- **WSD (WarmupStableDecay) scheduler:** LR warms up linearly → holds flat → decays at the end
+- **Sequence packing:** Hindi sentences are packed into 1024-token windows with no padding waste
+- **Global batch 512, microbatch 8** on a single RTX 4090; gradient accumulation handles the rest for much more stable training. 
+
+The LR sweep runs 8 Optuna trials over the range 1e-2–1e-6, each for 1000 batches (~524M tokens), and selects the LR minimising eval MLM loss.
+
+### Phase 2 — Context extension to 8192 tokens
+
+Load phase-1 weights and extend the context window by raising `max_seq_len` to 8192 and increasing the global RoPE base from 10,000 to 160,000. The higher RoPE base gives the model a "longer ruler" for position encoding — without it, the model would have no signal for positions it never saw during phase 1. Local (sliding-window) layers keep their original RoPE base since they never attend beyond 128 tokens anyway.
+
+### Phase 3 — LR decay at 8192
+
+Continue from phase 2 with a `1−√` learning rate decay. The model converges its long-context representations.
+
+### Our configs
 
 ```bash
-PYTHONPATH=indic-modernBERT uv run python -m tokenizer.trainer.superbpe_trainer
-cd indic-modernBERT && uv run python scripts/validate_superbpe.py
+# Smoke test (any GPU, quick)
+make train-smoke-50ba
+
+# Phase 1 with paper-ratio targets (override max_duration for production run)
+uv run python scripts/run_pretrain.py --config-name hindi_mlm_phase1
+
+# Phase 2 (needs a phase-1 checkpoint)
+uv run python scripts/run_pretrain.py --config-name hindi_mlm_context_extension
 ```
 
-Other targets: `train-bpe`, `eval-intrinsic`, `eval-parity`, `pretokenization`.
-
-### Eval data
-
-Training reads `data/sangrah_dataset/verified/hin/*.parquet`. Evals use a **holdout** under `data/eval/hi/` (see `configs/tokenizer.yaml`):
-
-- Intrinsic metrics (fertility, bytes/token, NSL, Rényi): `make eval-intrinsic`
-  - Hindi parquets in `data/eval/hi/*.parquet` with a `text` column
-  - NSL reference: `ai4bharat/IndicBERTv2-MLM-only` (same Hindi text, both tokenizers)
-- Parity (optional): `make eval-parity`
-  - Parallel corpus at `data/eval/flores_hi_en.parquet` (`text_hi`, `text_eng`)
-
-SuperBPE uses a vendored `tokenizers` patch (merge extension in Rust, under `_support_repo/`). `uv sync` installs it automatically. Requires Rust if no prebuilt wheel matches your platform.
-
-## `_support_repo` and git
-
-`_support_repo/` holds reference code and the **vendored SuperBPE `tokenizers` patch**. Our training pipeline lives in `indic-modernBERT/` — we do not run the reference SuperBPE shell scripts.
-
-`pyproject.toml` pins the patch:
-
-```toml
-tokenizers = { path = "_support_repo/superbpe/tokenizers_superbpe/bindings/python", editable = true }
-```
-
-So the `tokenizers_superbpe` **source** must be available after clone, or `uv sync` / SuperBPE stage 2 will fail.
-
-### What to version
-
-**Required** — commit this or SuperBPE won't build after clone:
-
-- `_support_repo/superbpe/tokenizers_superbpe/` — the vendored `tokenizers` patch source
-
-**Local modifications we carry** (see `LEARNINGS.md` → *merges.txt leading-space parsing*):
-
-- `model.rs` / `trainer.rs` — `parse_bpe_merge_line()` for Hindi word-initial merges (`"  क"`).
-  Re-verify after any submodule bump.
-
-**Do not commit** — already in `.gitignore`:
-
-- `_support_repo/**/target/` — Rust build cache
-- `_support_repo/**/tokenizer_json/` — example English tokenizer artifacts
-
-**Optional** — reference only, not used by our trainers:
-
-- `_support_repo/superbpe/` scripts and notebooks
-- `_support_repo/ModernBERT/`
-
-Do not `git add _support_repo/` wholesale without checking for nested `.git` directories inside cloned reference repos.
-
-### Recommended setup (submodule)
-
-Cleanest for collaborators — track only the fork, not the full ~600MB clone:
+### Learning rate sweep
 
 ```bash
-git submodule add https://github.com/alisawuffles/tokenizers-superbpe \
-  _support_repo/superbpe/tokenizers_superbpe
+uv sync --extra pretrain --extra sweep
+make lr-sweep          # runs in foreground
+make lr-sweep-nohup    # runs in background, logs to logs/lr_sweep/nohup.log
 ```
 
-After clone:
+8 Optuna trials, log-uniform 3e-5–3e-4, 1000 batches each. Results in `artifacts/model/modernbert/lr_sweep/`; each trial writes `sweep_summary.json` with `eval_loss` and `lr`.
 
+---
+
+## Data
+
+**Training:** `data/sangrah_dataset/verified/hin/*.parquet` (~12.6B Hindi tokens from 19 shards).
+
+**Eval holdout:** `data/eval/hi/` — one shard withheld from training. Create with:
 ```bash
-git submodule update --init --recursive
-uv sync
+uv run python -m dataset.sangrah_dataset --count 20 --eval-count 1
 ```
 
-### Fresh clone checklist
+> We are using `hindi` datasets from sangrah, where we expect the gains from modernBERT also came from new datasets, this might be challenging here. 
 
-```bash
-git clone <repo-url>
-cd indic-modernBERT
-git submodule update --init --recursive   # if using submodules
-uv sync
-make validate-superbpe                   # optional smoke test
-make train-superbpe
+**Full corpus available:** Sangraha verified + unverified + synthetic Hindi — ~23.6B tokens across 274 shards (~89 GB). Scale up by downloading more shards.
+
+**Scale-up candidates:** Sangraha unverified Hindi, IndicCorp V2/V1.
+
+We use Parquet directly (no conversion to MDS/Mosaic format) — at ~100 GB on local NVMe, Parquet + DataLoader workers is just as fast without the preprocessing overhead. See `docs/LEARNINGS.md §4` for details on garbage collection and dataloader design. 
+
+### DataLoader settings (tuned on RTX 4090)
+
+| Setting | Value | Why |
+|---|---|---|
+| Train `num_workers` | **2** | Higher counts OOM'd workers with 8-shard loads |
+| Train `prefetch_factor` | **4** | Best latency/memory tradeoff |
+| Eval `num_workers` | **3** | Padded eval path is lighter; 3 workers is safe |
+| `packing_prefetch_factor` | **5** | Keeps the sequence packer buffer full |
+
+These are tuned for the packed training path on a 4090. Re-profile after changing batch size, shard count, or model depth.
+
+---
+
+## Repository layout
+
 ```
+indic-modernBERT/     main Python package
+  config/             Pydantic config schemas
+  model/modernbert/   encoder (attention, layers, RoPE, MLP, …)
+  pretrain/           training loop, DataLoader, optimizer, scheduler, callbacks
+  tokenizer/          BPE trainer, eval metrics
+  dataset/            Sangraha downloader
+
+configs/              YAML configs (tokenizer, model, pretrain phases, LR sweep)
+scripts/              run_pretrain.py, compare_bpe_vocabs.py, export_hf.py, …
+docs/                 LEARNINGS.md (this project's engineering journal), difference.md
+artifacts/            tokenizers and checkpoints (gitignored)
+notebook/             interactive walkthrough of the full pipeline
+_support_repo/        upstream ModernBERT reference (read-only; do not commit blindly)
+```
+
+---
+
+## Notes 
+
+> **Run everything from the repo root.** The Python package lives in `indic-modernBERT/` and uses flat imports (not pip-installable). Always `cd` to the repo root before running any command.
+
+## Further reading
+
+| Document | What's in it |
+|---|---|
+| `docs/LEARNINGS.md` | Engineering journal: every non-obvious decision, bug fix, and "why does this work" note |
+| `docs/difference.md` | Line-by-line comparison of our implementation vs. upstream ModernBERT |
+| `configs/model/README.md` | GPU hardware alignment notes (tensor cores, vocab sizing) |
+| `notebook/pipeline_map.ipynb` | Interactive walkthrough of the full training pipeline |
+
+Paper: [ModernBERT (arxiv:2412.13663)](https://arxiv.org/abs/2412.13663)

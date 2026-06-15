@@ -1,0 +1,48 @@
+# Production-faithful 50-batch smoke on a single GPU (RTX 4090 tuned).
+#
+# Inherits `hindi_mlm_phase1` (modernbert_base, FA2, torch.compile, packed unpadded,
+# fa_cross_entropy, decoupled_stableadamw, warmup_stable_decay, TensorBoard, production
+# callbacks). Duration, artifact paths, eval cadence, checkpointing, and batch sizing differ.
+#
+# Packed batch memory scales with `device_train_microbatch_size` (tokens/forward ≈ micro × 1024).
+# phase1 defaults (micro=8 + 500M-token packer warmup) leave most VRAM idle on a short smoke run.
+#
+# Run: make train-smoke-50ba
+defaults:
+  - hindi_mlm_phase1
+  - _self_
+
+hydra:
+  run:
+    dir: logs/smoke_50ba
+
+pretrain:
+  output_dir: artifacts/model/modernbert/smoke_50ba
+  save_folder: artifacts/model/modernbert/checkpoints/smoke_50ba
+  max_duration: 50ba
+  eval_interval: 25ba
+  save_interval: 25ba
+  save_num_checkpoints_to_keep: 1
+  save_overwrite: true
+  autoresume: false
+  progress_bar: true
+  log_to_console: false
+  # RTX 4090: micro=8 ≈ 3–4GB VRAM; micro=16 ≈ 10–12GB (+ compile headroom).
+  device_train_microbatch_size: 8
+  device_eval_microbatch_size: 8
+  # RTX 4090 dataloader sweep (packed path, 2 shards): 2 workers × prefetch 4 beats workers=0
+  # (~5.6 ms/batch vs ~14 ms). w≥4 OOM'd with mmap parquet.
+  num_workers: 2
+  dataloader_prefetch_factor: 4
+  eval_num_workers: 3
+  packing_prefetch_factor: 5
+  # Smoke is ~26M tokens — disable phase-1 500M packer warmup so batch is full from step 0.
+  batch_size_warmup_tokens: null
+  batch_size_warmup_min_size: null
+  callbacks:
+    train_step_logger:
+      log_microbatches: false
+      log_eval_batches: true
+  loggers:
+    tensorboard:
+      log_dir: artifacts/model/modernbert/tensorboard/smoke_50ba

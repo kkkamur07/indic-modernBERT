@@ -1,10 +1,11 @@
 [project]
 name = "indic-modernbert"
 version = "0.1.0"
-description = "Add your description here"
+description = "Extending ModernBERT to Other Indic Languages."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "einops",
     "huggingface_hub",
     "hydra-core",
     "indic-nlp-library",
@@ -12,15 +13,29 @@ dependencies = [
     "pyarrow",
     "protobuf",
     "pydantic",
-    "sentencepiece",
+    "pyyaml",
     "tqdm",
-    "tokenizers",
-    "transformers",
+    "tokenizers>=0.22.0,<=0.23.0",
+    "torch",
+    "transformers>=4.57.1",
 ]
 
 [tool.uv]
 package = false
 
-# Vendored SuperBPE patch: extends merges.txt during stage-2 training.
-[tool.uv.sources]
-tokenizers = { path = "_support_repo/superbpe/tokenizers_superbpe/bindings/python", editable = true }
+[project.optional-dependencies]
+viz = [
+    "matplotlib",
+]
+sweep = [
+    "hydra-optuna-sweeper",
+]
+pretrain = [
+    "composer",
+    "numba",
+    "tensorboard",
+    "torch-optimi",
+    "torchmetrics",
+    # flash-attn: unpadded RoPE + FA2 varlen (install manually if uv sync fails to build):
+    #   mkdir -p .tmp && TMPDIR=$PWD/.tmp uv pip install 'flash-attn>=2.6.3' --no-build-isolation
+]

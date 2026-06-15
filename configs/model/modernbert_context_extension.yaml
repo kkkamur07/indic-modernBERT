@@ -1,0 +1,5 @@
+# Phase-2 context extension — upstream modernbert-large-context-extension.yaml (Hindi base dims).
+extends: modernbert_base.yaml
+model_config:
+  rotary_emb_base: 160000.0
+  local_attn_rotary_emb_base: 10000.0

@@ -1,4 +1,4 @@
-"""Train a Hindi BPE tokenizer (MUTANT stage 1 / subword-only)."""
+"""Train a Hindi BPE tokenizer."""
 
 from __future__ import annotations
 
@@ -14,6 +14,8 @@ from utils.log_helpers import (
     log_vocab_training_complete,
     setup_training_run_log,
 )
+
+from tokenizer.pretokenization import PretokenizationStage
 
 from .common import (
     attach_cls_sep_processor,
@@ -31,6 +33,7 @@ def train_bpe(
     vocab_size: int,
     min_frequency: int,
     *,
+    pretokenization_stage: PretokenizationStage = "subword",
     use_script_norm: bool = True,
     use_nfkc: bool = True,
 ) -> Path:
@@ -38,8 +41,13 @@ def train_bpe(
 
     train_bpe_stage(
         tokenizer,
-        lambda: iter_corpus_texts(data_root, text_column, use_script_norm=use_script_norm),
-        pretokenization_stage="subword",
+        lambda: iter_corpus_texts(
+            data_root,
+            text_column,
+            use_script_norm=use_script_norm,
+            progress_desc=f"BPE vocab={vocab_size}",
+        ),
+        pretokenization_stage=pretokenization_stage,
         vocab_size=vocab_size,
         min_frequency=min_frequency,
         stage_name="BPE",
@@ -66,6 +74,7 @@ def main(cfg: DictConfig) -> None:
             text_column=bpe_cfg.text_column,
             vocab_size=run.vocab_size,
             min_frequency=bpe_cfg.min_frequency,
+            pretokenization_stage=pretok_cfg.stage,
             use_script_norm=pretok_cfg.use_script_norm,
             use_nfkc=pretok_cfg.use_nfkc,
         )

@@ -1,0 +1,42 @@
+# Phase-1 pretrain @ seq 1024, RoPE base 10k.
+# Corpus: ~23.617B tok (1 epoch) — see artifacts/corpus_stats/hindi_training_schedule.json
+defaults:
+  - hindi_mlm
+  - _self_
+
+pretrain:
+  max_seq_len: 1024
+  arch_config_path: configs/model/modernbert_base.yaml
+  save_folder: artifacts/model/modernbert/checkpoints/phase1
+  max_duration: 23617204995tok
+  global_train_batch_size: 512
+  device_train_microbatch_size: 8
+  global_eval_batch_size: 64
+  device_eval_microbatch_size: 8
+  eval_subset_num_batches: 50
+  eval_interval: 450ba
+  save_interval: 450ba
+  save_num_checkpoints_to_keep: 1
+  autoresume: true
+  progress_bar: true
+  loggers:
+    tensorboard:
+      log_dir: artifacts/model/modernbert/tensorboard/phase1
+  batch_size_warmup_tokens: 500000000tok
+  optimizer:
+    lr: 1e-4
+  scheduler:
+    name: warmup_stable_decay
+    t_warmup: 50000000tok
+    alpha_f: 0.0
+    t_decay: 0tok
+  callbacks:
+    speed_monitor:
+      window_size: 100
+    lr_monitor: {}
+    log_grad_norm:
+      batch_log_interval: 10
+    packing_efficiency:
+      log_interval: 10
+    save_best_checkpoints:
+      num_checkpoints: 3
