@@ -1,0 +1,47 @@
+{
+  "runs": [
+    {
+      "device": "NVIDIA GeForce RTX 4090 (25GB)",
+      "config": {
+        "arch": "/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml",
+        "max_seq_len": 1024,
+        "microbatch": 2,
+        "global_batch": 8,
+        "warmup_steps": 10,
+        "timed_steps": 35
+      },
+      "sweeps": {
+        "packed": {
+          "rows": [
+            {
+              "path": "packed",
+              "workers": 8,
+              "prefetch": 2,
+              "packing_prefetch": 5,
+              "data_wait_ms": 12.34,
+              "compute_ms": null,
+              "total_ms": 12.34,
+              "data_fraction": 1.0,
+              "steps_per_sec": 81.04,
+              "regime": "overhead-bound",
+              "data_only": true
+            }
+          ],
+          "best": {
+            "path": "packed",
+            "workers": 8,
+            "prefetch": 2,
+            "packing_prefetch": 5,
+            "data_wait_ms": 12.34,
+            "compute_ms": null,
+            "total_ms": 12.34,
+            "data_fraction": 1.0,
+            "steps_per_sec": 81.04,
+            "regime": "overhead-bound",
+            "data_only": true
+          }
+        }
+      }
+    }
+  ]
+}

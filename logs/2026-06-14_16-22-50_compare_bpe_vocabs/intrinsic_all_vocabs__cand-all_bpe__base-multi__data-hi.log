@@ -1,0 +1,47 @@
+2026-06-14 16:22:50 | INFO | Applying preprocess_for_eval (script norm + NFKC) to all tokenizers before encode
+2026-06-14 16:22:50 | INFO | Eval holdout | 1 shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/eval/hi | data-1.parquet
+2026-06-14 16:22:51 | INFO | Loading reference tokenizer: ai4bharat/IndicBERTv2-MLM-only
+2026-06-14 16:22:54 | INFO | Reference [IndicBERTv2-MLM-only] | 1/1 data-1.parquet | 174763 rows
+2026-06-14 16:26:52 | INFO | Reference [IndicBERTv2-MLM-only] | fertility=1.232761 | bytes/token=10.533753 | NSL=0.000000 | Rényi entropy=6.808760 | Rényi efficiency=0.379708
+2026-06-14 16:26:52 | INFO | Evaluating vocab_size=32768 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs32768/tokenizer.json
+2026-06-14 16:26:54 | INFO | BPE vs32768 | 1/1 data-1.parquet | 174763 rows
+2026-06-14 16:32:58 | INFO | BPE vs32768 | fertility=1.259537 | bytes/token=10.309820 | NSL=1.021720 | Rényi entropy=7.039924 | Rényi efficiency=0.469328
+2026-06-14 16:32:58 | INFO | Evaluating vocab_size=50368 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs50368/tokenizer.json
+2026-06-14 16:33:00 | INFO | BPE vs50368 | 1/1 data-1.parquet | 174763 rows
+2026-06-14 16:38:56 | INFO | BPE vs50368 | fertility=1.224093 | bytes/token=10.608347 | NSL=0.992968 | Rényi entropy=6.975050 | Rényi efficiency=0.446540
+2026-06-14 16:38:56 | INFO | Evaluating vocab_size=65536 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs65536/tokenizer.json
+2026-06-14 16:38:59 | INFO | BPE vs65536 | 1/1 data-1.parquet | 174763 rows
+2026-06-14 16:45:43 | INFO | BPE vs65536 | fertility=1.207810 | bytes/token=10.751367 | NSL=0.979759 | Rényi entropy=6.944477 | Rényi efficiency=0.434030
+2026-06-14 16:45:43 | INFO | Evaluating vocab_size=98304 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs98304/tokenizer.json
+2026-06-14 16:45:47 | INFO | BPE vs98304 | 1/1 data-1.parquet | 174763 rows
+2026-06-14 16:53:24 | INFO | BPE vs98304 | fertility=1.188407 | bytes/token=10.926901 | NSL=0.964020 | Rényi entropy=6.907289 | Rényi efficiency=0.416479
+2026-06-14 16:53:24 | INFO | Evaluating vocab_size=131072 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs131072/tokenizer.json
+2026-06-14 16:53:32 | INFO | BPE vs131072 | 1/1 data-1.parquet | 174763 rows
+2026-06-14 16:59:48 | INFO | BPE vs131072 | fertility=1.177816 | bytes/token=11.025154 | NSL=0.955429 | Rényi entropy=6.886808 | Rényi efficiency=0.405106
+2026-06-14 16:59:48 | INFO | Evaluating vocab_size=196608 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs196608/tokenizer.json
+2026-06-14 16:59:52 | INFO | BPE vs196608 | 1/1 data-1.parquet | 174763 rows
+2026-06-14 17:06:33 | INFO | BPE vs196608 | fertility=1.166178 | bytes/token=11.135182 | NSL=0.945988 | Rényi entropy=6.864041 | Rényi efficiency=0.390336
+2026-06-14 17:06:33 | INFO | Loading baseline tokenizer: sarvamai/sarvam-1
+2026-06-14 17:06:37 | INFO | Baseline [sarvam-1] | 1/1 data-1.parquet | 174763 rows
+2026-06-14 17:11:20 | INFO | Baseline [sarvam-1] | fertility=1.470724 | bytes/token=8.829397 | NSL=0.000000 | Rényi entropy=7.250129 | Rényi efficiency=0.451573
+2026-06-14 17:11:20 | INFO | Loading baseline tokenizer: google/gemma-4-E4B-it
+2026-06-14 17:11:26 | INFO | Baseline [gemma-4-E4B-it] | 1/1 data-1.parquet | 174763 rows
+2026-06-14 17:16:24 | INFO | Baseline [gemma-4-E4B-it] | fertility=1.389146 | bytes/token=9.347903 | NSL=0.000000 | Rényi entropy=7.133788 | Rényi efficiency=0.396322
+2026-06-14 17:16:24 | INFO | Loading baseline tokenizer: meta-llama/Llama-4-Scout-17B-16E-Instruct
+2026-06-14 17:16:28 | INFO | Baseline [Llama-4-Scout-17B-16E-Instruct] | 1/1 data-1.parquet | 174763 rows
+2026-06-14 17:23:29 | INFO | Baseline [Llama-4-Scout-17B-16E-Instruct] | fertility=1.729741 | bytes/token=7.507252 | NSL=0.000000 | Rényi entropy=7.649078 | Rényi efficiency=0.434369
+2026-06-14 17:23:29 | INFO | --- vocab comparison (eval holdout) ---
+2026-06-14 17:23:29 | INFO | label | fertility | bytes/token | NSL | Rényi eff | vocab
+2026-06-14 17:23:29 | INFO | Reference [IndicBERTv2-MLM-only] | 1.2328 | 10.5338 | 0.0000 | 0.3797 | 250000
+2026-06-14 17:23:29 | INFO | BPE vs32768 | 1.2595 | 10.3098 | 1.0217 | 0.4693 | 32768
+2026-06-14 17:23:29 | INFO | BPE vs50368 | 1.2241 | 10.6083 | 0.9930 | 0.4465 | 50368
+2026-06-14 17:23:29 | INFO | BPE vs65536 | 1.2078 | 10.7514 | 0.9798 | 0.4340 | 65536
+2026-06-14 17:23:29 | INFO | BPE vs98304 | 1.1884 | 10.9269 | 0.9640 | 0.4165 | 98304
+2026-06-14 17:23:29 | INFO | BPE vs131072 | 1.1778 | 11.0252 | 0.9554 | 0.4051 | 131072
+2026-06-14 17:23:29 | INFO | BPE vs196608 | 1.1662 | 11.1352 | 0.9460 | 0.3903 | 196608
+2026-06-14 17:23:29 | INFO | Baseline [sarvam-1] | 1.4707 | 8.8294 | 0.0000 | 0.4516 | 68096
+2026-06-14 17:23:29 | INFO | Baseline [gemma-4-E4B-it] | 1.3891 | 9.3479 | 0.0000 | 0.3963 | 262144
+2026-06-14 17:23:29 | INFO | Baseline [Llama-4-Scout-17B-16E-Instruct] | 1.7297 | 7.5073 | 0.0000 | 0.4344 | 200000
+2026-06-14 17:23:29 | INFO | Fertility comparison | Reference [IndicBERTv2-MLM-only]=1.2328 | BPE vs32768=1.2595 | BPE vs50368=1.2241 | BPE vs65536=1.2078 | BPE vs98304=1.1884 | BPE vs131072=1.1778 | BPE vs196608=1.1662 | Baseline [sarvam-1]=1.4707 | Baseline [gemma-4-E4B-it]=1.3891 | Baseline [Llama-4-Scout-17B-16E-Instruct]=1.7297 | lower is better
+2026-06-14 17:23:29 | INFO | Metric guide | fertility ↓ | bytes/token ↑ | NSL ↓ | Rényi efficiency ↑
+2026-06-14 17:23:29 | INFO | Hydra experiment log: /home/krrish/Desktop/Programming/indic-modernBERT/logs/2026-06-14_16-22-50_compare_bpe_vocabs/intrinsic_all_vocabs__cand-all_bpe__base-multi__data-hi.log

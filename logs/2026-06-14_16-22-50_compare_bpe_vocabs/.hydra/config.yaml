@@ -1,0 +1,30 @@
+tokenizer:
+  pretokenization:
+    use_script_norm: true
+    use_nfkc: true
+    stage: subword
+  trainer:
+    bpe:
+      data_root: data/sangrah_dataset
+      output_dir: artifacts/tokenizer/bpe
+      text_column: text
+      vocab_sizes:
+      - 32768
+      - 50368
+      - 65536
+      - 98304
+      - 131072
+      - 196608
+      min_frequency: 2
+  evals:
+    intrinsic:
+      data_root: data/eval/hi
+      max_shards: 1
+      text_column: text
+      baseline_tokenizer_names:
+      - ai4bharat/IndicBERTv2-MLM-only
+      - sarvamai/sarvam-1
+      - google/gemma-4-E4B-it
+      - meta-llama/Llama-4-Scout-17B-16E-Instruct
+      reference_tokenizer_name: ai4bharat/IndicBERTv2-MLM-only
+      renyi_alpha: 2.5

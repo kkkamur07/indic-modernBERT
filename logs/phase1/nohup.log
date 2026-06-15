@@ -1,0 +1,732 @@
+make[1]: Entering directory '/home/krrish/Desktop/Programming/indic-modernBERT'
+mkdir -p .tmp logs/phase1
+TMPDIR=/home/krrish/Desktop/Programming/indic-modernBERT/.tmp TORCHINDUCTOR_CACHE_DIR=/home/krrish/Desktop/Programming/indic-modernBERT/.tmp/torchinductor TRAIN_STEP_LOG=0 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 \
+  uv run --extra pretrain python scripts/run_pretrain.py --config-name hindi_mlm_phase1
+19:37:25 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml
+19:37:25 | INFO | Training data: 274 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset
+19:37:25 | INFO | Pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | max_duration=23617204995tok | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/phase1 | save_interval=450ba | save_keep=1 | autoresume=True | eval_interval=450ba | eval_batch=64 | save_best={'num_checkpoints': 3} | loggers=['tensorboard'] | load_path=None | reset_time=False | restart_override=False
+19:37:25 | INFO | MLM pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | train_packing=True | eval_packing=False | max_duration=23617204995tok | seq=1024 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml | eval_interval=450ba | save_interval=450ba | save_best={'num_checkpoints': 3} | load_path=None | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+[2026-06-15 19:37:25,810][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] FlexBertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly defined. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+19:37:27 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+19:37:27 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+19:37:27 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+19:37:27 | INFO | Disabling Composer progress bar (stdout is not a TTY). Use `make train-smoke-50ba` (script wrapper) or set log_to_console=true.
+[2026-06-15 19:37:27,984][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-15 19:37:28,035][composer.trainer.trainer][INFO] - Run name: hindi_modernbert_phase1
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/callbacks/speed_monitor.py:298: UserWarning: gpu_flop count not found for nvidia geforce rtx 4090 with precision=amp_bf16 so MFU cannot be calculated and reported. gpu_flops_available can be manually overridden by setting gpu_flops_available in SpeedMonitor or nvidia geforce rtx 4090 can be added to GPU_AVAILABLE_FLOPS in composer/callbacks/speed_monitor.py
+  self.gpu_flops_available = get_gpu_flops_available(state)
+[2026-06-15 19:37:28,123][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-15 19:37:28,123][composer.trainer.trainer][INFO] - Searching for a previous checkpoint to autoresume
+[2026-06-15 19:37:28,123][composer.trainer.trainer][INFO] - Looking for autoresume checkpoint: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/phase1/latest-rank0.pt (remote), /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/phase1/latest-rank0.pt (local)
+[2026-06-15 19:37:28,123][composer.trainer.trainer][INFO] - Checkpoint not found in: <composer.loggers.tensorboard_logger.TensorboardLogger object at 0x7f919d199fd0>
+[2026-06-15 19:37:28,123][composer.trainer.trainer][INFO] - Checkpoint not found in: <composer.loggers.console_logger.ConsoleLogger object at 0x7f919d187110>
+[2026-06-15 19:37:28,123][composer.trainer.trainer][INFO] - No previous autoresume checkpoint found
+[2026-06-15 19:37:28,124][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-15 19:37:28,124][composer.utils.reproducibility][INFO] - Setting seed to 17
+19:37:28 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=True | console_log_interval=100ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+[2026-06-15 19:37:28,125][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16
+******************************
+Config:
+composer_commit_hash: None
+composer_version: 0.32.1
+node_name: unknown because NODENAME environment variable not set
+num_gpus_per_node: 1
+num_nodes: 1
+rank_zero_seed: 17
+
+******************************
+19:37:35 | INFO | model | torch.compile start | first forward compiles embeddings + layers + head (may take several minutes; CPU-heavy)
+[transformers] `use_return_dict` is deprecated! Use `return_dict` instead!
+19:37:36 | INFO | model | torch.compile done | first forward finished in 1.4s
+[token=8148/23617204995]:
+	 Train time/epoch: 0
+	 Train trainer/packing_efficiency: 0.9946
+	 Train time/batch: 0
+	 Train time/sample: 0
+	 Train time/batch_in_epoch: 0
+	 Train time/sample_in_epoch: 0
+	 Train time/token: 0
+	 Train time/token_in_epoch: 0
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 10.9795
+	 Train time/train: 0.0021
+	 Train time/val: 0.0000
+	 Train time/total: 0.0021
+	 Train lr-StableAdamW/group0: 0.0000
+	 Train lr-StableAdamW/group1: 0.0000
+[token=1754860/23617204995]:
+	 Train time/batch: 99
+	 Train time/sample: 3855
+	 Train time/batch_in_epoch: 99
+	 Train time/sample_in_epoch: 3855
+	 Train time/token: 1722230
+	 Train time/token_in_epoch: 1722230
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 9.6780
+	 Train time/train: 0.0075
+	 Train time/val: 0.0000
+	 Train time/total: 0.0075
+	 Train lr-StableAdamW/group0: 0.0000
+	 Train lr-StableAdamW/group1: 0.0000
+	 Train gradient_norms/l1_norm: 2529.6875
+	 Train gradient_norms/l2_norm: 2.0509
+	 Train trainer/packing_efficiency: 0.9965
+[token=6163659/23617204995]:
+	 Train trainer/packing_efficiency: 0.9974
+	 Train time/batch: 199
+	 Train time/sample: 13398
+	 Train time/batch_in_epoch: 199
+	 Train time/sample_in_epoch: 13398
+	 Train time/token: 6106493
+	 Train time/token_in_epoch: 6106493
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 7.6701
+	 Train throughput/batches_per_sec: 2.1821
+	 Train throughput/samples_per_sec: 209.2594
+	 Train throughput/device/batches_per_sec: 2.1821
+	 Train throughput/device/samples_per_sec: 209.2594
+	 Train throughput/tokens_per_sec: 96202.5682
+	 Train throughput/device/tokens_per_sec: 96202.5682
+	 Train time/train: 0.0202
+	 Train time/val: 0.0000
+	 Train time/total: 0.0202
+	 Train lr-StableAdamW/group0: 0.0001
+	 Train lr-StableAdamW/group1: 0.0001
+	 Train gradient_norms/l1_norm: 1969.0879
+	 Train gradient_norms/l2_norm: 1.0637
+[token=13236430/23617204995]:
+	 Train trainer/packing_efficiency: 0.9985
+	 Train time/batch: 299
+	 Train time/sample: 28760
+	 Train time/batch_in_epoch: 299
+	 Train time/sample_in_epoch: 28760
+	 Train time/token: 13154829
+	 Train time/token_in_epoch: 13154829
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 6.7707
+	 Train throughput/batches_per_sec: 1.3966
+	 Train throughput/samples_per_sec: 215.1999
+	 Train throughput/device/batches_per_sec: 1.3966
+	 Train throughput/device/samples_per_sec: 215.1999
+	 Train throughput/tokens_per_sec: 98777.3157
+	 Train throughput/device/tokens_per_sec: 98777.3157
+	 Train time/train: 0.0401
+	 Train time/val: 0.0000
+	 Train time/total: 0.0401
+	 Train lr-StableAdamW/group0: 0.0001
+	 Train lr-StableAdamW/group1: 0.0001
+	 Train gradient_norms/l1_norm: 3664.0725
+	 Train gradient_norms/l2_norm: 1.1272
+[token=23002156/23617204995]:
+	 Train trainer/packing_efficiency: 0.9974
+	 Train time/batch: 399
+	 Train time/sample: 50045
+	 Train time/batch_in_epoch: 399
+	 Train time/sample_in_epoch: 50045
+	 Train time/token: 22887901
+	 Train time/token_in_epoch: 22887901
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 5.3491
+	 Train throughput/batches_per_sec: 1.0190
+	 Train throughput/samples_per_sec: 217.7175
+	 Train throughput/device/batches_per_sec: 1.0190
+	 Train throughput/device/samples_per_sec: 217.7175
+	 Train throughput/tokens_per_sec: 99516.4806
+	 Train throughput/device/tokens_per_sec: 99516.4806
+	 Train time/train: 0.0674
+	 Train time/val: 0.0000
+	 Train time/total: 0.0674
+	 Train lr-StableAdamW/group0: 0.0002
+	 Train lr-StableAdamW/group1: 0.0002
+	 Train gradient_norms/l1_norm: 4348.8926
+	 Train gradient_norms/l2_norm: 1.3865
+[Eval batch=1/50] Eval on eval data
+[Eval batch=6/50] Eval on eval data
+[Eval batch=11/50] Eval on eval data
+[Eval batch=16/50] Eval on eval data
+[Eval batch=21/50] Eval on eval data
+[Eval batch=26/50] Eval on eval data
+[Eval batch=30/50] Eval on eval data
+[Eval batch=35/50] Eval on eval data
+[Eval batch=40/50] Eval on eval data
+[Eval batch=45/50] Eval on eval data
+[Eval batch=50/50] Eval on eval data:
+	 Eval metrics/eval/EfficientCrossEntropy: 5.0961
+	 Eval metrics/eval/MaskedAccuracy: 0.3104
+19:42:38 | INFO | saved best checkpoint ba=450 loss=5.0961 acc=0.3104 → best-ba450-rank0 (keeping 1)
+[token=35481156/23617204995]:
+	 Train eval/loss: 5.0961
+	 Train eval/masked_accuracy: 0.3104
+	 Train trainer/packing_efficiency: 0.9977
+	 Train time/batch: 499
+	 Train time/sample: 77276
+	 Train time/batch_in_epoch: 499
+	 Train time/sample_in_epoch: 77276
+	 Train time/token: 35342190
+	 Train time/token_in_epoch: 35342190
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 4.5746
+	 Train throughput/batches_per_sec: 0.7903
+	 Train throughput/samples_per_sec: 215.7488
+	 Train throughput/device/batches_per_sec: 0.7903
+	 Train throughput/device/samples_per_sec: 215.7488
+	 Train throughput/tokens_per_sec: 98616.5198
+	 Train throughput/device/tokens_per_sec: 98616.5198
+	 Train time/train: 0.1025
+	 Train time/val: 0.0017
+	 Train time/total: 0.1042
+	 Train lr-StableAdamW/group0: 0.0003
+	 Train lr-StableAdamW/group1: 0.0003
+	 Train gradient_norms/l1_norm: 3982.6694
+	 Train gradient_norms/l2_norm: 1.3327
+[token=50621447/23617204995]:
+	 Train trainer/packing_efficiency: 0.9956
+	 Train time/batch: 599
+	 Train time/sample: 110435
+	 Train time/batch_in_epoch: 599
+	 Train time/sample_in_epoch: 110435
+	 Train time/token: 50458346
+	 Train time/token_in_epoch: 50458346
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 4.0511
+	 Train throughput/batches_per_sec: 0.6600
+	 Train throughput/samples_per_sec: 219.2264
+	 Train throughput/device/batches_per_sec: 0.6600
+	 Train throughput/device/samples_per_sec: 219.2264
+	 Train throughput/tokens_per_sec: 99926.2632
+	 Train throughput/device/tokens_per_sec: 99926.2632
+	 Train time/train: 0.1446
+	 Train time/val: 0.0017
+	 Train time/total: 0.1463
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 3135.6892
+	 Train gradient_norms/l2_norm: 1.0265
+[token=68432306/23617204995]:
+	 Train trainer/packing_efficiency: 0.9951
+	 Train time/batch: 699
+	 Train time/sample: 149288
+	 Train time/batch_in_epoch: 699
+	 Train time/sample_in_epoch: 149288
+	 Train time/token: 68244776
+	 Train time/token_in_epoch: 68244776
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 3.5983
+	 Train throughput/batches_per_sec: 0.5628
+	 Train throughput/samples_per_sec: 218.9193
+	 Train throughput/device/batches_per_sec: 0.5628
+	 Train throughput/device/samples_per_sec: 218.9193
+	 Train throughput/tokens_per_sec: 100237.5623
+	 Train throughput/device/tokens_per_sec: 100237.5623
+	 Train time/train: 0.1940
+	 Train time/val: 0.0017
+	 Train time/total: 0.1956
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2645.8010
+	 Train gradient_norms/l2_norm: 0.7899
+[token=88983542/23617204995]:
+	 Train trainer/packing_efficiency: 0.9981
+	 Train time/batch: 799
+	 Train time/sample: 198889
+	 Train time/batch_in_epoch: 799
+	 Train time/sample_in_epoch: 198889
+	 Train time/token: 88762890
+	 Train time/token_in_epoch: 88762890
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 3.4194
+	 Train throughput/batches_per_sec: 0.4887
+	 Train throughput/samples_per_sec: 243.0365
+	 Train throughput/device/batches_per_sec: 0.4887
+	 Train throughput/device/samples_per_sec: 243.0365
+	 Train throughput/tokens_per_sec: 100426.2646
+	 Train throughput/device/tokens_per_sec: 100426.2646
+	 Train time/train: 0.2508
+	 Train time/val: 0.0017
+	 Train time/total: 0.2525
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2667.8860
+	 Train gradient_norms/l2_norm: 0.7481
+[token=112218970/23617204995]:
+	 Train trainer/packing_efficiency: 0.9975
+	 Train time/batch: 899
+	 Train time/sample: 256081
+	 Train time/batch_in_epoch: 899
+	 Train time/sample_in_epoch: 256081
+	 Train time/token: 111973797
+	 Train time/token_in_epoch: 111973797
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 3.2048
+	 Train throughput/batches_per_sec: 0.4328
+	 Train throughput/samples_per_sec: 247.7482
+	 Train throughput/device/batches_per_sec: 0.4328
+	 Train throughput/device/samples_per_sec: 247.7482
+	 Train throughput/tokens_per_sec: 100570.1685
+	 Train throughput/device/tokens_per_sec: 100570.1685
+	 Train time/train: 0.3150
+	 Train time/val: 0.0017
+	 Train time/total: 0.3167
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2571.0425
+	 Train gradient_norms/l2_norm: 0.6841
+[Eval batch=1/50] Eval on eval data
+[Eval batch=6/50] Eval on eval data
+[Eval batch=11/50] Eval on eval data
+[Eval batch=16/50] Eval on eval data
+[Eval batch=21/50] Eval on eval data
+[Eval batch=26/50] Eval on eval data
+[Eval batch=30/50] Eval on eval data
+[Eval batch=35/50] Eval on eval data
+[Eval batch=40/50] Eval on eval data
+[Eval batch=45/50] Eval on eval data
+[Eval batch=50/50] Eval on eval data:
+	 Eval metrics/eval/EfficientCrossEntropy: 2.7484
+	 Eval metrics/eval/MaskedAccuracy: 0.5252
+19:56:38 | INFO | saved best checkpoint ba=900 loss=2.7484 acc=0.5252 → best-ba900-rank0 (keeping 2)
+[token=138121098/23617204995]:
+	 Train eval/loss: 2.7484
+	 Train eval/masked_accuracy: 0.5252
+	 Train trainer/packing_efficiency: 0.9984
+	 Train time/batch: 999
+	 Train time/sample: 319541
+	 Train time/batch_in_epoch: 999
+	 Train time/sample_in_epoch: 319541
+	 Train time/token: 137851422
+	 Train time/token_in_epoch: 137851422
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 3.0184
+	 Train throughput/batches_per_sec: 0.3845
+	 Train throughput/samples_per_sec: 244.3311
+	 Train throughput/device/batches_per_sec: 0.3845
+	 Train throughput/device/samples_per_sec: 244.3311
+	 Train throughput/tokens_per_sec: 99597.0331
+	 Train throughput/device/tokens_per_sec: 99597.0331
+	 Train time/train: 0.3872
+	 Train time/val: 0.0033
+	 Train time/total: 0.3906
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2796.6255
+	 Train gradient_norms/l2_norm: 0.7541
+[token=166720198/23617204995]:
+	 Train trainer/packing_efficiency: 0.9973
+	 Train time/batch: 1099
+	 Train time/sample: 384257
+	 Train time/batch_in_epoch: 1099
+	 Train time/sample_in_epoch: 384257
+	 Train time/token: 166417955
+	 Train time/token_in_epoch: 166417955
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.7431
+	 Train throughput/batches_per_sec: 0.3493
+	 Train throughput/samples_per_sec: 225.9938
+	 Train throughput/device/batches_per_sec: 0.3493
+	 Train throughput/device/samples_per_sec: 225.9938
+	 Train throughput/tokens_per_sec: 99902.9339
+	 Train throughput/device/tokens_per_sec: 99902.9339
+	 Train time/train: 0.4667
+	 Train time/val: 0.0033
+	 Train time/total: 0.4701
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2403.1201
+	 Train gradient_norms/l2_norm: 0.5847
+[token=198011118/23617204995]:
+	 Train trainer/packing_efficiency: 0.9968
+	 Train time/batch: 1199
+	 Train time/sample: 452515
+	 Train time/batch_in_epoch: 1199
+	 Train time/sample_in_epoch: 452515
+	 Train time/token: 197684778
+	 Train time/token_in_epoch: 197684778
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.6165
+	 Train throughput/batches_per_sec: 0.3194
+	 Train throughput/samples_per_sec: 218.1603
+	 Train throughput/device/batches_per_sec: 0.3194
+	 Train throughput/device/samples_per_sec: 218.1603
+	 Train throughput/tokens_per_sec: 99944.8815
+	 Train throughput/device/tokens_per_sec: 99944.8815
+	 Train time/train: 0.5537
+	 Train time/val: 0.0033
+	 Train time/total: 0.5570
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2294.6160
+	 Train gradient_norms/l2_norm: 0.5228
+[token=231972872/23617204995]:
+	 Train trainer/packing_efficiency: 0.9974
+	 Train time/batch: 1299
+	 Train time/sample: 526509
+	 Train time/batch_in_epoch: 1299
+	 Train time/sample_in_epoch: 526509
+	 Train time/token: 231621771
+	 Train time/token_in_epoch: 231621771
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.4811
+	 Train throughput/batches_per_sec: 0.2954
+	 Train throughput/samples_per_sec: 218.7512
+	 Train throughput/device/batches_per_sec: 0.2954
+	 Train throughput/device/samples_per_sec: 218.7512
+	 Train throughput/tokens_per_sec: 100330.5227
+	 Train throughput/device/tokens_per_sec: 100330.5227
+	 Train time/train: 0.6477
+	 Train time/val: 0.0033
+	 Train time/total: 0.6511
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2149.2031
+	 Train gradient_norms/l2_norm: 0.4528
+[Eval batch=1/50] Eval on eval data
+[Eval batch=6/50] Eval on eval data
+[Eval batch=11/50] Eval on eval data
+[Eval batch=16/50] Eval on eval data
+[Eval batch=21/50] Eval on eval data
+[Eval batch=26/50] Eval on eval data
+[Eval batch=30/50] Eval on eval data
+[Eval batch=35/50] Eval on eval data
+[Eval batch=40/50] Eval on eval data
+[Eval batch=45/50] Eval on eval data
+[Eval batch=50/50] Eval on eval data:
+	 Eval metrics/eval/EfficientCrossEntropy: 2.2867
+	 Eval metrics/eval/MaskedAccuracy: 0.5791
+20:19:42 | INFO | saved best checkpoint ba=1350 loss=2.2867 acc=0.5791 → best-ba1350-rank0 (keeping 3)
+[token=268614812/23617204995]:
+	 Train eval/loss: 2.2867
+	 Train eval/masked_accuracy: 0.5791
+	 Train trainer/packing_efficiency: 0.9972
+	 Train time/batch: 1399
+	 Train time/sample: 606122
+	 Train time/batch_in_epoch: 1399
+	 Train time/sample_in_epoch: 606122
+	 Train time/token: 268231701
+	 Train time/token_in_epoch: 268231701
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.4318
+	 Train throughput/batches_per_sec: 0.2730
+	 Train throughput/samples_per_sec: 217.5741
+	 Train throughput/device/batches_per_sec: 0.2730
+	 Train throughput/device/samples_per_sec: 217.5741
+	 Train throughput/tokens_per_sec: 100034.3271
+	 Train throughput/device/tokens_per_sec: 100034.3271
+	 Train time/train: 0.7495
+	 Train time/val: 0.0050
+	 Train time/total: 0.7544
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2138.7844
+	 Train gradient_norms/l2_norm: 0.4650
+[token=308028846/23617204995]:
+	 Train trainer/packing_efficiency: 0.9997
+	 Train time/batch: 1499
+	 Train time/sample: 693056
+	 Train time/batch_in_epoch: 1499
+	 Train time/sample_in_epoch: 693056
+	 Train time/token: 307619878
+	 Train time/token_in_epoch: 307619878
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.4344
+	 Train throughput/batches_per_sec: 0.2522
+	 Train throughput/samples_per_sec: 219.3858
+	 Train throughput/device/batches_per_sec: 0.2522
+	 Train throughput/device/samples_per_sec: 219.3858
+	 Train throughput/tokens_per_sec: 99382.5844
+	 Train throughput/device/tokens_per_sec: 99382.5844
+	 Train time/train: 0.8596
+	 Train time/val: 0.0050
+	 Train time/total: 0.8646
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1960.3002
+	 Train gradient_norms/l2_norm: 0.4425
+[token=350143980/23617204995]:
+	 Train trainer/packing_efficiency: 0.9976
+	 Train time/batch: 1599
+	 Train time/sample: 790888
+	 Train time/batch_in_epoch: 1599
+	 Train time/sample_in_epoch: 790888
+	 Train time/token: 349710602
+	 Train time/token_in_epoch: 349710602
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.5637
+	 Train throughput/batches_per_sec: 0.2358
+	 Train throughput/samples_per_sec: 230.9834
+	 Train throughput/device/batches_per_sec: 0.2358
+	 Train throughput/device/samples_per_sec: 230.9834
+	 Train throughput/tokens_per_sec: 99296.6755
+	 Train throughput/device/tokens_per_sec: 99296.6755
+	 Train time/train: 0.9775
+	 Train time/val: 0.0050
+	 Train time/total: 0.9824
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2030.6295
+	 Train gradient_norms/l2_norm: 0.4278
+[token=394889630/23617204995]:
+	 Train trainer/packing_efficiency: 0.9983
+	 Train time/batch: 1699
+	 Train time/sample: 900727
+	 Train time/batch_in_epoch: 1699
+	 Train time/sample_in_epoch: 900727
+	 Train time/token: 394431602
+	 Train time/token_in_epoch: 394431602
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.3829
+	 Train throughput/batches_per_sec: 0.2246
+	 Train throughput/samples_per_sec: 246.9420
+	 Train throughput/device/batches_per_sec: 0.2246
+	 Train throughput/device/samples_per_sec: 246.9420
+	 Train throughput/tokens_per_sec: 100519.2471
+	 Train throughput/device/tokens_per_sec: 100519.2471
+	 Train time/train: 1.1011
+	 Train time/val: 0.0050
+	 Train time/total: 1.1061
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1925.9161
+	 Train gradient_norms/l2_norm: 0.3923
+[token=442359328/23617204995]:
+	 Train trainer/packing_efficiency: 0.9981
+	 Train time/batch: 1799
+	 Train time/sample: 1017323
+	 Train time/batch_in_epoch: 1799
+	 Train time/sample_in_epoch: 1017323
+	 Train time/token: 441868657
+	 Train time/token_in_epoch: 441868657
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.3550
+	 Train throughput/batches_per_sec: 0.2118
+	 Train throughput/samples_per_sec: 247.1613
+	 Train throughput/device/batches_per_sec: 0.2118
+	 Train throughput/device/samples_per_sec: 247.1613
+	 Train throughput/tokens_per_sec: 100550.8244
+	 Train throughput/device/tokens_per_sec: 100550.8244
+	 Train time/train: 1.2322
+	 Train time/val: 0.0050
+	 Train time/total: 1.2372
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1831.0367
+	 Train gradient_norms/l2_norm: 0.3572
+[Eval batch=1/50] Eval on eval data
+[Eval batch=6/50] Eval on eval data
+[Eval batch=11/50] Eval on eval data
+[Eval batch=16/50] Eval on eval data
+[Eval batch=21/50] Eval on eval data
+[Eval batch=26/50] Eval on eval data
+[Eval batch=30/50] Eval on eval data
+[Eval batch=35/50] Eval on eval data
+[Eval batch=40/50] Eval on eval data
+[Eval batch=45/50] Eval on eval data
+[Eval batch=50/50] Eval on eval data:
+	 Eval metrics/eval/EfficientCrossEntropy: 1.9440
+	 Eval metrics/eval/MaskedAccuracy: 0.6251
+20:51:55 | INFO | saved best checkpoint ba=1800 loss=1.9440 acc=0.6251 → best-ba1800-rank0 (keeping 3)
+[token=492519686/23617204995]:
+	 Train eval/loss: 1.9440
+	 Train eval/masked_accuracy: 0.6251
+	 Train trainer/packing_efficiency: 0.9972
+	 Train time/batch: 1899
+	 Train time/sample: 1137856
+	 Train time/batch_in_epoch: 1899
+	 Train time/sample_in_epoch: 1137856
+	 Train time/token: 492004857
+	 Train time/token_in_epoch: 492004857
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.2243
+	 Train throughput/batches_per_sec: 0.1997
+	 Train throughput/samples_per_sec: 240.4427
+	 Train throughput/device/batches_per_sec: 0.1997
+	 Train throughput/device/samples_per_sec: 240.4427
+	 Train throughput/tokens_per_sec: 100149.4034
+	 Train throughput/device/tokens_per_sec: 100149.4034
+	 Train time/train: 1.3714
+	 Train time/val: 0.0066
+	 Train time/total: 1.3780
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1821.9640
+	 Train gradient_norms/l2_norm: 0.3724
+[token=544676214/23617204995]:
+	 Train trainer/packing_efficiency: 0.9970
+	 Train time/batch: 1999
+	 Train time/sample: 1251875
+	 Train time/batch_in_epoch: 1999
+	 Train time/sample_in_epoch: 1251875
+	 Train time/token: 544153715
+	 Train time/token_in_epoch: 544153715
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.1817
+	 Train throughput/batches_per_sec: 0.1925
+	 Train throughput/samples_per_sec: 219.5319
+	 Train throughput/device/batches_per_sec: 0.1925
+	 Train throughput/device/samples_per_sec: 219.5319
+	 Train throughput/tokens_per_sec: 100385.9357
+	 Train throughput/device/tokens_per_sec: 100385.9357
+	 Train time/train: 1.5157
+	 Train time/val: 0.0066
+	 Train time/total: 1.5223
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1810.9573
+	 Train gradient_norms/l2_norm: 0.3781
+[token=597066104/23617204995]:
+	 Train trainer/packing_efficiency: 0.9997
+	 Train time/batch: 2099
+	 Train time/sample: 1368646
+	 Train time/batch_in_epoch: 2099
+	 Train time/sample_in_epoch: 1368646
+	 Train time/token: 596541992
+	 Train time/token_in_epoch: 596541992
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.0889
+	 Train throughput/batches_per_sec: 0.1878
+	 Train throughput/samples_per_sec: 219.3521
+	 Train throughput/device/batches_per_sec: 0.1878
+	 Train throughput/device/samples_per_sec: 219.3521
+	 Train throughput/tokens_per_sec: 98383.0914
+	 Train throughput/device/tokens_per_sec: 98383.0914
+	 Train time/train: 1.6636
+	 Train time/val: 0.0066
+	 Train time/total: 1.6702
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1635.0216
+	 Train gradient_norms/l2_norm: 0.3339
+[token=649449093/23617204995]:
+	 Train trainer/packing_efficiency: 0.9968
+	 Train time/batch: 2199
+	 Train time/sample: 1484702
+	 Train time/batch_in_epoch: 2199
+	 Train time/sample_in_epoch: 1484702
+	 Train time/token: 648925933
+	 Train time/token_in_epoch: 648925933
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.2300
+	 Train throughput/batches_per_sec: 0.1882
+	 Train throughput/samples_per_sec: 218.2688
+	 Train throughput/device/batches_per_sec: 0.1882
+	 Train throughput/device/samples_per_sec: 218.2688
+	 Train throughput/tokens_per_sec: 98575.4680
+	 Train throughput/device/tokens_per_sec: 98575.4680
+	 Train time/train: 1.8112
+	 Train time/val: 0.0066
+	 Train time/total: 1.8178
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1889.2375
+	 Train gradient_norms/l2_norm: 0.4075
+[Eval batch=1/50] Eval on eval data
+[Eval batch=6/50] Eval on eval data
+[Eval batch=11/50] Eval on eval data
+[Eval batch=16/50] Eval on eval data
+[Eval batch=21/50] Eval on eval data
+[Eval batch=26/50] Eval on eval data
+[Eval batch=30/50] Eval on eval data
+[Eval batch=35/50] Eval on eval data
+[Eval batch=40/50] Eval on eval data
+[Eval batch=45/50] Eval on eval data
+[Eval batch=50/50] Eval on eval data:
+	 Eval metrics/eval/EfficientCrossEntropy: 1.9265
+	 Eval metrics/eval/MaskedAccuracy: 0.6257
+21:31:08 | INFO | saved best checkpoint ba=2250 loss=1.9265 acc=0.6257 → best-ba2250-rank0 (keeping 3)
+[token=701732896/23617204995]:
+	 Train eval/loss: 1.9265
+	 Train eval/masked_accuracy: 0.6257
+	 Train trainer/packing_efficiency: 0.9979
+	 Train time/batch: 2299
+	 Train time/sample: 1598842
+	 Train time/batch_in_epoch: 2299
+	 Train time/sample_in_epoch: 1598842
+	 Train time/token: 701209952
+	 Train time/token_in_epoch: 701209952
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.0992
+	 Train throughput/batches_per_sec: 0.1910
+	 Train throughput/samples_per_sec: 218.0513
+	 Train throughput/device/batches_per_sec: 0.1910
+	 Train throughput/device/samples_per_sec: 218.0513
+	 Train throughput/tokens_per_sec: 99867.3198
+	 Train throughput/device/tokens_per_sec: 99867.3198
+	 Train time/train: 1.9567
+	 Train time/val: 0.0082
+	 Train time/total: 1.9649
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1743.3597
+	 Train gradient_norms/l2_norm: 0.3386
+[token=754014660/23617204995]:
+	 Train trainer/packing_efficiency: 0.9968
+	 Train time/batch: 2399
+	 Train time/sample: 1712823
+	 Train time/batch_in_epoch: 2399
+	 Train time/sample_in_epoch: 1712823
+	 Train time/token: 753491875
+	 Train time/token_in_epoch: 753491875
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.0842
+	 Train throughput/batches_per_sec: 0.1918
+	 Train throughput/samples_per_sec: 218.6577
+	 Train throughput/device/batches_per_sec: 0.1918
+	 Train throughput/device/samples_per_sec: 218.6577
+	 Train throughput/tokens_per_sec: 100301.9305
+	 Train throughput/device/tokens_per_sec: 100301.9305
+	 Train time/train: 2.1014
+	 Train time/val: 0.0082
+	 Train time/total: 2.1097
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1726.6644
+	 Train gradient_norms/l2_norm: 0.3348
+[token=806309792/23617204995]:
+	 Train trainer/packing_efficiency: 0.9975
+	 Train time/batch: 2499
+	 Train time/sample: 1832798
+	 Train time/batch_in_epoch: 2499
+	 Train time/sample_in_epoch: 1832798
+	 Train time/token: 805786697
+	 Train time/token_in_epoch: 805786697
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.2387
+	 Train throughput/batches_per_sec: 0.1920
+	 Train throughput/samples_per_sec: 230.6053
+	 Train throughput/device/batches_per_sec: 0.1920
+	 Train throughput/device/samples_per_sec: 230.6053
+	 Train throughput/tokens_per_sec: 100388.1839
+	 Train throughput/device/tokens_per_sec: 100388.1839
+	 Train time/train: 2.2461
+	 Train time/val: 0.0082
+	 Train time/total: 2.2544
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 1712.0317
+	 Train gradient_norms/l2_norm: 0.3383
+[token=858630255/23617204995]:
+	 Train trainer/packing_efficiency: 0.9978
+	 Train time/batch: 2599
+	 Train time/sample: 1961058
+	 Train time/batch_in_epoch: 2599
+	 Train time/sample_in_epoch: 1961058
+	 Train time/token: 858106383
+	 Train time/token_in_epoch: 858106383
+	 Train trainer/device_train_microbatch_size: 8
+	 Train loss/train/total: 2.2454
+	 Train throughput/batches_per_sec: 0.1914
+	 Train throughput/samples_per_sec: 245.4337
+	 Train throughput/device/batches_per_sec: 0.1914
+	 Train throughput/device/samples_per_sec: 245.4337
+	 Train throughput/tokens_per_sec: 100159.9179
+	 Train throughput/device/tokens_per_sec: 100159.9179
+	 Train time/train: 2.3912
+	 Train time/val: 0.0082
+	 Train time/total: 2.3995
+	 Train lr-StableAdamW/group0: 0.0005
+	 Train lr-StableAdamW/group1: 0.0005
+	 Train gradient_norms/l1_norm: 2085.8169
+	 Train gradient_norms/l2_norm: 0.4791

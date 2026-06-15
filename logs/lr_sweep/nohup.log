@@ -1,0 +1,332 @@
+make[1]: Entering directory '/home/krrish/Desktop/Programming/indic-modernBERT'
+mkdir -p .tmp logs/lr_sweep
+TMPDIR=/home/krrish/Desktop/Programming/indic-modernBERT/.tmp TORCHINDUCTOR_CACHE_DIR=/home/krrish/Desktop/Programming/indic-modernBERT/.tmp/torchinductor TRAIN_STEP_LOG=0 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 \
+  uv run --extra pretrain --extra sweep python scripts/run_pretrain.py \
+  --config-path ../configs/sweep --config-name hindi_mlm_lr_sweep -m
+[2026-06-15 14:01:21,079][HYDRA] setup plugin alembic.autogenerate.schemas
+[2026-06-15 14:01:21,079][HYDRA] setup plugin alembic.autogenerate.tables
+[2026-06-15 14:01:21,079][HYDRA] setup plugin alembic.autogenerate.types
+[2026-06-15 14:01:21,079][HYDRA] setup plugin alembic.autogenerate.constraints
+[2026-06-15 14:01:21,079][HYDRA] setup plugin alembic.autogenerate.defaults
+[2026-06-15 14:01:21,079][HYDRA] setup plugin alembic.autogenerate.comments
+[32m[I 2026-06-15 14:01:21,267][0m A new study created in memory with name: hindi_mlm_lr[0m
+[2026-06-15 14:01:21,267][HYDRA] Study name: hindi_mlm_lr
+[2026-06-15 14:01:21,267][HYDRA] Storage: None
+[2026-06-15 14:01:21,267][HYDRA] Sampler: TPESampler
+[2026-06-15 14:01:21,267][HYDRA] Directions: ['minimize']
+[2026-06-15 14:01:21,268][HYDRA] Launching 1 jobs locally
+[2026-06-15 14:01:21,269][HYDRA] 	#0 : pretrain.optimizer.lr=3.6051579249446705e-05
+14:01:26 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml
+14:01:26 | INFO | Training data: 274 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset
+14:01:26 | INFO | Pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | max_duration=1000ba | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/lr_sweep/trial0_lr3.6051579249446705e-05 | save_interval=1000ba | save_keep=0 | autoresume=False | eval_interval=100ba | eval_batch=64 | save_best={'num_checkpoints': 1} | loggers=['tensorboard'] | load_path=None | reset_time=False | restart_override=False
+14:01:26 | INFO | MLM pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | train_packing=True | eval_packing=False | max_duration=1000ba | seq=1024 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml | eval_interval=100ba | save_interval=1000ba | save_best={'num_checkpoints': 1} | load_path=None | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+[2026-06-15 14:01:27,130][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] FlexBertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly defined. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+14:01:29 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+14:01:29 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+14:01:29 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+[2026-06-15 14:01:29,552][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-15 14:01:29,605][composer.trainer.trainer][INFO] - Run name: 1781524889-onyx-squirrel
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/callbacks/speed_monitor.py:298: UserWarning: gpu_flop count not found for nvidia geforce rtx 4090 with precision=amp_bf16 so MFU cannot be calculated and reported. gpu_flops_available can be manually overridden by setting gpu_flops_available in SpeedMonitor or nvidia geforce rtx 4090 can be added to GPU_AVAILABLE_FLOPS in composer/callbacks/speed_monitor.py
+  self.gpu_flops_available = get_gpu_flops_available(state)
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+[2026-06-15 14:01:29,693][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-15 14:01:29,694][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-15 14:01:29,694][composer.utils.reproducibility][INFO] - Setting seed to 17
+14:01:29 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=False | console_log_interval=100ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+[2026-06-15 14:01:29,695][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16
+[transformers] `use_return_dict` is deprecated! Use `return_dict` instead!
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+14:02:05 | INFO | saved best checkpoint ba=100 loss=8.0716 acc=0.0618 → best-ba100-rank0 (keeping 1)
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+14:02:58 | INFO | saved best checkpoint ba=200 loss=7.4151 acc=0.0921 → best-ba200-rank0 (keeping 1)
+14:04:17 | INFO | saved best checkpoint ba=300 loss=7.1127 acc=0.1356 → best-ba300-rank0 (keeping 1)
+14:06:02 | INFO | saved best checkpoint ba=400 loss=6.5597 acc=0.2043 → best-ba400-rank0 (keeping 1)
+14:08:15 | INFO | saved best checkpoint ba=500 loss=6.0944 acc=0.2457 → best-ba500-rank0 (keeping 1)
+14:10:53 | INFO | saved best checkpoint ba=600 loss=5.7278 acc=0.2721 → best-ba600-rank0 (keeping 1)
+14:13:58 | INFO | saved best checkpoint ba=700 loss=5.4847 acc=0.2886 → best-ba700-rank0 (keeping 1)
+14:17:29 | INFO | saved best checkpoint ba=800 loss=5.2164 acc=0.3088 → best-ba800-rank0 (keeping 1)
+14:21:27 | INFO | saved best checkpoint ba=900 loss=4.9403 acc=0.3278 → best-ba900-rank0 (keeping 1)
+14:25:52 | INFO | saved best checkpoint ba=1000 loss=4.7596 acc=0.3437 → best-ba1000-rank0 (keeping 1)
+14:25:54 | INFO | Pretrain complete | best_eval_loss=4.7596
+[2026-06-15 14:25:54,939][HYDRA] Launching 1 jobs locally
+[2026-06-15 14:25:54,939][HYDRA] 	#1 : pretrain.optimizer.lr=0.008557956374466455
+14:26:01 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml
+14:26:01 | INFO | Training data: 274 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset
+14:26:01 | INFO | Pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | max_duration=1000ba | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/lr_sweep/trial1_lr0.008557956374466455 | save_interval=1000ba | save_keep=0 | autoresume=False | eval_interval=100ba | eval_batch=64 | save_best={'num_checkpoints': 1} | loggers=['tensorboard'] | load_path=None | reset_time=False | restart_override=False
+14:26:01 | INFO | MLM pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | train_packing=True | eval_packing=False | max_duration=1000ba | seq=1024 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml | eval_interval=100ba | save_interval=1000ba | save_best={'num_checkpoints': 1} | load_path=None | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+[2026-06-15 14:26:01,337][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] FlexBertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly defined. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+14:26:02 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+14:26:02 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+14:26:02 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+[2026-06-15 14:26:02,748][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-15 14:26:02,798][composer.trainer.trainer][INFO] - Run name: 1781526362-shaggy-flamingo
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/callbacks/speed_monitor.py:298: UserWarning: gpu_flop count not found for nvidia geforce rtx 4090 with precision=amp_bf16 so MFU cannot be calculated and reported. gpu_flops_available can be manually overridden by setting gpu_flops_available in SpeedMonitor or nvidia geforce rtx 4090 can be added to GPU_AVAILABLE_FLOPS in composer/callbacks/speed_monitor.py
+  self.gpu_flops_available = get_gpu_flops_available(state)
+[2026-06-15 14:26:02,804][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-15 14:26:02,805][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-15 14:26:02,805][composer.utils.reproducibility][INFO] - Setting seed to 17
+14:26:02 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=False | console_log_interval=100ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+[2026-06-15 14:26:02,806][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+14:26:36 | INFO | saved best checkpoint ba=100 loss=7.8639 acc=0.0321 → best-ba100-rank0 (keeping 1)
+14:27:30 | INFO | saved best checkpoint ba=200 loss=7.7582 acc=0.0316 → best-ba200-rank0 (keeping 1)
+14:28:49 | INFO | saved best checkpoint ba=300 loss=7.6442 acc=0.0419 → best-ba300-rank0 (keeping 1)
+14:30:36 | INFO | saved best checkpoint ba=400 loss=7.5412 acc=0.0549 → best-ba400-rank0 (keeping 1)
+14:32:48 | INFO | saved best checkpoint ba=500 loss=7.4796 acc=0.0631 → best-ba500-rank0 (keeping 1)
+14:35:27 | INFO | saved best checkpoint ba=600 loss=7.3269 acc=0.0789 → best-ba600-rank0 (keeping 1)
+14:38:32 | INFO | saved best checkpoint ba=700 loss=7.1913 acc=0.0881 → best-ba700-rank0 (keeping 1)
+14:42:03 | INFO | saved best checkpoint ba=800 loss=7.1548 acc=0.0829 → best-ba800-rank0 (keeping 1)
+14:46:01 | INFO | saved best checkpoint ba=900 loss=6.9693 acc=0.0965 → best-ba900-rank0 (keeping 1)
+14:50:24 | INFO | saved best checkpoint ba=1000 loss=6.8130 acc=0.1086 → best-ba1000-rank0 (keeping 1)
+14:50:26 | INFO | Pretrain complete | best_eval_loss=6.8130
+[2026-06-15 14:50:27,044][HYDRA] Launching 1 jobs locally
+[2026-06-15 14:50:27,044][HYDRA] 	#2 : pretrain.optimizer.lr=2.7245636366489737e-06
+14:50:33 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml
+14:50:33 | INFO | Training data: 274 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset
+14:50:33 | INFO | Pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | max_duration=1000ba | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/lr_sweep/trial2_lr2.7245636366489737e-06 | save_interval=1000ba | save_keep=0 | autoresume=False | eval_interval=100ba | eval_batch=64 | save_best={'num_checkpoints': 1} | loggers=['tensorboard'] | load_path=None | reset_time=False | restart_override=False
+14:50:33 | INFO | MLM pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | train_packing=True | eval_packing=False | max_duration=1000ba | seq=1024 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml | eval_interval=100ba | save_interval=1000ba | save_best={'num_checkpoints': 1} | load_path=None | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+[2026-06-15 14:50:33,708][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] FlexBertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly defined. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+14:50:35 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+14:50:35 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+14:50:35 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+[2026-06-15 14:50:35,096][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-15 14:50:35,147][composer.trainer.trainer][INFO] - Run name: 1781527835-shiny-turtle
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/callbacks/speed_monitor.py:298: UserWarning: gpu_flop count not found for nvidia geforce rtx 4090 with precision=amp_bf16 so MFU cannot be calculated and reported. gpu_flops_available can be manually overridden by setting gpu_flops_available in SpeedMonitor or nvidia geforce rtx 4090 can be added to GPU_AVAILABLE_FLOPS in composer/callbacks/speed_monitor.py
+  self.gpu_flops_available = get_gpu_flops_available(state)
+[2026-06-15 14:50:35,153][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-15 14:50:35,153][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-15 14:50:35,153][composer.utils.reproducibility][INFO] - Setting seed to 17
+14:50:35 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=False | console_log_interval=100ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+[2026-06-15 14:50:35,154][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+14:51:09 | INFO | saved best checkpoint ba=100 loss=10.1266 acc=0.0416 → best-ba100-rank0 (keeping 1)
+14:52:03 | INFO | saved best checkpoint ba=200 loss=9.7676 acc=0.0512 → best-ba200-rank0 (keeping 1)
+14:53:23 | INFO | saved best checkpoint ba=300 loss=9.5023 acc=0.0530 → best-ba300-rank0 (keeping 1)
+14:55:09 | INFO | saved best checkpoint ba=400 loss=9.2505 acc=0.0562 → best-ba400-rank0 (keeping 1)
+14:57:22 | INFO | saved best checkpoint ba=500 loss=9.0288 acc=0.0570 → best-ba500-rank0 (keeping 1)
+15:00:02 | INFO | saved best checkpoint ba=600 loss=8.7930 acc=0.0610 → best-ba600-rank0 (keeping 1)
+15:03:08 | INFO | saved best checkpoint ba=700 loss=8.5998 acc=0.0642 → best-ba700-rank0 (keeping 1)
+15:06:40 | INFO | saved best checkpoint ba=800 loss=8.4004 acc=0.0679 → best-ba800-rank0 (keeping 1)
+15:10:39 | INFO | saved best checkpoint ba=900 loss=8.2283 acc=0.0693 → best-ba900-rank0 (keeping 1)
+15:15:05 | INFO | saved best checkpoint ba=1000 loss=8.0722 acc=0.0743 → best-ba1000-rank0 (keeping 1)
+15:15:07 | INFO | Pretrain complete | best_eval_loss=8.0722
+[2026-06-15 15:15:07,855][HYDRA] Launching 1 jobs locally
+[2026-06-15 15:15:07,855][HYDRA] 	#3 : pretrain.optimizer.lr=0.0004884555511755356
+15:15:13 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml
+15:15:13 | INFO | Training data: 274 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset
+15:15:13 | INFO | Pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | max_duration=1000ba | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/lr_sweep/trial3_lr0.0004884555511755356 | save_interval=1000ba | save_keep=0 | autoresume=False | eval_interval=100ba | eval_batch=64 | save_best={'num_checkpoints': 1} | loggers=['tensorboard'] | load_path=None | reset_time=False | restart_override=False
+15:15:13 | INFO | MLM pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | train_packing=True | eval_packing=False | max_duration=1000ba | seq=1024 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml | eval_interval=100ba | save_interval=1000ba | save_best={'num_checkpoints': 1} | load_path=None | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+[2026-06-15 15:15:14,000][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] FlexBertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly defined. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+15:15:15 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+15:15:15 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+15:15:15 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+[2026-06-15 15:15:15,927][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-15 15:15:15,977][composer.trainer.trainer][INFO] - Run name: 1781529315-cerise-quoll
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/callbacks/speed_monitor.py:298: UserWarning: gpu_flop count not found for nvidia geforce rtx 4090 with precision=amp_bf16 so MFU cannot be calculated and reported. gpu_flops_available can be manually overridden by setting gpu_flops_available in SpeedMonitor or nvidia geforce rtx 4090 can be added to GPU_AVAILABLE_FLOPS in composer/callbacks/speed_monitor.py
+  self.gpu_flops_available = get_gpu_flops_available(state)
+[2026-06-15 15:15:15,983][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-15 15:15:15,984][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-15 15:15:15,984][composer.utils.reproducibility][INFO] - Setting seed to 17
+15:15:15 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=False | console_log_interval=100ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+[2026-06-15 15:15:15,984][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+15:15:50 | INFO | saved best checkpoint ba=100 loss=6.7725 acc=0.1671 → best-ba100-rank0 (keeping 1)
+15:16:44 | INFO | saved best checkpoint ba=200 loss=5.1363 acc=0.3041 → best-ba200-rank0 (keeping 1)
+15:18:05 | INFO | saved best checkpoint ba=300 loss=4.4640 acc=0.3515 → best-ba300-rank0 (keeping 1)
+15:19:51 | INFO | saved best checkpoint ba=400 loss=4.0522 acc=0.3827 → best-ba400-rank0 (keeping 1)
+15:22:05 | INFO | saved best checkpoint ba=500 loss=3.7422 acc=0.4093 → best-ba500-rank0 (keeping 1)
+15:24:45 | INFO | saved best checkpoint ba=600 loss=3.4830 acc=0.4340 → best-ba600-rank0 (keeping 1)
+15:27:51 | INFO | saved best checkpoint ba=700 loss=3.2326 acc=0.4611 → best-ba700-rank0 (keeping 1)
+15:31:24 | INFO | saved best checkpoint ba=800 loss=2.7482 acc=0.5201 → best-ba800-rank0 (keeping 1)
+15:35:24 | INFO | saved best checkpoint ba=900 loss=2.5361 acc=0.5468 → best-ba900-rank0 (keeping 1)
+15:39:51 | INFO | saved best checkpoint ba=1000 loss=2.3911 acc=0.5652 → best-ba1000-rank0 (keeping 1)
+15:39:52 | INFO | Pretrain complete | best_eval_loss=2.3911
+[2026-06-15 15:39:53,718][HYDRA] Launching 1 jobs locally
+[2026-06-15 15:39:53,718][HYDRA] 	#4 : pretrain.optimizer.lr=1.4093959834841699e-05
+15:40:00 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml
+15:40:00 | INFO | Training data: 274 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset
+15:40:00 | INFO | Pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | max_duration=1000ba | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/lr_sweep/trial4_lr1.4093959834841699e-05 | save_interval=1000ba | save_keep=0 | autoresume=False | eval_interval=100ba | eval_batch=64 | save_best={'num_checkpoints': 1} | loggers=['tensorboard'] | load_path=None | reset_time=False | restart_override=False
+15:40:00 | INFO | MLM pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | train_packing=True | eval_packing=False | max_duration=1000ba | seq=1024 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml | eval_interval=100ba | save_interval=1000ba | save_best={'num_checkpoints': 1} | load_path=None | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+[2026-06-15 15:40:00,173][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] FlexBertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly defined. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+15:40:01 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+15:40:01 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+15:40:01 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+[2026-06-15 15:40:01,599][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-15 15:40:01,649][composer.trainer.trainer][INFO] - Run name: 1781530801-modest-pelican
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/callbacks/speed_monitor.py:298: UserWarning: gpu_flop count not found for nvidia geforce rtx 4090 with precision=amp_bf16 so MFU cannot be calculated and reported. gpu_flops_available can be manually overridden by setting gpu_flops_available in SpeedMonitor or nvidia geforce rtx 4090 can be added to GPU_AVAILABLE_FLOPS in composer/callbacks/speed_monitor.py
+  self.gpu_flops_available = get_gpu_flops_available(state)
+[2026-06-15 15:40:01,655][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-15 15:40:01,656][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-15 15:40:01,656][composer.utils.reproducibility][INFO] - Setting seed to 17
+15:40:01 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=False | console_log_interval=100ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+[2026-06-15 15:40:01,656][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+15:40:36 | INFO | saved best checkpoint ba=100 loss=9.1640 acc=0.0544 → best-ba100-rank0 (keeping 1)
+15:41:31 | INFO | saved best checkpoint ba=200 loss=8.2884 acc=0.0627 → best-ba200-rank0 (keeping 1)
+15:42:51 | INFO | saved best checkpoint ba=300 loss=7.7442 acc=0.0759 → best-ba300-rank0 (keeping 1)
+15:44:37 | INFO | saved best checkpoint ba=400 loss=7.4487 acc=0.0906 → best-ba400-rank0 (keeping 1)
+15:46:51 | INFO | saved best checkpoint ba=500 loss=7.2961 acc=0.1125 → best-ba500-rank0 (keeping 1)
+15:49:31 | INFO | saved best checkpoint ba=600 loss=7.1072 acc=0.1404 → best-ba600-rank0 (keeping 1)
+15:52:38 | INFO | saved best checkpoint ba=700 loss=6.8485 acc=0.1742 → best-ba700-rank0 (keeping 1)
+15:56:11 | INFO | saved best checkpoint ba=800 loss=6.5838 acc=0.1981 → best-ba800-rank0 (keeping 1)
+16:00:11 | INFO | saved best checkpoint ba=900 loss=6.4845 acc=0.2026 → best-ba900-rank0 (keeping 1)
+16:04:38 | INFO | saved best checkpoint ba=1000 loss=6.1375 acc=0.2371 → best-ba1000-rank0 (keeping 1)
+16:04:39 | INFO | Pretrain complete | best_eval_loss=6.1375
+[2026-06-15 16:04:40,739][HYDRA] Launching 1 jobs locally
+[2026-06-15 16:04:40,739][HYDRA] 	#5 : pretrain.optimizer.lr=2.7609881437261726e-06
+16:04:47 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml
+16:04:47 | INFO | Training data: 274 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset
+16:04:47 | INFO | Pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | max_duration=1000ba | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/lr_sweep/trial5_lr2.7609881437261726e-06 | save_interval=1000ba | save_keep=0 | autoresume=False | eval_interval=100ba | eval_batch=64 | save_best={'num_checkpoints': 1} | loggers=['tensorboard'] | load_path=None | reset_time=False | restart_override=False
+16:04:47 | INFO | MLM pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | train_packing=True | eval_packing=False | max_duration=1000ba | seq=1024 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml | eval_interval=100ba | save_interval=1000ba | save_best={'num_checkpoints': 1} | load_path=None | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+[2026-06-15 16:04:47,278][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] FlexBertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly defined. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+16:04:48 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+16:04:48 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+16:04:48 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+[2026-06-15 16:04:48,757][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-15 16:04:48,808][composer.trainer.trainer][INFO] - Run name: 1781532288-fancy-toad
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/callbacks/speed_monitor.py:298: UserWarning: gpu_flop count not found for nvidia geforce rtx 4090 with precision=amp_bf16 so MFU cannot be calculated and reported. gpu_flops_available can be manually overridden by setting gpu_flops_available in SpeedMonitor or nvidia geforce rtx 4090 can be added to GPU_AVAILABLE_FLOPS in composer/callbacks/speed_monitor.py
+  self.gpu_flops_available = get_gpu_flops_available(state)
+[2026-06-15 16:04:48,814][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-15 16:04:48,814][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-15 16:04:48,814][composer.utils.reproducibility][INFO] - Setting seed to 17
+16:04:48 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=False | console_log_interval=100ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+[2026-06-15 16:04:48,815][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+16:05:23 | INFO | saved best checkpoint ba=100 loss=10.1214 acc=0.0419 → best-ba100-rank0 (keeping 1)
+16:06:18 | INFO | saved best checkpoint ba=200 loss=9.7606 acc=0.0511 → best-ba200-rank0 (keeping 1)
+16:07:38 | INFO | saved best checkpoint ba=300 loss=9.4934 acc=0.0530 → best-ba300-rank0 (keeping 1)
+16:09:25 | INFO | saved best checkpoint ba=400 loss=9.2392 acc=0.0562 → best-ba400-rank0 (keeping 1)
+16:11:38 | INFO | saved best checkpoint ba=500 loss=9.0152 acc=0.0572 → best-ba500-rank0 (keeping 1)
+16:14:19 | INFO | saved best checkpoint ba=600 loss=8.7776 acc=0.0611 → best-ba600-rank0 (keeping 1)
+16:17:25 | INFO | saved best checkpoint ba=700 loss=8.5832 acc=0.0644 → best-ba700-rank0 (keeping 1)
+16:20:58 | INFO | saved best checkpoint ba=800 loss=8.3831 acc=0.0680 → best-ba800-rank0 (keeping 1)
+16:24:58 | INFO | saved best checkpoint ba=900 loss=8.2103 acc=0.0697 → best-ba900-rank0 (keeping 1)
+16:29:25 | INFO | saved best checkpoint ba=1000 loss=8.0538 acc=0.0749 → best-ba1000-rank0 (keeping 1)
+16:29:26 | INFO | Pretrain complete | best_eval_loss=8.0538
+[2026-06-15 16:29:27,936][HYDRA] Launching 1 jobs locally
+[2026-06-15 16:29:27,936][HYDRA] 	#6 : pretrain.optimizer.lr=5.119019929029682e-06
+16:29:34 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml
+16:29:34 | INFO | Training data: 274 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset
+16:29:34 | INFO | Pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | max_duration=1000ba | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/lr_sweep/trial6_lr5.119019929029682e-06 | save_interval=1000ba | save_keep=0 | autoresume=False | eval_interval=100ba | eval_batch=64 | save_best={'num_checkpoints': 1} | loggers=['tensorboard'] | load_path=None | reset_time=False | restart_override=False
+16:29:34 | INFO | MLM pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | train_packing=True | eval_packing=False | max_duration=1000ba | seq=1024 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml | eval_interval=100ba | save_interval=1000ba | save_best={'num_checkpoints': 1} | load_path=None | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+[2026-06-15 16:29:34,594][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] FlexBertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly defined. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+16:29:35 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+16:29:35 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+16:29:36 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+[2026-06-15 16:29:36,027][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-15 16:29:36,077][composer.trainer.trainer][INFO] - Run name: 1781533776-godlike-buzzard
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/callbacks/speed_monitor.py:298: UserWarning: gpu_flop count not found for nvidia geforce rtx 4090 with precision=amp_bf16 so MFU cannot be calculated and reported. gpu_flops_available can be manually overridden by setting gpu_flops_available in SpeedMonitor or nvidia geforce rtx 4090 can be added to GPU_AVAILABLE_FLOPS in composer/callbacks/speed_monitor.py
+  self.gpu_flops_available = get_gpu_flops_available(state)
+[2026-06-15 16:29:36,083][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-15 16:29:36,084][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-15 16:29:36,084][composer.utils.reproducibility][INFO] - Setting seed to 17
+16:29:36 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=False | console_log_interval=100ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+[2026-06-15 16:29:36,085][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+16:30:11 | INFO | saved best checkpoint ba=100 loss=9.8455 acc=0.0488 → best-ba100-rank0 (keeping 1)
+16:31:05 | INFO | saved best checkpoint ba=200 loss=9.3708 acc=0.0546 → best-ba200-rank0 (keeping 1)
+16:32:25 | INFO | saved best checkpoint ba=300 loss=8.9679 acc=0.0567 → best-ba300-rank0 (keeping 1)
+16:34:12 | INFO | saved best checkpoint ba=400 loss=8.5868 acc=0.0619 → best-ba400-rank0 (keeping 1)
+16:36:27 | INFO | saved best checkpoint ba=500 loss=8.2812 acc=0.0659 → best-ba500-rank0 (keeping 1)
+16:39:08 | INFO | saved best checkpoint ba=600 loss=7.9952 acc=0.0738 → best-ba600-rank0 (keeping 1)
+16:42:14 | INFO | saved best checkpoint ba=700 loss=7.7831 acc=0.0810 → best-ba700-rank0 (keeping 1)
+16:45:49 | INFO | saved best checkpoint ba=800 loss=7.5861 acc=0.0876 → best-ba800-rank0 (keeping 1)
+16:49:49 | INFO | saved best checkpoint ba=900 loss=7.4523 acc=0.0928 → best-ba900-rank0 (keeping 1)
+16:54:16 | INFO | saved best checkpoint ba=1000 loss=7.3405 acc=0.1070 → best-ba1000-rank0 (keeping 1)
+16:54:18 | INFO | Pretrain complete | best_eval_loss=7.3405
+[2026-06-15 16:54:19,748][HYDRA] Launching 1 jobs locally
+[2026-06-15 16:54:19,748][HYDRA] 	#7 : pretrain.optimizer.lr=3.378479250172018e-06
+16:54:26 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml
+16:54:26 | INFO | Training data: 274 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/sangrah_dataset
+16:54:26 | INFO | Pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | max_duration=1000ba | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/lr_sweep/trial7_lr3.378479250172018e-06 | save_interval=1000ba | save_keep=0 | autoresume=False | eval_interval=100ba | eval_batch=64 | save_best={'num_checkpoints': 1} | loggers=['tensorboard'] | load_path=None | reset_time=False | restart_override=False
+16:54:26 | INFO | MLM pretrain | global_batch=512 | microbatch=8 | grad_accum=64 | train_packing=True | eval_packing=False | max_duration=1000ba | seq=1024 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_base.yaml | eval_interval=100ba | save_interval=1000ba | save_best={'num_checkpoints': 1} | load_path=None | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+[2026-06-15 16:54:26,458][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] FlexBertForMaskedLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly defined. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+16:54:27 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+16:54:27 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+16:54:27 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+[2026-06-15 16:54:27,935][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-15 16:54:27,985][composer.trainer.trainer][INFO] - Run name: 1781535267-brave-civet
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/callbacks/speed_monitor.py:298: UserWarning: gpu_flop count not found for nvidia geforce rtx 4090 with precision=amp_bf16 so MFU cannot be calculated and reported. gpu_flops_available can be manually overridden by setting gpu_flops_available in SpeedMonitor or nvidia geforce rtx 4090 can be added to GPU_AVAILABLE_FLOPS in composer/callbacks/speed_monitor.py
+  self.gpu_flops_available = get_gpu_flops_available(state)
+[2026-06-15 16:54:27,991][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-15 16:54:27,992][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-15 16:54:27,992][composer.utils.reproducibility][INFO] - Setting seed to 17
+16:54:27 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=False | console_log_interval=100ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+[2026-06-15 16:54:27,992][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16
+/home/krrish/Desktop/Programming/indic-modernBERT/.venv/lib/python3.11/site-packages/composer/optim/scheduler.py:200: UserWarning: The warmup duration is 0. If you specified warmup as a fraction of total
+training duration, take note that the warmup duration is calculated in the
+same unit as the trainer's max_duration parameter.
+  return scheduler(state, ssr)
+16:55:03 | INFO | saved best checkpoint ba=100 loss=10.0381 acc=0.0455 → best-ba100-rank0 (keeping 1)
+16:55:57 | INFO | saved best checkpoint ba=200 loss=9.6480 acc=0.0514 → best-ba200-rank0 (keeping 1)
+16:57:17 | INFO | saved best checkpoint ba=300 loss=9.3472 acc=0.0546 → best-ba300-rank0 (keeping 1)
+16:59:04 | INFO | saved best checkpoint ba=400 loss=9.0521 acc=0.0577 → best-ba400-rank0 (keeping 1)
+17:01:17 | INFO | saved best checkpoint ba=500 loss=8.7964 acc=0.0589 → best-ba500-rank0 (keeping 1)
+17:03:58 | INFO | saved best checkpoint ba=600 loss=8.5332 acc=0.0649 → best-ba600-rank0 (keeping 1)
+17:07:05 | INFO | saved best checkpoint ba=700 loss=8.3262 acc=0.0680 → best-ba700-rank0 (keeping 1)
+17:10:38 | INFO | saved best checkpoint ba=800 loss=8.1162 acc=0.0729 → best-ba800-rank0 (keeping 1)
+17:14:39 | INFO | saved best checkpoint ba=900 loss=7.9350 acc=0.0772 → best-ba900-rank0 (keeping 1)
+17:19:05 | INFO | saved best checkpoint ba=1000 loss=7.7776 acc=0.0826 → best-ba1000-rank0 (keeping 1)
+17:19:07 | INFO | Pretrain complete | best_eval_loss=7.7776
+[2026-06-15 17:19:08,865][HYDRA] Best parameters: {'pretrain.optimizer.lr': 0.0004884555511755356}
+[2026-06-15 17:19:08,865][HYDRA] Best value: 2.3911194801330566
+make[1]: Leaving directory '/home/krrish/Desktop/Programming/indic-modernBERT'

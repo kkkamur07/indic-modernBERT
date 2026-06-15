@@ -17,7 +17,6 @@ Experiments/
 experiments/
 
 # Run output (Hydra, nohup, inductor cache)
-logs/
 multirun/
 
 # Data
@@ -26,4 +25,11 @@ data/
 # SuperBPE Patch
 _support_repo/**/target/
 _support_repo/**/tokenizer_json/
-artifacts/
+# Artifacts — ignore all except tensorboard event logs
+artifacts/*
+!artifacts/model/
+artifacts/model/*
+!artifacts/model/modernbert/
+artifacts/model/modernbert/*
+!artifacts/model/modernbert/tensorboard/
+!artifacts/model/modernbert/tensorboard/**

@@ -1,0 +1,78 @@
+make[1]: Entering directory '/home/krrish/Desktop/Programming/indic-modernBERT'
+uv run python scripts/compare_bpe_vocabs.py
+16:22:50 | INFO | Applying preprocess_for_eval (script norm + NFKC) to all tokenizers before encode
+16:22:50 | INFO | Eval holdout | 1 shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/eval/hi | data-1.parquet
+[2026-06-14 16:22:50,496][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-14 16:22:50,509][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/config.json "HTTP/1.1 200 OK"
+[2026-06-14 16:22:50,639][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-14 16:22:50,653][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-14 16:22:50,776][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-14 16:22:50,790][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-14 16:22:50,921][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+[2026-06-14 16:22:51,044][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+[2026-06-14 16:22:51,628][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only "HTTP/1.1 200 OK"
+16:22:51 | INFO | Loading reference tokenizer: ai4bharat/IndicBERTv2-MLM-only
+16:22:54 | INFO | Reference [IndicBERTv2-MLM-only] | 1/1 data-1.parquet | 174763 rows
+16:26:52 | INFO | Reference [IndicBERTv2-MLM-only] | fertility=1.232761 | bytes/token=10.533753 | NSL=0.000000 | Rényi entropy=6.808760 | Rényi efficiency=0.379708
+16:26:52 | INFO | Evaluating vocab_size=32768 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs32768/tokenizer.json
+16:26:54 | INFO | BPE vs32768 | 1/1 data-1.parquet | 174763 rows
+16:32:58 | INFO | BPE vs32768 | fertility=1.259537 | bytes/token=10.309820 | NSL=1.021720 | Rényi entropy=7.039924 | Rényi efficiency=0.469328
+16:32:58 | INFO | Evaluating vocab_size=50368 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs50368/tokenizer.json
+16:33:00 | INFO | BPE vs50368 | 1/1 data-1.parquet | 174763 rows
+16:38:56 | INFO | BPE vs50368 | fertility=1.224093 | bytes/token=10.608347 | NSL=0.992968 | Rényi entropy=6.975050 | Rényi efficiency=0.446540
+16:38:56 | INFO | Evaluating vocab_size=65536 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs65536/tokenizer.json
+16:38:59 | INFO | BPE vs65536 | 1/1 data-1.parquet | 174763 rows
+16:45:43 | INFO | BPE vs65536 | fertility=1.207810 | bytes/token=10.751367 | NSL=0.979759 | Rényi entropy=6.944477 | Rényi efficiency=0.434030
+16:45:43 | INFO | Evaluating vocab_size=98304 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs98304/tokenizer.json
+16:45:47 | INFO | BPE vs98304 | 1/1 data-1.parquet | 174763 rows
+16:53:24 | INFO | BPE vs98304 | fertility=1.188407 | bytes/token=10.926901 | NSL=0.964020 | Rényi entropy=6.907289 | Rényi efficiency=0.416479
+16:53:24 | INFO | Evaluating vocab_size=131072 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs131072/tokenizer.json
+16:53:32 | INFO | BPE vs131072 | 1/1 data-1.parquet | 174763 rows
+16:59:48 | INFO | BPE vs131072 | fertility=1.177816 | bytes/token=11.025154 | NSL=0.955429 | Rényi entropy=6.886808 | Rényi efficiency=0.405106
+16:59:48 | INFO | Evaluating vocab_size=196608 | /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/tokenizer/bpe_vs196608/tokenizer.json
+16:59:52 | INFO | BPE vs196608 | 1/1 data-1.parquet | 174763 rows
+17:06:33 | INFO | BPE vs196608 | fertility=1.166178 | bytes/token=11.135182 | NSL=0.945988 | Rényi entropy=6.864041 | Rényi efficiency=0.390336
+17:06:33 | INFO | Loading baseline tokenizer: sarvamai/sarvam-1
+[2026-06-14 17:06:33,487][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/sarvamai/sarvam-1/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-14 17:06:33,505][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sarvamai/sarvam-1/e9607337286ddf496d4a2562b194e489dcf3feea/config.json "HTTP/1.1 200 OK"
+[2026-06-14 17:06:33,645][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/sarvamai/sarvam-1/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-14 17:06:33,659][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sarvamai/sarvam-1/e9607337286ddf496d4a2562b194e489dcf3feea/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-14 17:06:33,800][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/sarvamai/sarvam-1/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+[2026-06-14 17:06:33,925][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/sarvamai/sarvam-1/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+17:06:37 | INFO | Baseline [sarvam-1] | 1/1 data-1.parquet | 174763 rows
+17:11:20 | INFO | Baseline [sarvam-1] | fertility=1.470724 | bytes/token=8.829397 | NSL=0.000000 | Rényi entropy=7.250129 | Rényi efficiency=0.451573
+17:11:20 | INFO | Loading baseline tokenizer: google/gemma-4-E4B-it
+[2026-06-14 17:11:20,641][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/google/gemma-4-E4B-it/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-14 17:11:20,655][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/google/gemma-4-E4B-it/fee6332c1abaafb77f6f9624236c63aa2f1d0187/config.json "HTTP/1.1 200 OK"
+[2026-06-14 17:11:20,784][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/google/gemma-4-E4B-it/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-14 17:11:20,798][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/google/gemma-4-E4B-it/fee6332c1abaafb77f6f9624236c63aa2f1d0187/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-14 17:11:20,922][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/google/gemma-4-E4B-it/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+[2026-06-14 17:11:21,045][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/google/gemma-4-E4B-it/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+[2026-06-14 17:11:23,086][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/google/gemma-4-E4B-it "HTTP/1.1 200 OK"
+17:11:26 | INFO | Baseline [gemma-4-E4B-it] | 1/1 data-1.parquet | 174763 rows
+17:16:24 | INFO | Baseline [gemma-4-E4B-it] | fertility=1.389146 | bytes/token=9.347903 | NSL=0.000000 | Rényi entropy=7.133788 | Rényi efficiency=0.396322
+17:16:24 | INFO | Loading baseline tokenizer: meta-llama/Llama-4-Scout-17B-16E-Instruct
+[2026-06-14 17:16:24,192][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct/resolve/main/config.json "HTTP/1.1 200 OK"
+[transformers] `rope_parameters`'s high_freq_factor field must be greater than low_freq_factor, got high_freq_factor=1.0 and low_freq_factor=1.0
+[2026-06-14 17:16:24,324][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct/resolve/main/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-14 17:16:24,453][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/meta-llama/Llama-4-Scout-17B-16E-Instruct/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+[2026-06-14 17:16:24,581][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/meta-llama/Llama-4-Scout-17B-16E-Instruct/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+[2026-06-14 17:16:25,804][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/meta-llama/Llama-4-Scout-17B-16E-Instruct "HTTP/1.1 200 OK"
+17:16:28 | INFO | Baseline [Llama-4-Scout-17B-16E-Instruct] | 1/1 data-1.parquet | 174763 rows
+17:23:29 | INFO | Baseline [Llama-4-Scout-17B-16E-Instruct] | fertility=1.729741 | bytes/token=7.507252 | NSL=0.000000 | Rényi entropy=7.649078 | Rényi efficiency=0.434369
+17:23:29 | INFO | --- vocab comparison (eval holdout) ---
+17:23:29 | INFO | label | fertility | bytes/token | NSL | Rényi eff | vocab
+17:23:29 | INFO | Reference [IndicBERTv2-MLM-only] | 1.2328 | 10.5338 | 0.0000 | 0.3797 | 250000
+17:23:29 | INFO | BPE vs32768 | 1.2595 | 10.3098 | 1.0217 | 0.4693 | 32768
+17:23:29 | INFO | BPE vs50368 | 1.2241 | 10.6083 | 0.9930 | 0.4465 | 50368
+17:23:29 | INFO | BPE vs65536 | 1.2078 | 10.7514 | 0.9798 | 0.4340 | 65536
+17:23:29 | INFO | BPE vs98304 | 1.1884 | 10.9269 | 0.9640 | 0.4165 | 98304
+17:23:29 | INFO | BPE vs131072 | 1.1778 | 11.0252 | 0.9554 | 0.4051 | 131072
+17:23:29 | INFO | BPE vs196608 | 1.1662 | 11.1352 | 0.9460 | 0.3903 | 196608
+17:23:29 | INFO | Baseline [sarvam-1] | 1.4707 | 8.8294 | 0.0000 | 0.4516 | 68096
+17:23:29 | INFO | Baseline [gemma-4-E4B-it] | 1.3891 | 9.3479 | 0.0000 | 0.3963 | 262144
+17:23:29 | INFO | Baseline [Llama-4-Scout-17B-16E-Instruct] | 1.7297 | 7.5073 | 0.0000 | 0.4344 | 200000
+17:23:29 | INFO | Fertility comparison | Reference [IndicBERTv2-MLM-only]=1.2328 | BPE vs32768=1.2595 | BPE vs50368=1.2241 | BPE vs65536=1.2078 | BPE vs98304=1.1884 | BPE vs131072=1.1778 | BPE vs196608=1.1662 | Baseline [sarvam-1]=1.4707 | Baseline [gemma-4-E4B-it]=1.3891 | Baseline [Llama-4-Scout-17B-16E-Instruct]=1.7297 | lower is better
+17:23:29 | INFO | Metric guide | fertility ↓ | bytes/token ↑ | NSL ↓ | Rényi efficiency ↑
+17:23:29 | INFO | Hydra experiment log: /home/krrish/Desktop/Programming/indic-modernBERT/logs/2026-06-14_16-22-50_compare_bpe_vocabs/intrinsic_all_vocabs__cand-all_bpe__base-multi__data-hi.log
+make[1]: Leaving directory '/home/krrish/Desktop/Programming/indic-modernBERT'

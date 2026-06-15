@@ -1,0 +1,37 @@
+{
+  "device": "NVIDIA GeForce RTX 4090 (24GB)",
+  "date": "2026-06-14",
+  "method": "data-only batch fetch + H2D (no model forward); see make profile-dataloader",
+  "chosen_defaults": {
+    "train_num_workers": 2,
+    "train_prefetch_factor": 4,
+    "eval_num_workers": 3,
+    "packing_prefetch_factor": 5,
+    "source": "packed_path",
+    "rationale": "Packed path (partial sweep, 2 shards): w=2 pf=4 → 5.64ms (vs 14.12ms @ w=0, 177.3 batches/s). Full 8-shard sweep OOM'd at w≥4; w=2 pf=4 is best measured packed setting. Production uses sequence_packing=true."
+  },
+  "probe_path": {
+    "config": "hindi_mlm_probe.yaml seq=512 microbatch=2",
+    "best": { "workers": 8, "prefetch": 2, "data_wait_ms": 2.98, "batches_per_sec": 336.1 },
+    "rows": [
+      { "workers": 0, "prefetch": null, "data_wait_ms": 6.21 },
+      { "workers": 2, "prefetch": 4, "data_wait_ms": 4.55 },
+      { "workers": 4, "prefetch": 2, "data_wait_ms": 3.79 },
+      { "workers": 4, "prefetch": 8, "data_wait_ms": 3.97 },
+      { "workers": 6, "prefetch": 4, "data_wait_ms": 3.12 },
+      { "workers": 8, "prefetch": 2, "data_wait_ms": 2.98 },
+      { "workers": 8, "prefetch": 8, "data_wait_ms": 3.07 }
+    ]
+  },
+  "packed_path": {
+    "config": "hindi_mlm packing global_batch=8 sweep_mode (2 shards, buffer=16)",
+    "note": "Full 8-shard packed sweep OOM'd worker processes; partial results below",
+    "chosen": { "workers": 2, "prefetch": 4, "data_wait_ms": 5.64, "batches_per_sec": 177.3 },
+    "rows": [
+      { "workers": 0, "prefetch": null, "data_wait_ms": 14.12 },
+      { "workers": 2, "prefetch": 2, "data_wait_ms": 7.24 },
+      { "workers": 2, "prefetch": 4, "data_wait_ms": 5.64 },
+      { "workers": 4, "prefetch": 2, "data_wait_ms": 7.38 }
+    ]
+  }
+}
