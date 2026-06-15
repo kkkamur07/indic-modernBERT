@@ -16,7 +16,7 @@ We need to do `ScriptNormalization` and how are we going to do that is the quest
 
 Need to inspect the folder structure of the `sangrah` dataset and then download random datasets to ensure that we have fair representation, we can calculate the size of the dataset as proxy and then only download the required.
 
-**Potential / evaluated Hindi sources** (see `data/README.md`): Sangraha verified+unverified, IndicCorp V2 (`hi-1/2/3.txt`), IndicCorp V1 (`hi.txt` via IndicNLPSuite). For encoder MLM, verified+unverified Sangraha (~25B Hindi tokens) is sufficient for round 2; current 19-shard sample is probe-only for round 1.
+**Potential / evaluated Hindi sources:** Sangraha verified+unverified, IndicCorp V2 (`hi-1/2/3.txt`), IndicCorp V1 (`hi.txt` via IndicNLPSuite). For encoder MLM, verified+unverified Sangraha (~25B Hindi tokens) is sufficient for round 2; current 19-shard sample is probe-only for round 1.
 
 ### Vendored SuperBPE patch: `merges.txt` leading-space parsing
 
@@ -42,7 +42,7 @@ the submodule was reset. Rebuild the editable wheel after Rust changes:
 uv pip install -e _support_repo/superbpe/tokenizers_superbpe/bindings/python --force-reinstall --no-deps
 ```
 
-**Smoke check:** `make validate-superbpe` (tiny Hindi phrase corpus).
+**Smoke check:** rebuild the editable wheel and run a tiny Hindi phrase tokenization before retraining.
 
 ### Parquet DataLoader memory fixes (2026-06-14)
 

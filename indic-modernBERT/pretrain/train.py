@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 import json
 import sys
 
@@ -93,6 +94,28 @@ def _best_eval_loss(pretrain_cfg: PretrainConfig, trainer) -> float:
         "No eval loss found after training — set eval_interval and save_best_checkpoints, "
         "or ensure eval_data_root is configured."
     )
+
+
+def _release_training_resources(trainer, train_loader) -> None:
+    """Tear down the Trainer and dataloader so a multi-run process (e.g. Optuna
+    sweep) does not leak DataLoader workers / packer threads across trials."""
+    close = getattr(train_loader, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception as exc:  # cleanup must not mask the training result
+            logger.warning("train_loader.close() failed during teardown: {}", exc)
+
+    trainer_close = getattr(trainer, "close", None)
+    if callable(trainer_close):
+        try:
+            trainer_close()
+        except Exception as exc:
+            logger.warning("trainer.close() failed during teardown: {}", exc)
+
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
 
 def run_mlm_pretrain(pretrain_cfg: PretrainConfig) -> float:
@@ -242,7 +265,10 @@ def run_mlm_pretrain(pretrain_cfg: PretrainConfig) -> float:
         pretrain_cfg.console_log_interval,
         "train_step_logger" in pretrain_cfg.callbacks,
     )
-    trainer.fit(**fit_kwargs)
-    eval_loss = _best_eval_loss(pretrain_cfg, trainer)
-    logger.info("Pretrain complete | best_eval_loss={:.4f}", eval_loss)
-    return eval_loss
+    try:
+        trainer.fit(**fit_kwargs)
+        eval_loss = _best_eval_loss(pretrain_cfg, trainer)
+        logger.info("Pretrain complete | best_eval_loss={:.4f}", eval_loss)
+        return eval_loss
+    finally:
+        _release_training_resources(trainer, train_loader)

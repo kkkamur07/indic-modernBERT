@@ -217,7 +217,7 @@ def stage_broken_lr_sweep_regressions() -> list[StageResult]:
                 True,
                 time.perf_counter() - t0,
                 _rss_mb(),
-                f"rows={len(rows):,} rss_after_build={_rss_mb():.0f}MB (OLD ParquetMLMMapDataset)",
+                f"rows={len(rows):,} rss_after_build={_rss_mb():.0f}MB (old materialized-row index)",
             )
         )
         del rows

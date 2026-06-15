@@ -84,6 +84,23 @@ def _get_scheduler(scheduler_type: Schedule):
         raise ValueError(f"Invalid scheduler type: {scheduler_type}")
 
 
+def _schedule_time_unit(state: State) -> TimeUnit:
+    assert state.max_duration is not None, "max_duration should be set whenever schedulers are invoked"
+    return state.max_duration.unit
+
+
+def _align_scheduler_time(time: Time, unit: TimeUnit) -> Time[int]:
+    if time.unit == unit:
+        return time
+    if int(time.value) == 0:
+        return Time(0, unit)
+    raise ValueError(
+        "WarmupStableDecayScheduler schedule time "
+        f"{time.to_timestring()} is incompatible with Trainer max_duration unit {unit!s}. "
+        f"Use the same unit (for example, {int(time.value)}{unit.value})."
+    )
+
+
 class WarmupStableDecayScheduler(ComposerScheduler):
     r"""
     Args:
@@ -110,9 +127,10 @@ class WarmupStableDecayScheduler(ComposerScheduler):
 
     def __call__(self, state: State, ssr: float = 1.0):
         assert state.max_duration is not None, "max_duration should be set whenever schedulers are invoked"
-        t_warmup = _convert_time(self.t_warmup, state)
-        t_decay = _convert_time(self.t_decay, state)
-        t_max = _convert_time(self.t_max, state, ssr=ssr)
+        schedule_unit = _schedule_time_unit(state)
+        t_warmup = _align_scheduler_time(_convert_time(self.t_warmup, state), schedule_unit)
+        t_decay = _align_scheduler_time(_convert_time(self.t_decay, state), schedule_unit)
+        t_max = _align_scheduler_time(_convert_time(self.t_max, state, ssr=ssr), schedule_unit)
         if t_warmup.value == 0:
             warnings.warn(
                 textwrap.dedent(
@@ -123,18 +141,23 @@ class WarmupStableDecayScheduler(ComposerScheduler):
                 )
             )
 
-        if state.timestamp < t_warmup:
+        timestamp = state.timestamp.get(schedule_unit)
+        stable_end = t_max - t_decay
+
+        if timestamp < t_warmup:
             if self.scale_warmup:
                 return self.warmup_scheduler(state, ssr)
             return self.warmup_scheduler(state)
-        elif state.timestamp < t_max - t_decay:
+        if timestamp < stable_end:
             return 1.0
-        else:
-            current_time = state.timestamp.get(t_warmup.unit)
-            current_decay_time = current_time - (t_max - t_decay)
-            current_decay_fraction = current_decay_time / t_decay
-            lr_scale = 1 - current_decay_fraction.value * (1 - self.alpha_f)
-            return max(0.0, lr_scale)  # prevent negative lr_scale
+
+        if t_decay.value == 0:
+            return self.alpha_f
+
+        current_decay_time = timestamp - stable_end
+        current_decay_fraction = current_decay_time / t_decay
+        lr_scale = 1 - current_decay_fraction.value * (1 - self.alpha_f)
+        return max(0.0, lr_scale)  # prevent negative lr_scale
 
 
 class CosineInverseSqrtScheduler(ComposerScheduler):

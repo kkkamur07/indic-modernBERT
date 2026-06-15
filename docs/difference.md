@@ -1,4 +1,4 @@
-`# Upstream ModernBERT vs indic-modernBERT
+# Upstream ModernBERT vs indic-modernBERT
 
 Reference upstream: `_support_repo/ModernBERT/` (`main.py`, `src/text_data.py`, `yamls/modernbert/modernbert-base-pretrain.yaml`).
 
@@ -10,7 +10,7 @@ Our implementation: `indic-modernBERT/pretrain/`, `configs/pretrain/hindi_mlm.ya
 
 ## Hindi corpus token estimate (2026-06-14)
 
-**Method:** `make measure-corpus-tokens` — one sample parquet per split × shard count (`scripts/measure_corpus_tokens.py`).  
+**Method:** local sampling of one parquet per split × shard count.
 **Tokenizer:** `bpe_vs50368` (vocab 50368). **Pretokenization:** `preprocess_for_tokenizer()` with script norm on.  
 **Raw JSON:** `artifacts/corpus_stats/hindi_bpe_vs50368_estimate.json`  
 **Derived schedule:** `artifacts/corpus_stats/hindi_training_schedule.json`
@@ -65,7 +65,7 @@ Practical warmups (round numbers, close to upstream %): **50M** LR warmup, **500
 | Hindi BPE + pretokenization | ✅ Accepted | Fork-only; `preprocess_for_tokenizer()` before BPE |
 | `batch_size_warmup_tokens` (~50B) | ✅ Scaled | `686946044tok` (2.91% of ph1, same as upstream) |
 | `global_train_batch_size` | 🔲 Scale | Smoke default 8; set production global batch for our GPU; Composer handles accum |
-| DataLoader workers/prefetch | ✅ Tuned | RTX 4090 sweep → train **6/4**, eval **3**; see `logs/dataloader_sweep.json` |
+| DataLoader workers/prefetch | ✅ Tuned | RTX 4090 sweep → train **6/4**, eval **3** |
 | `eval_interval` | ✅ Wired | `450ba` in `hindi_mlm_phase1.yaml` (~100 evals/epoch); smoke yaml omits it (eval off) |
 | `save_interval` + retention | ✅ Wired | `450ba`, `save_num_checkpoints_to_keep: 1` + `save_best_checkpoints` top-3 |
 | Resume / autoresume | ✅ Wired | `load_path` on Trainer; `autoresume: true` in phase1; context extension uses explicit `load_path` |
@@ -237,7 +237,7 @@ Probe path does not use packing.
 
 ### Differences
 
-- Worker/prefetch tuned on RTX 4090 — train **6/4**, eval **3** (`logs/dataloader_sweep.json`); set in `hindi_mlm.yaml`.
+- Worker/prefetch tuned on RTX 4090 — train **6/4**, eval **3**; set in `hindi_mlm.yaml`.
 - Multi-GPU sampler exists but **not needed** for single-GPU production.
 - `DataloaderSpeedMonitor` callback available but not in default yaml — use during tuning.
 

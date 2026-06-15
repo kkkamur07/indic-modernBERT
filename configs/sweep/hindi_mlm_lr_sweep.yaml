@@ -29,8 +29,13 @@ hydra:
 pretrain:
   output_dir: artifacts/model/modernbert/lr_sweep
   save_folder: artifacts/model/modernbert/checkpoints/lr_sweep
-  # ~524M tokens/trial @ global 512 — finishes 500M packer warmup, then a short stable tail.
+  # Short batch-scoped LR probe (~524M tokens @ global 512 when counted); WSD uses batch time units.
   max_duration: 1000ba
+  scheduler:
+    name: warmup_stable_decay
+    t_warmup: 0ba
+    alpha_f: 0.0
+    t_decay: 0ba
   eval_interval: 100ba
   save_interval: 1000ba
   save_num_checkpoints_to_keep: 0

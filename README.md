@@ -14,12 +14,11 @@ make eval-bpe
 ```
 
 - **Train Hindi BPE** (all vocab sizes): `make train-bpe` or `make train-bpe-nohup`
-- **Tokenizer eval:** `make eval-bpe`
-- **Tokenizer eval plots:** `make visualize-bpe-eval` → `docs/bpe_vocab_eval.png` (see [Eval visualization](#eval-visualization))
+- **Tokenizer eval:** `make eval-bpe` writes the comparison table to `logs/eval_bpe.log`
 - **LR sweep (Optuna, full pretrain):** `uv sync --extra pretrain --extra sweep && make lr-sweep`
 - **Full pretrain (Composer):** `uv sync --extra pretrain && make train-pretrain`
 - **Phase 1 / context extension:** see [Training](#training) below
-- **Model smoke test:** `make validate-modernbert`
+- **Model smoke test:** `make train-smoke-50ba`
 - **HF export:** `make export-hf ARGS="ckpt.pt out/dir --tokenizer artifacts/tokenizer/bpe_vs50368"`
 
 Artifacts: `artifacts/tokenizer/bpe_vs{V}/`, `artifacts/model/modernbert/`.
@@ -31,18 +30,9 @@ Artifacts: `artifacts/tokenizer/bpe_vs{V}/`, `artifacts/model/modernbert/`.
 - Use `preprocess_for_tokenizer()` at inference so train/eval/inference match.
 - Config: `configs/tokenizer.yaml`. Intrinsic eval holdout: `data/eval/hi/`.
 
-Hardware vocab notes (tensor vs tile vs wave): `artifacts/ablations/hardware_alignment/README.md`.
+Hardware vocab notes (tensor vs tile vs wave): `configs/model/README.md`.
 
-### Eval visualization
-
-`make eval-bpe` writes a comparison table to `logs/eval_bpe.log`. Plot it with:
-
-```bash
-uv sync --extra viz
-make visualize-bpe-eval
-```
-
-Output: `docs/bpe_vocab_eval.png` (refreshed from the log; commit when results change). Script: `scripts/visualize_bpe_eval.py`.
+### Eval Summary
 
 | Metric | Better |
 |--------|--------|
@@ -66,11 +56,7 @@ Latest Hindi holdout run (174k rows, `data/eval/hi/`):
 | gemma-4 | 1.389 | 9.348 | 0.000 | 0.396 | 262k |
 | Llama-4 Scout | 1.730 | 7.507 | 0.000 | 0.434 | 200k |
 
-![BPE vocab intrinsic metrics on Hindi eval holdout](docs/bpe_vocab_eval.png)
-
 **50k** is the production target: fertility matches IndicBERT (1.224 vs 1.233) with slightly higher bytes/token; larger BPE vocabs trade Rényi efficiency for lower fertility and longer tokens.
-
-Custom paths: `make visualize-bpe-eval ARGS="--log logs/eval_bpe.log --out docs/bpe_vocab_eval.png"`
 
 ## Model
 
@@ -114,7 +100,7 @@ uv run python scripts/run_pretrain.py --config-name hindi_mlm_context_extension
 | `configs/pretrain/hindi_mlm_phase1.yaml` | phase 1 targets |
 | `configs/pretrain/hindi_mlm_context_extension.yaml` | 8192 + resume from phase 1 |
 
-Full tables (large model, microbatches, rollback): **`learning.md`**. Parity notes (packing, FA, parquet vs MDS): same file.
+Full tables (large model, microbatches, rollback): `docs/learning.md`. Parity notes (packing, FA, parquet vs MDS): same file.
 
 ### Learning rate (sweep)
 
@@ -130,7 +116,7 @@ Each trial writes `sweep_summary.json` with `eval_loss` and `lr`. Optuna minimiz
 
 ### DataLoader (workers / prefetch)
 
-Tuned on **RTX 4090** with `make profile-dataloader` (data-only batch fetch + H2D, no model forward). Full results: `logs/dataloader_sweep.json`.
+Historical local tuning on **RTX 4090** found the packed-path settings below to be fastest without worker OOMs.
 
 Production (`hindi_mlm.yaml`, `sequence_packing=true`) uses the **packed-path** winner from a partial sweep (2 shards; full 8-shard grid OOM'd workers at w≥4):
 
@@ -151,15 +137,15 @@ Padded eval path (seq 512, no packing) was faster at w=8/pf=2 (2.98 ms) in an ol
 
 **Eval holdout:** `data/eval/hi/` — create with `dataset.sangrah_dataset --eval-count N`.
 
-**Candidates for scale-up:** Sangrah unverified Hindi, IndicCorp V2/V1 — see `data/README.md`.
+**Candidates for scale-up:** Sangrah unverified Hindi, IndicCorp V2/V1.
 
 ## Layout
 
 ```
 indic-modernBERT/     # config/, model/, pretrain/, tokenizer/, dataset/
 configs/              # tokenizer, model, pretrain, sweep yamls
-scripts/              # run_pretrain.py, visualize_bpe_eval.py, export_hf.py, …
-docs/                 # README figures (e.g. bpe_vocab_eval.png)
+scripts/              # run_pretrain.py, compare_bpe_vocabs.py, export_hf.py, …
+docs/                 # learning notes and port differences
 artifacts/            # tokenizers, checkpoints, ablations
 _support_repo/        # upstream ModernBERT reference (do not commit blindly)
 ```
@@ -167,5 +153,4 @@ _support_repo/        # upstream ModernBERT reference (do not commit blindly)
 ## Reference
 
 - Paper: [arxiv:2412.13663](https://arxiv.org/abs/2412.13663)
-- Deep dives: `learning.md`, `configs/model/README.md`, `data/README.md`
-- DataLoader sweep (RTX 4090): `logs/dataloader_sweep.json`
+- Deep dives: `docs/learning.md`, `docs/difference.md`, `configs/model/README.md`

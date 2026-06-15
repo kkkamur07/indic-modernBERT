@@ -1,11 +1,8 @@
-"""GPU alignment metrics for ModernBERT embedding / LM-head GEMMs (ablation + optional enforce)."""
+"""GPU alignment metrics for ModernBERT embedding / LM-head GEMMs."""
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -135,56 +132,3 @@ def validate_hardware_alignment(
     if failures:
         raise ValueError("; ".join(failures))
     return report
-
-
-def iter_vocab_ablation_sizes(center: int, *, step: int = 64, radius: int = 512) -> list[int]:
-    low = max(step, center - radius)
-    high = center + radius
-    return [size for size in range(low, high + 1, step) if size % 64 == 0]
-
-
-def run_vocab_ablation(
-    base: ModernBertArchConfig,
-    *,
-    center_vocab_size: int | None = None,
-    step: int = 64,
-    radius: int = 512,
-    sm_counts: list[int | None] | None = None,
-) -> list[dict[str, Any]]:
-    center = center_vocab_size if center_vocab_size is not None else base.vocab_size
-    counts: list[int | None] = [None] if sm_counts is None else sm_counts
-    rows: list[dict[str, Any]] = []
-    for vocab_size in iter_vocab_ablation_sizes(center, step=step, radius=radius):
-        candidate = base.model_copy(update={"vocab_size": vocab_size})
-        for sm_count in counts:
-            hw = candidate.hardware_alignment.model_copy(update={"sm_count": sm_count})
-            report = compute_hardware_alignment(candidate, hardware=hw)
-            rows.append(report.to_dict())
-    return rows
-
-
-def write_ablation_results(
-    rows: list[dict[str, Any]],
-    output_dir: Path,
-    *,
-    label: str,
-) -> Path:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    path = output_dir / f"{label}_{stamp}.json"
-    payload = {"label": label, "generated_at": stamp, "results": rows}
-    path.write_text(json.dumps(payload, indent=2) + "\n")
-    latest = output_dir / "latest.json"
-    latest.write_text(json.dumps(payload, indent=2) + "\n")
-    return path
-
-
-def detect_cuda_sm_count() -> int | None:
-    try:
-        import torch
-
-        if not torch.cuda.is_available():
-            return None
-        return torch.cuda.get_device_properties(0).multi_processor_count
-    except ImportError:
-        return None

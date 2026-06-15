@@ -38,5 +38,4 @@ pretrain = [
     "torchmetrics",
     # flash-attn: unpadded RoPE + FA2 varlen (install manually if uv sync fails to build):
     #   mkdir -p .tmp && TMPDIR=$PWD/.tmp uv pip install 'flash-attn>=2.6.3' --no-build-isolation
-    # Verify: make verify-attention
 ]

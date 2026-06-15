@@ -4,7 +4,7 @@ Background on data formats and streaming choices for this project.
 
 ## Project decision: parquet is enough
 
-We train on **parquet** (Sangraha `verified/hin/*.parquet`, ~100 GB scale). No MDS conversion, no Mosaic `StreamingDataset`. `ParquetMLMMapDataset` is the only dataset-layer glue; packing, unpadding, optimizer, and scheduler match upstream ModernBERT.
+We train on **parquet** (Sangraha `verified/hin/*.parquet`, ~100 GB scale). No MDS conversion, no Mosaic `StreamingDataset`. `ParquetMLMDataset` is the dataset-layer glue; packing, unpadding, optimizer, and scheduler match upstream ModernBERT.
 
 Revisit MDS only if profiling shows the dataloader is the bottleneck after tuning `num_workers` and disk layout — not as a default prerequisite.
 
@@ -17,7 +17,7 @@ Revisit MDS only if profiling shows the dataloader is the bottleneck after tunin
 | Layout | `index.json` + raw shard files under e.g. `data_folder/train/` | `verified/hin/*.parquet` (Sangraha) |
 | Access | mmap / shard index; optional remote streaming | `pyarrow` row reads via `(path, row_idx)` index |
 | Pretokenization | Can store `input_ids` in shards | Tokenize `text` on the fly in the dataloader |
-| Upstream code | `text_data.py` works as-is | Thin adapter only: `ParquetMLMMapDataset` in `pretrain/parquet_mlm.py` |
+| Upstream code | `text_data.py` works as-is | Thin adapter only: `ParquetMLMDataset` in `pretrain/parquet_mlm.py` |
 
 With parquet, we only need that thin adapter — **`GreedyBestFitSequencePacker`**, unpadding (`bert_padding.py`), optimizer, scheduler, and callbacks are copied verbatim from `_support_repo/ModernBERT/`. The training stack is the same; only the dataset layer differs.
 
@@ -25,7 +25,7 @@ With parquet, we only need that thin adapter — **`GreedyBestFitSequencePacker`
 
 **No — not Mosaic `StreamingDataset`.** At ~100 GB (Sangraha verified + unverified Hindi is in this ballpark), data lives on disk; you do **not** load the full corpus into RAM.
 
-- **Full pretrain (`sequence_packing: true`):** `ParquetMLMMapDataset` builds a lightweight index of `(parquet_file, row)` pairs. Workers read and cache one shard at a time. Shuffle is via `DistributedSamplerPCG64DXSM`, same idea as upstream.
+- **Full pretrain (`sequence_packing: true`):** `ParquetMLMDataset` builds a lightweight index of `(parquet_file, row)` pairs. Workers read and cache one shard at a time. Shuffle is via `DistributedSamplerPCG64DXSM`, same idea as upstream.
 - **Probe / padded path:** `ParquetMLMDataset` (`IterableDataset`) walks shards sequentially — enough for LR probes and eval.
 
 Mosaic streaming is mainly for **remote/object-store** corpora or **multi-node** setups where you want sequential shard streaming without a local copy. For a **local ~100 GB parquet tree on NVMe**, map-style parquet + `num_workers` is sufficient for this project.
@@ -52,7 +52,7 @@ Code: `indic-modernBERT/model/modernbert/attention.py` (`use_fa3 = ... sliding_w
 
 Official FA3 (`flash-attention/hopper` → `import flash_attn_interface`) targets **Hopper only** (Dao-AILab docs: H100/H800, CUDA ≥ 12.3). Upstream ModernBERT: install FA3 only “if using H100s”; otherwise FA2 everywhere is correct.
 
-Verify routing on your machine: `make verify-fa-routing` (uses `configs/model/modernbert_base.yaml`).
+Routing is selected at runtime from `configs/model/modernbert_base.yaml` and the available FlashAttention packages.
 
 ## Training phases (RoPE)
 
@@ -112,7 +112,7 @@ Same 22-layer / 768-dim arch as phase 1; only seq length, RoPE bases, LR schedul
 
 ## Hindi corpus & training budget
 
-Measured 2026-06-14 (`make measure-corpus-tokens`): **23.617 B** tokens across verified + unverified + synthetic (274 shards, ~89 GB parquet). Details: `difference.md` § corpus estimate, `artifacts/corpus_stats/`.
+Measured 2026-06-14 from local corpus sampling: **23.617 B** tokens across verified + unverified + synthetic (274 shards, ~89 GB parquet). Details: `docs/difference.md` § corpus estimate.
 
 **Phase 1 production (`hindi_mlm_phase1.yaml`):** `global_batch=512`, `microbatch=8`. Eval every **450ba** (~100×/epoch). **`save_best_checkpoints`** keeps top **3** by eval MLM loss under `checkpoints/phase1/best/`; TensorBoard logs `eval/loss` and `eval/masked_accuracy`. Composer also keeps `latest-rank0.pt` + 1 rolling interval save.
 
@@ -168,7 +168,7 @@ p = load_pretrain_config(cfg)
 
 **Not hard-enforced in Pydantic** (defaults match upstream; use `hardware_alignment.enforce: true` only if you opt in).
 
-Recorded run: `artifacts/ablations/hardware_alignment/README.md` (RTX, 128 SMs).
+Recorded local run on RTX-class hardware (128 SMs):
 
 | `vocab_size` | Tensor ÷64 | Tile ÷128 | Notes |
 |--------------|------------|-----------|-------|
@@ -178,8 +178,4 @@ Recorded run: `artifacts/ablations/hardware_alignment/README.md` (RTX, 128 SMs).
 
 Upstream uses **50368**, not 50432. That size is BPE + specials + `[unused*]` padding to **÷64** (tensor cores), not **÷128** (full LM-head tile). Our Hindi tokenizer target should stay **50368** unless profiling shows a real gain from a tile-aligned neighbor.
 
-```bash
-make ablate-hardware
-```
-
-Results: `artifacts/ablations/hardware_alignment/latest.json`. Wave check uses **vocab tiles only** (`vocab/128 % sm_count`); none of the ±512 sweep hit wave-zero on 128 SMs — treat wave as experimental.
+Wave check uses **vocab tiles only** (`vocab/128 % sm_count`); none of the ±512 sweep hit wave-zero on 128 SMs — treat wave as experimental.

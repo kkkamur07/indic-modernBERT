@@ -15,7 +15,6 @@ from composer.utils import dist
 
 from config import PretrainConfig
 from pretrain.parquet_mlm import (
-    ListMLMDataset,
     MLMCollator,
     ParquetMLMDataset,
     TokenizeCollator,

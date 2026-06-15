@@ -18,16 +18,15 @@ Pretrain Hydra configs:
 | `configs/pretrain/hindi_mlm_phase1.yaml` | Seq 1024, base arch |
 | `configs/pretrain/hindi_mlm_context_extension.yaml` | Seq 8192, extension arch |
 
-Hardware tile/wave ablations: `make ablate-hardware` → `artifacts/ablations/hardware_alignment/`.
+Hardware alignment is validated by `compute_hardware_alignment()` / `validate_hardware_alignment()` when enabled in the model config.
 
-Kernel checks (CUDA + `flash-attn` from `uv sync --extra pretrain`):
+Kernel/runtime checks are covered by the 50-batch smoke train (`make train-smoke-50ba`) with CUDA + `flash-attn` from `uv sync --extra pretrain`:
 
 | Target | What it checks |
 |--------|----------------|
-| `make verify-attention` | FA2 varlen attention + unpadded RoPE forward |
-| `make verify-fa-routing` | Per-layer FA3/FA2 routing vs GPU (4090 → FA2 all layers; H100+hopper → FA3 global) |
-| `make verify-compile` | `torch.compile` on embeddings, MLP, LM head (+ backward) |
-| `make verify-kernels` | All of the above |
+| Attention | FA2 varlen attention + unpadded RoPE forward |
+| Routing | Per-layer FA3/FA2 routing vs GPU (4090 → FA2 all layers; H100+hopper → FA3 global) |
+| Compile | `torch.compile` on embeddings, MLP, LM head (+ backward) |
 
 **Smoke train:** `make train-smoke-50ba` — 50 batches, inherits `hindi_mlm_phase1` (FA2, `compile_model`, packing, TensorBoard, production callbacks).
 

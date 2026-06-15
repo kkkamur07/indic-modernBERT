@@ -5,7 +5,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Generic, Iterable, NamedTuple, Optional, TypeVar, Any, Union, Sequence
+from typing import Generic, Iterable, Optional, TypeVar, Any, Union, Sequence
 from composer.core.types import Batch
 
 import numpy as np
@@ -59,13 +59,6 @@ class BatchSizeWarmupScheduler:
 
         # should never hit this, but just in case
         return self.max_batch_size
-
-
-class SequencePackerBatchOutputTuple(NamedTuple):
-    masked_pseqs: torch.Tensor
-    labels: Optional[torch.Tensor]
-    cu_seq_lens: list[torch.Tensor]
-    max_cu_seq_len: list[torch.Tensor]
 
 
 class SequencePacker(ABC):
@@ -499,9 +492,26 @@ class BufferedIterable(Generic[T]):
         """
         self.iterable = iterable
         self.buffer_size = buffer_size
+        self._active_iterator: Optional["BufferedIterator[T]"] = None
 
     def __iter__(self):
-        return BufferedIterator(self.iterable, self.buffer_size)
+        # Stop any previous iterator's background thread before starting a new one.
+        self.close()
+        self._active_iterator = BufferedIterator(self.iterable, self.buffer_size)
+        return self._active_iterator
+
+    def close(self) -> None:
+        """Shut down the active iterator's background thread and release its workers."""
+        iterator = getattr(self, "_active_iterator", None)
+        if iterator is not None:
+            iterator.close()
+            self._active_iterator = None
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
+            pass
 
 
 class BufferedIterator(Generic[T]):
@@ -511,12 +521,13 @@ class BufferedIterator(Generic[T]):
         self.buffer_size = buffer_size
         self.lock = threading.Lock()
         self.exhausted = False
+        self._stopped = False
         self.filler_thread = threading.Thread(target=self._background_fill, daemon=True)
         self.filler_thread.start()
 
     def _background_fill(self):
         # Fill up the buffer, whenever possible, in the background
-        while not self.exhausted:
+        while not self.exhausted and not self._stopped:
             if len(self.buffer) < self.buffer_size:
                 try:
                     item = next(self.iterator)
@@ -528,6 +539,35 @@ class BufferedIterator(Generic[T]):
             else:
                 time.sleep(0.01)  # Sleep for a bit to avoid busy waiting
 
+    def close(self) -> None:
+        """Stop the background fill thread and drop the source iterator/workers.
+
+        Training stops at max_duration before the dataset is exhausted, so the
+        daemon fill thread would otherwise spin forever and keep the packer ->
+        DataLoader -> worker processes alive. Explicit shutdown lets them be
+        reclaimed between runs (e.g. Optuna sweep trials in one process).
+        """
+        self._stopped = True
+        thread = getattr(self, "filler_thread", None)
+        if (
+            thread is not None
+            and thread.is_alive()
+            and thread is not threading.current_thread()
+        ):
+            thread.join(timeout=5.0)
+        lock = getattr(self, "lock", None)
+        if lock is not None:
+            with lock:
+                self.buffer.clear()
+        # Drop the source iterator so the underlying DataLoader can shut its workers down.
+        self.iterator = iter(())
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
+            pass
+
     def __iter__(self):
         return self
 
@@ -536,7 +576,7 @@ class BufferedIterator(Generic[T]):
 
         while True:
             if not self.buffer:
-                if self.exhausted:
+                if self.exhausted or self._stopped:
                     # We've exhausted the iterator and the buffer so we're done
                     raise StopIteration
                 else:
