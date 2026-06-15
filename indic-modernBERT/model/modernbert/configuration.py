@@ -235,7 +235,7 @@ class FlexBertConfig(TransformersBertConfig):
         if self.sliding_window != -1:
             if not self.use_fa2:
                 raise ValueError("Sliding window attention is only supported with FlashAttention2")
-            if self.sliding_window % 2 != 0 and self.sliding_window % 64 != 0:
+            if self.sliding_window % 2 != 0 or self.sliding_window % 64 != 0:
                 raise ValueError(
                     f"Sliding window must be an even number and divisible by 64: {self.sliding_window=} {self.sliding_window % 64} {self.sliding_window % 2}"
                 )

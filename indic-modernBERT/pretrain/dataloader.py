@@ -240,14 +240,14 @@ def build_eval_dataloader(
         max_seq_len=pretrain_cfg.max_seq_len,
         mlm_probability=pretrain_cfg.eval_mlm_probability,
     )
+    eval_cfg = pretrain_cfg.model_copy(update={"num_workers": pretrain_cfg.eval_num_workers})
     eval_kwargs = _dataloader_kwargs(
-        pretrain_cfg,
+        eval_cfg,
         device,
         batch_size=_eval_device_batch_size(pretrain_cfg),
         drop_last=False,
         shuffle=False,
     )
-    eval_kwargs["num_workers"] = pretrain_cfg.eval_num_workers
     return DataLoader(
         ParquetMLMDataset(eval_root, pretrain_cfg.text_column),
         collate_fn=collator,
