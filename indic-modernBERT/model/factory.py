@@ -189,7 +189,5 @@ def create_modernbert_mlm(
         allow_embedding_resizing=config.allow_embedding_resizing,
     )
 
-    if config.vocab_size % 8 != 0:
-        config.vocab_size += 8 - (config.vocab_size % 8)
     hf_model.model.resize_token_embeddings(config.vocab_size)
     return hf_model
