@@ -1,5 +1,3 @@
-![Indic ModernBERT — Architecture Overview](docs/architecture.png)
-
 # Indic ModernBERT
 
 A Hindi-first extension of [ModernBERT](https://arxiv.org/abs/2412.13663) — a state-of-the-art masked language model with 22 transformer layers, 8192-token context, and retrieval-focused design. The goal is to build a strong Hindi encoder first, then scale to all 15 major Indic languages once the recipe is proven.
