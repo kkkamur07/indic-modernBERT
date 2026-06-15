@@ -13,6 +13,20 @@ pretrain:
   restart_override: true
   sequence_packing: true
   eval_sequence_packing: false
+  global_eval_batch_size: 64
+  device_eval_microbatch_size: 8
+  eval_subset_num_batches: 50
+  eval_interval: 450ba
+  save_interval: 450ba
+  # Disk retention: 1 rolling "latest" for autoresume + top-3 best by eval loss (pruned).
+  save_num_checkpoints_to_keep: 1
+  autoresume: true
+  loggers:
+    tensorboard:
+      log_dir: artifacts/model/modernbert/tensorboard/context_extension
+  callbacks:
+    save_best_checkpoints:
+      num_checkpoints: 3
   scheduler:
     name: constant_with_warmup
     t_warmup: 0tok

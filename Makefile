@@ -4,7 +4,8 @@ export PYTHONPATH := indic-modernBERT
 TMPDIR_ENV := TMPDIR=$(PWD)/.tmp TORCHINDUCTOR_CACHE_DIR=$(PWD)/.tmp/torchinductor
 
 .PHONY: train-bpe train-bpe-nohup eval-bpe eval-bpe-nohup pretokenization \
-        train-pretrain train-smoke-50ba train-smoke-50ba-nohup lr-sweep lr-sweep-nohup \
+        train-pretrain train-phase1 train-phase1-nohup \
+        train-smoke-50ba train-smoke-50ba-nohup lr-sweep lr-sweep-nohup \
         export-hf pipeline-trace
 
 # --- Tokenizer ---
@@ -30,6 +31,19 @@ pretokenization:
 
 train-pretrain:
 	PYTHONPATH=indic-modernBERT uv run --extra pretrain python scripts/run_pretrain.py
+
+# Phase-1 production pretrain (~23.6B tok, configs/pretrain/hindi_mlm_phase1.yaml).
+train-phase1:
+	mkdir -p .tmp logs/phase1
+	$(TMPDIR_ENV) TRAIN_STEP_LOG=0 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 \
+	  uv run --extra pretrain python scripts/run_pretrain.py --config-name hindi_mlm_phase1
+
+train-phase1-nohup:
+	mkdir -p logs/phase1 .tmp
+	PYTHONUNBUFFERED=1 nohup $(MAKE) train-phase1 > logs/phase1/nohup.log 2>&1 &
+
+tensorboard-phase1:
+	tensorboard --logdir artifacts/model/modernbert/tensorboard/phase1
 
 # Test Pretrain runs
 train-smoke-50ba:

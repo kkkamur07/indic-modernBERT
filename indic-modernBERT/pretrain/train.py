@@ -327,6 +327,8 @@ def run_mlm_pretrain(pretrain_cfg: PretrainConfig) -> float:
     }
     if loggers:
         trainer_kwargs["loggers"] = loggers
+    if pretrain_cfg.run_name is not None:
+        trainer_kwargs["run_name"] = pretrain_cfg.run_name
     if pretrain_cfg.autoresume is not None:
         trainer_kwargs["autoresume"] = pretrain_cfg.autoresume
     if eval_evaluator is not None:

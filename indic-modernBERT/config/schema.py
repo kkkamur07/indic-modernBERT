@@ -418,6 +418,10 @@ class PretrainConfig(BaseModel):
     global_train_batch_size: int = Field(default=8, ge=1)
     device_train_microbatch_size: int = Field(default=2, ge=1)
     max_duration: str = "100ba"
+    run_name: str | None = Field(
+        default=None,
+        description="Composer run name; required by Composer when autoresume=True.",
+    )
     save_folder: Path = Path("artifacts/model/modernbert/checkpoints")
     save_interval: str = Field(
         default="1000ba",
