@@ -373,8 +373,9 @@ class BertForMaskedLM(BertPreTrainedModel):
 
         if labels is None:
             masked_tokens_mask = None
-        else:
-            masked_tokens_mask = labels > 0
+        else: 
+            # > 0 wouldn't have hurt. 
+            masked_tokens_mask = labels != -100
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
@@ -400,7 +401,7 @@ class BertForMaskedLM(BertPreTrainedModel):
         if labels is not None:
             # Compute loss
             loss_fct = nn.CrossEntropyLoss()
-            masked_token_idx = torch.nonzero(labels.flatten() > 0, as_tuple=False).flatten()
+            masked_token_idx = torch.nonzero(labels.flatten() != -100, as_tuple=False).flatten()
             loss = loss_fct(prediction_scores, labels.flatten()[masked_token_idx])
 
             assert input_ids is not None, "Coding error; please open an issue"
@@ -1349,7 +1350,7 @@ class FlexBertForSequenceClassification(FlexBertPreTrainedModel):
                 loss = loss_fct(logits, labels)
 
         if not return_dict:
-            output = (logits,) + output
+            output = (logits,) + (output,)
             return ((loss,) + output) if loss is not None else output
 
         return SequenceClassifierOutput(
@@ -1471,7 +1472,7 @@ class FlexBertForMultipleChoice(FlexBertPreTrainedModel):
             loss = loss_fct(reshaped_logits, labels)
 
         if not return_dict:
-            output = (reshaped_logits,) + output
+            output = (reshaped_logits,) + (output,)
             return ((loss,) + output) if loss is not None else output
 
         return MultipleChoiceModelOutput(
@@ -1541,7 +1542,7 @@ def init_model_from_pretrained(
     # Calculate the layer mapping
     pretrained_layers = len(pretrained_model.encoder.layers)
     new_layers = len(new_model.encoder.layers)
-    layer_mapping = [round(i * pretrained_layers / new_layers) for i in range(new_layers)]
+    layer_mapping = [min((i * pretrained_layers) // new_layers, pretrained_layers - 1) for i in range(new_layers)]
 
     # Initialize layers
     for new_model_idx, pretrained_idx in enumerate(layer_mapping):

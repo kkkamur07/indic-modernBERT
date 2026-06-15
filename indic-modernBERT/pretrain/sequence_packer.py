@@ -522,6 +522,7 @@ class BufferedIterator(Generic[T]):
         self.lock = threading.Lock()
         self.exhausted = False
         self._stopped = False
+        self._error: Exception | None = None
         self.filler_thread = threading.Thread(target=self._background_fill, daemon=True)
         self.filler_thread.start()
 
@@ -534,6 +535,10 @@ class BufferedIterator(Generic[T]):
                     with self.lock:
                         self.buffer.append(item)
                 except StopIteration:
+                    self.exhausted = True
+                    break
+                except Exception as exc:
+                    self._error = exc
                     self.exhausted = True
                     break
             else:
@@ -575,6 +580,10 @@ class BufferedIterator(Generic[T]):
         from pretrain.step_log import bump, should_log_detail, step_log
 
         while True:
+            if self._error is not None:
+                err = self._error
+                self._error = None
+                raise RuntimeError("BufferedIterator background fill failed") from err
             if not self.buffer:
                 if self.exhausted or self._stopped:
                     # We've exhausted the iterator and the buffer so we're done

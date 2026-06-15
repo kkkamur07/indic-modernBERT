@@ -296,7 +296,8 @@ class FlexBertCompileUnpadPreNormLayer(FlexBertLayerBase):
     def _init_weights(self, reset_params: bool = False):
         super()._init_weights(reset_params)
         if reset_params:
-            self.attn_norm.reset_parameters()
+            if hasattr(self.attn_norm, "reset_parameters"):
+                self.attn_norm.reset_parameters()
             self.mlp_norm.reset_parameters()
 
     @torch.compile(dynamic=True)
@@ -340,7 +341,8 @@ class FlexBertUnpadPreNormLayer(FlexBertLayerBase):
     def _init_weights(self, reset_params: bool = False):
         super()._init_weights(reset_params)
         if reset_params:
-            self.attn_norm.reset_parameters()
+            if hasattr(self.attn_norm, "reset_parameters"):
+                self.attn_norm.reset_parameters()
             self.mlp_norm.reset_parameters()
 
     def forward(
@@ -428,7 +430,8 @@ class FlexBertPaddedPreNormLayer(FlexBertLayerBase):
     def _init_weights(self, reset_params: bool = False):
         super()._init_weights(reset_params)
         if reset_params:
-            self.attn_norm.reset_parameters()
+            if hasattr(self.attn_norm, "reset_parameters"):
+                self.attn_norm.reset_parameters()
             self.mlp_norm.reset_parameters()
 
     def forward(
@@ -465,7 +468,8 @@ class FlexBertPaddedParallelPreNormLayer(FlexBertLayerBase):
     def _init_weights(self, reset_params: bool = False):
         super()._init_weights(reset_params)
         if reset_params:
-            self.norm.reset_parameters()
+            if hasattr(self.norm, "reset_parameters"):
+                self.norm.reset_parameters()
 
         init_weights(
             self.config,
@@ -541,6 +545,7 @@ class FlexBertPaddedPostNormLayer(FlexBertLayerBase):
     def _init_weights(self, reset_params: bool = False):
         super()._init_weights(reset_params)
         if reset_params:
+            self.attn_norm.reset_parameters()
             self.mlp_norm.reset_parameters()
 
     def forward(
@@ -573,7 +578,7 @@ def get_bert_layer(config: FlexBertConfig, layer_id: Optional[int] = None) -> Fl
     try:
         bert_layer = (
             config.initial_bert_layer
-            if layer_id < config.num_initial_layers and getattr(config, "initial_bert_layer", None) is not None
+            if layer_id is not None and layer_id < config.num_initial_layers and getattr(config, "initial_bert_layer", None) is not None
             else config.bert_layer
         )
         bert_layer = maybe_add_padding(config, bert_layer)
@@ -581,7 +586,7 @@ def get_bert_layer(config: FlexBertConfig, layer_id: Optional[int] = None) -> Fl
             bert_layer = "unpadded_compile_prenorm"
         return LAYER2CLS[bert_layer](config, layer_id=layer_id)
     except KeyError:
-        if layer_id < config.num_initial_layers and getattr(config, "initial_bert_layer", None) is not None:
+        if layer_id is not None and layer_id < config.num_initial_layers and getattr(config, "initial_bert_layer", None) is not None:
             raise ValueError(
                 f"Invalid BERT layer type: {config.initial_bert_layer=}, must be one of {LAYER2CLS.keys()}."
                 f"{config.padding=} will be automatically prepended to `config.bert_layer` if unspecified."

@@ -549,3 +549,5 @@ def tile_embedding(
                 new_embedding.padding_idx = pretrained_embedding.padding_idx
             else:
                 assert new_embedding.padding_idx == pretrained_embedding.padding_idx, "padding_idx must remain the same"
+
+    return new_embedding

@@ -173,7 +173,7 @@ class UnpaddedRotaryEmbedding(torch.nn.Module):
         base: float = 10000.0,
         interleaved: bool = False,
         max_seqlen: Optional[int] = None,
-        scale_base: Optional[bool] = None,
+        scale_base: Optional[float] = None,
         pos_idx_in_fp32: bool = True,
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,

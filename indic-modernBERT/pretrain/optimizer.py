@@ -68,6 +68,8 @@ class StableAdamW(OptimiOptimizer):
             raise ValueError(f"Invalid beta2 parameter: {betas[1]=}")
         if not 0.0 <= eps:
             raise ValueError(f"Invalid epsilon: {eps=}")
+        if decouple_lr and (max_lr is None or max_lr <= 0):
+            raise ValueError("`max_lr` must be provided and > 0 when `decouple_lr=True`")
 
         defaults = dict(
             lr=lr,
@@ -151,6 +153,8 @@ class StableAdamW(OptimiOptimizer):
             with torch.enable_grad():
                 loss = closure()
 
+        group_l1_norms: list = []
+        group_l2_norms: list = []
         for group in self.param_groups:
             params, grads, exp_avgs, exp_avg_sqs, eps_sqs, kahan_comps = [], [], [], [], [], []
             self._init_group(group, params, grads, exp_avgs, exp_avg_sqs, eps_sqs, kahan_comps)
@@ -173,9 +177,13 @@ class StableAdamW(OptimiOptimizer):
                 kahan_sum=group["kahan_sum"],
                 return_norms=self.return_norms,
             )
+            if l1_norm is not None:
+                group_l1_norms.append(l1_norm)
+                group_l2_norms.append(l2_norm)
 
-        self.grad_norms["l1_norm"] = l1_norm
-        self.grad_norms["l2_norm"] = l2_norm
+        if group_l1_norms:
+            self.grad_norms["l1_norm"] = torch.stack(group_l1_norms).sum()
+            self.grad_norms["l2_norm"] = torch.linalg.vector_norm(torch.stack(group_l2_norms), 2)
 
         return loss
 
@@ -330,6 +338,8 @@ def _foreach_stableadamw(
             torch._foreach_addcdiv_(dev_params, dev_exp_avgs, dev_grads, scalars=neg_lrs)
 
     if return_norms:
+        if not l1_norms:
+            return torch.zeros(1), torch.zeros(1)
         l1_norm = torch.linalg.vector_norm(torch.stack(l1_norms), 1)
         l2_norm = torch.linalg.vector_norm(torch.stack(l2_norms), 2)
         return l1_norm, l2_norm

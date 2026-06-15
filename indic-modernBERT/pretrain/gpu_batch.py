@@ -55,7 +55,8 @@ def training_autocast(device: torch.device) -> Iterator[None]:
 def log_device_summary(device: torch.device) -> str:
     if device.type != "cuda":
         return "device=cpu (no CUDA)"
+    idx = device.index if device.index is not None else torch.cuda.current_device()
     name = torch.cuda.get_device_name(device)
     capability = torch.cuda.get_device_capability(device)
     mem_gb = torch.cuda.get_device_properties(device).total_memory / 1e9
-    return f"device=cuda:{device.index} name={name} cc={capability} mem={mem_gb:.1f}GB bf16={torch.cuda.is_bf16_supported()}"
+    return f"device=cuda:{idx} name={name} cc={capability} mem={mem_gb:.1f}GB bf16={torch.cuda.is_bf16_supported()}"

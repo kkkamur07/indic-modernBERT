@@ -129,7 +129,8 @@ def step_backward(
     loss.backward()
     norms = [float(p.grad.norm()) for p in model.parameters() if p.grad is not None]
     ok = len(norms) > 0 and all(torch.isfinite(p.grad).all() for p in model.parameters() if p.grad is not None)
-    detail = f"loss={float(loss):.4f} params_with_grad={len(norms)} grad_max={max(norms):.3e}"
+    grad_max = f"{max(norms):.3e}" if norms else "N/A"
+    detail = f"loss={float(loss):.4f} params_with_grad={len(norms)} grad_max={grad_max}"
     return StepResult("backward", ok, detail)
 
 

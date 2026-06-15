@@ -143,7 +143,7 @@ class BertAlibiUnpadSelfAttention(nn.Module):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     alibi_slopes=slopes,
                 )
@@ -153,7 +153,7 @@ class BertAlibiUnpadSelfAttention(nn.Module):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     alibi_slopes=slopes,
                 )
@@ -396,7 +396,7 @@ class FlexBertUnpadAttention(FlexBertAttentionBase):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -406,7 +406,7 @@ class FlexBertUnpadAttention(FlexBertAttentionBase):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -421,7 +421,7 @@ class FlexBertUnpadAttention(FlexBertAttentionBase):
                 q,
                 k,
                 v,
-                dropout_p=self.p_dropout,
+                dropout_p=self.p_dropout if self.training else 0.0,
                 attn_mask=attn_mask[:, None, None, :seqlen].to(torch.bool).expand(unpad_bs, 1, seqlen, seqlen)
                 if self.use_sdpa_attn_mask
                 else None,
@@ -546,7 +546,7 @@ class FlexBertUnpadParallelAttention(FlexBertAttentionBase):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -556,7 +556,7 @@ class FlexBertUnpadParallelAttention(FlexBertAttentionBase):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -571,7 +571,7 @@ class FlexBertUnpadParallelAttention(FlexBertAttentionBase):
                 q,
                 k,
                 v,
-                dropout_p=self.p_dropout,
+                dropout_p=self.p_dropout if self.training else 0.0,
                 attn_mask=attn_mask[:, None, None, :seqlen].to(torch.bool).expand(unpad_bs, 1, seqlen, seqlen)
                 if self.use_sdpa_attn_mask
                 else None,
@@ -681,7 +681,7 @@ class FlexBertPaddedAttention(FlexBertAttentionBase):
 
                 attn = flash_attn_qkvpacked_func(
                     qkv,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -689,7 +689,7 @@ class FlexBertPaddedAttention(FlexBertAttentionBase):
             else:
                 attn = flash_attn_qkvpacked_func(
                     qkv,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -701,7 +701,7 @@ class FlexBertPaddedAttention(FlexBertAttentionBase):
                 q,
                 k,
                 v,
-                dropout_p=self.p_dropout,
+                dropout_p=self.p_dropout if self.training else 0.0,
                 attn_mask=attn_mask[:, None, None, :seqlen].to(torch.bool).expand(bs, 1, seqlen, seqlen)
                 if self.use_sdpa_attn_mask
                 else None,
@@ -897,7 +897,7 @@ class FlexBertUnpadRopeAttention(FlexBertAttentionBase):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -907,7 +907,7 @@ class FlexBertUnpadRopeAttention(FlexBertAttentionBase):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -923,7 +923,7 @@ class FlexBertUnpadRopeAttention(FlexBertAttentionBase):
                 q,
                 k,
                 v,
-                dropout_p=self.p_dropout,
+                dropout_p=self.p_dropout if self.training else 0.0,
                 attn_mask=attn_mask[:, None, None, :seqlen].to(torch.bool).expand(unpad_bs, 1, seqlen, seqlen)
                 if self.use_sdpa_attn_mask
                 else None,
@@ -1049,7 +1049,7 @@ class FlexBertPaddedRopeAttention(FlexBertAttentionBase):
         # Reshape to (batch, seqlen, 3, nheads, headdim)
         qkv = qkv.view(bs, seqlen, 3, self.num_attention_heads, self.attn_head_size)
 
-        if IMPL_USE_FLASH2:
+        if self.use_fa2:
             # Apply RoPE
             qkv = self.rotary_emb(qkv, seqlen_offset=seqlen_offset, max_seqlen=None)
 
@@ -1062,7 +1062,7 @@ class FlexBertPaddedRopeAttention(FlexBertAttentionBase):
 
                 attn = flash_attn_qkvpacked_func(
                     qkv,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -1070,7 +1070,7 @@ class FlexBertPaddedRopeAttention(FlexBertAttentionBase):
             else:
                 attn = flash_attn_qkvpacked_func(
                     qkv,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -1081,7 +1081,7 @@ class FlexBertPaddedRopeAttention(FlexBertAttentionBase):
                 q,
                 k,
                 v,
-                dropout_p=self.p_dropout,
+                dropout_p=self.p_dropout if self.training else 0.0,
                 attn_mask=attn_mask[:, None, None, :seqlen].to(torch.bool).expand(bs, 1, seqlen, seqlen)
                 if self.use_sdpa_attn_mask
                 else None,
@@ -1234,7 +1234,7 @@ class FlexBertUnpadRopeParallelAttention(FlexBertAttentionBase):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -1244,7 +1244,7 @@ class FlexBertUnpadRopeParallelAttention(FlexBertAttentionBase):
                     qkv,
                     cu_seqlens=cu_seqlens,
                     max_seqlen=max_seqlen,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -1260,7 +1260,7 @@ class FlexBertUnpadRopeParallelAttention(FlexBertAttentionBase):
                 q,
                 k,
                 v,
-                dropout_p=self.p_dropout,
+                dropout_p=self.p_dropout if self.training else 0.0,
                 attn_mask=attn_mask[:, None, None, :seqlen].to(torch.bool).expand(unpad_bs, 1, seqlen, seqlen)
                 if self.use_sdpa_attn_mask
                 else None,
@@ -1393,7 +1393,7 @@ class FlexBertPaddedRopeParallelAttention(FlexBertAttentionBase):
 
                 attn = flash_attn_qkvpacked_func(
                     qkv,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -1401,7 +1401,7 @@ class FlexBertPaddedRopeParallelAttention(FlexBertAttentionBase):
             else:
                 attn = flash_attn_qkvpacked_func(
                     qkv,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -1412,7 +1412,7 @@ class FlexBertPaddedRopeParallelAttention(FlexBertAttentionBase):
                 q,
                 k,
                 v,
-                dropout_p=self.p_dropout,
+                dropout_p=self.p_dropout if self.training else 0.0,
                 attn_mask=attn_mask[:, None, None, :seqlen].to(torch.bool).expand(bs, 1, seqlen, seqlen)
                 if self.use_sdpa_attn_mask
                 else None,
@@ -1513,7 +1513,7 @@ class FlexBertPaddedParallelAttention(FlexBertAttentionBase):
 
                 attn = flash_attn_qkvpacked_func(
                     qkv,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -1521,7 +1521,7 @@ class FlexBertPaddedParallelAttention(FlexBertAttentionBase):
             else:
                 attn = flash_attn_qkvpacked_func(
                     qkv,
-                    dropout_p=self.p_dropout,
+                    dropout_p=self.p_dropout if self.training else 0.0,
                     deterministic=self.deterministic_fa2,
                     window_size=self.sliding_window,
                 )
@@ -1532,7 +1532,7 @@ class FlexBertPaddedParallelAttention(FlexBertAttentionBase):
                 q,
                 k,
                 v,
-                dropout_p=self.p_dropout,
+                dropout_p=self.p_dropout if self.training else 0.0,
                 attn_mask=attn_mask[:, None, None, :seqlen].to(torch.bool).expand(bs, 1, seqlen, seqlen)
                 if self.use_sdpa_attn_mask
                 else None,
@@ -1558,12 +1558,12 @@ def get_attention_layer(config: FlexBertConfig, layer_id: Optional[int] = None) 
     try:
         attention_layer = (
             config.initial_attention_layer
-            if layer_id < config.num_initial_layers and getattr(config, "initial_attention_layer", None) is not None
+            if layer_id is not None and layer_id < config.num_initial_layers and getattr(config, "initial_attention_layer", None) is not None
             else config.attention_layer
         )
         return ATTN2CLS[maybe_add_padding(config, attention_layer)](config, layer_id=layer_id)
     except KeyError:
-        if layer_id < config.num_initial_layers and getattr(config, "initial_attention_layer", None) is not None:
+        if layer_id is not None and layer_id < config.num_initial_layers and getattr(config, "initial_attention_layer", None) is not None:
             raise ValueError(
                 f"Invalid attention layer type: {config.initial_attention_layer=}, must be one of {ATTN2CLS.keys()}."
                 f"{config.padding=} will be automatically prepended to `config.attention_layer` if unspecified."

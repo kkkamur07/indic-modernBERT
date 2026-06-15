@@ -453,6 +453,14 @@ class PretrainConfig(BaseModel):
         description="Eval DataLoader workers (upstream eval_loader uses 3).",
     )
     dataloader_pin_memory: bool = True
+    dataloader_persistent_workers: bool = Field(
+        default=True,
+        description=(
+            "Keep DataLoader workers alive across epochs. Disable for in-process "
+            "multi-run (Optuna sweep) so workers are reaped between trials and RAM "
+            "does not accumulate to OOM."
+        ),
+    )
     max_train_shards: int | None = Field(
         default=None,
         ge=1,

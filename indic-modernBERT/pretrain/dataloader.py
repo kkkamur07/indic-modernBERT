@@ -106,7 +106,7 @@ def _dataloader_kwargs(
         "sampler": sampler,
     }
     if workers > 0:
-        kwargs["persistent_workers"] = True
+        kwargs["persistent_workers"] = pretrain_cfg.dataloader_persistent_workers
         kwargs["prefetch_factor"] = pretrain_cfg.dataloader_prefetch_factor
     return kwargs
 

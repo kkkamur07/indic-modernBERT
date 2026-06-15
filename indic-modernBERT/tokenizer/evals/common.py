@@ -98,18 +98,15 @@ def iter_hindi_lines(
     progress_desc: str | None = None,
 ) -> Iterator[tuple[str, list[str]]]:
 
-    sangrah_layout = sorted(data_root.glob(f"verified/{HINDI_LANG3}/*.parquet"))
-    eval_layout = sorted(data_root.glob("*.parquet"))
-    parquet_files = sangrah_layout or eval_layout
+    # Just get all the parquet files under the data root.
+    parquet_files = sorted(data_root.glob("**/*.parquet"))
 
     if max_shards is not None:
         parquet_files = parquet_files[:max_shards]
 
     if not parquet_files:
         raise FileNotFoundError(
-            "No Hindi eval parquet files found. Expected either "
-            f"{data_root}/verified/{HINDI_LANG3}/*.parquet (Sangrah layout) "
-            f"or {data_root}/*.parquet (eval holdout layout)."
+            f"No Hindi eval parquet files found under {data_root}."
         )
 
     label = progress_desc or "Eval"

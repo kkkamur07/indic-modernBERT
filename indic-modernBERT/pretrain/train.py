@@ -8,6 +8,7 @@ import sys
 
 import torch
 from loguru import logger
+from torch.utils.data import DataLoader
 
 from config import PretrainConfig
 from model.factory import create_modernbert_mlm
@@ -96,15 +97,102 @@ def _best_eval_loss(pretrain_cfg: PretrainConfig, trainer) -> float:
     )
 
 
-def _release_training_resources(trainer, train_loader) -> None:
-    """Tear down the Trainer and dataloader so a multi-run process (e.g. Optuna
-    sweep) does not leak DataLoader workers / packer threads across trials."""
-    close = getattr(train_loader, "close", None)
-    if callable(close):
+# Wrapper attributes that hold a reference to the next loader in the chain.
+# DataSpec.dataloader -> BufferedIterable.iterable (packer) -> packer.src_iterable
+# (the torch DataLoader); Evaluator.dataloader -> DataSpec -> ... . The live
+# DataLoader *iterator* (which owns the worker subprocesses) is held by the buffer
+# (_active_iterator.iterator) and, crucially, by the packer (src_iterator) — with
+# persistent_workers=False, torch does NOT store it on DataLoader._iterator, so we
+# must reach it through src_iterator or the workers leak.
+_LOADER_GRAPH_ATTRS = (
+    "dataloader",
+    "iterable",
+    "src_iterable",
+    "src_iterator",
+    "_active_iterator",
+    "iterator",
+    "_iterator",
+)
+
+
+def _walk_loader_graph(root) -> list:
+    """Collect every object reachable from a (possibly wrapped) loader so we can
+    stop its background threads and reap its DataLoader worker subprocesses."""
+    seen: set[int] = set()
+    order: list = []
+    stack = [root]
+    while stack:
+        cur = stack.pop()
+        if cur is None or id(cur) in seen:
+            continue
+        seen.add(id(cur))
+        order.append(cur)
+        for attr in _LOADER_GRAPH_ATTRS:
+            stack.append(getattr(cur, attr, None))
+    return order
+
+
+def _shutdown_worker_iterator(obj) -> None:
+    """Shut down a torch ``_MultiProcessingDataLoaderIter``'s worker subprocesses.
+
+    Works for any object exposing ``_shutdown_workers`` — both the iterator stored
+    on a persistent DataLoader and the iterator held by the packer/buffer when
+    persistent_workers=False (where DataLoader._iterator stays None).
+    """
+    shutdown = getattr(obj, "_shutdown_workers", None)
+    if callable(shutdown):
         try:
-            close()
-        except Exception as exc:  # cleanup must not mask the training result
-            logger.warning("train_loader.close() failed during teardown: {}", exc)
+            shutdown()
+        except Exception as exc:
+            logger.warning("DataLoader worker shutdown failed during teardown: {}", exc)
+
+
+def _release_loader(loader) -> None:
+    """Stop background fill threads and reap DataLoader worker subprocesses for a
+    train or eval loader (unwrapping DataSpec/Evaluator/BufferedIterable)."""
+    if loader is None:
+        return
+    graph = _walk_loader_graph(loader)
+    # Stop packer/buffer fill threads first (e.g. BufferedIterable.close()) so they
+    # stop pulling from the workers we are about to shut down.
+    for obj in graph:
+        if isinstance(obj, DataLoader):
+            continue
+        close = getattr(obj, "close", None)
+        if callable(close):
+            try:
+                close()
+            except Exception as exc:  # cleanup must not mask the training result
+                logger.warning("loader.close() failed during teardown: {}", exc)
+    # Then reap the worker subprocesses. Shut down every reachable DataLoader
+    # iterator (persistent path) AND any standalone _MultiProcessingDataLoaderIter
+    # held by the packer (non-persistent path).
+    for obj in graph:
+        if isinstance(obj, DataLoader):
+            try:
+                obj.persistent_workers = False
+            except Exception:
+                pass
+            _shutdown_worker_iterator(getattr(obj, "_iterator", None))
+            try:
+                obj._iterator = None
+            except Exception:
+                pass
+        else:
+            _shutdown_worker_iterator(obj)
+
+
+def _release_training_resources(trainer, train_loader, eval_loader=None) -> None:
+    """Tear down the Trainer and dataloaders so a multi-run process (e.g. Optuna
+    sweep) does not leak DataLoader workers / packer threads across trials.
+
+    Both the train loader (DataSpec -> BufferedIterable -> packer -> DataLoader)
+    and the eval loader (Evaluator -> DataSpec -> DataLoader) must be released:
+    the eval DataLoader is otherwise never closed, and DataSpec has no `.close()`,
+    so persistent workers from every trial would accumulate until OOM.
+    """
+    _release_loader(train_loader)
+    _release_loader(eval_loader)
 
     trainer_close = getattr(trainer, "close", None)
     if callable(trainer_close):
@@ -271,4 +359,4 @@ def run_mlm_pretrain(pretrain_cfg: PretrainConfig) -> float:
         logger.info("Pretrain complete | best_eval_loss={:.4f}", eval_loss)
         return eval_loss
     finally:
-        _release_training_resources(trainer, train_loader)
+        _release_training_resources(trainer, train_loader, eval_evaluator)

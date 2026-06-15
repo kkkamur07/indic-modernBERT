@@ -130,9 +130,11 @@ def stage_raw_dataloader_batch(cfg, tokenizer, *, num_workers: int) -> StageResu
 
 
 def stage_packed_batch(cfg, tokenizer) -> StageResult:
+    from composer.utils import dist
+
     t0 = time.perf_counter()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device_batch_size = cfg.global_train_batch_size // 1
+    device_batch_size = cfg.global_train_batch_size // dist.get_world_size()
     packed = build_parquet_train_dataloader(
         cfg,
         tokenizer,

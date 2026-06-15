@@ -227,7 +227,7 @@ Probe path does not use packing.
 
 | Setting | Value |
 |---------|-------|
-| Train `num_workers` | `pretrain.num_workers` or fallback `probe.dataloader_num_workers` (**6** in `hindi_mlm.yaml`) |
+| Train `num_workers` | `pretrain.num_workers` or fallback `probe.dataloader_num_workers` (**2** in `hindi_mlm.yaml`) |
 | Eval `num_workers` | `pretrain.eval_num_workers` or fallback `probe.eval_dataloader_num_workers` (**3**) |
 | `prefetch_factor` | `pretrain.dataloader_prefetch_factor` or probe default (**4** in `hindi_mlm.yaml`) |
 | `pin_memory` | true |
@@ -237,11 +237,11 @@ Probe path does not use packing.
 
 ### Differences
 
-- Worker/prefetch tuned on RTX 4090 — train **6/4**, eval **3**; set in `hindi_mlm.yaml`.
+- Worker/prefetch tuned on RTX 4090 — train **2/4**, eval **3**; set in `hindi_mlm.yaml`.
 - Multi-GPU sampler exists but **not needed** for single-GPU production.
 - `DataloaderSpeedMonitor` callback available but not in default yaml — use during tuning.
 
-Measured on RTX 4090 (probe): workers ≥ 2 hides tokenize/collate overhead; production yaml uses 6 train / 3 eval workers. Re-profile when moving to production model depth and batch size.
+Measured on RTX 4090 (probe): workers ≥ 2 hides tokenize/collate overhead; production yaml uses 2 train / 3 eval workers. Re-profile when moving to production model depth and batch size.
 
 ---
 

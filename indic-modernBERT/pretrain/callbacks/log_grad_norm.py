@@ -25,6 +25,8 @@ class LogGradNorm(Callback):
     """Logs the precomputed L1 and L2 gradient norms from StableAdamW"""
 
     def __init__(self, log_optimizer_metrics: bool = True, batch_log_interval: int = 10):
+        if batch_log_interval <= 0:
+            raise ValueError(f"`batch_log_interval` must be > 0, got {batch_log_interval}")
         self.log_optimizer_metrics = log_optimizer_metrics
         self.batch_log_interval = batch_log_interval
         if StableAdamW is None:

@@ -108,6 +108,7 @@ def build_scheduler(cfg: SchedulerConfig):
             t_warmup=cfg.t_warmup,
             alpha_f=cfg.alpha_f,
             t_decay=cfg.t_decay,
+            t_max=cfg.t_max,
         )
     if cfg.name == "cosine_inverse_sqrt":
         return CosineInverseSqrtScheduler(
@@ -118,6 +119,7 @@ def build_scheduler(cfg: SchedulerConfig):
             alpha_s=cfg.alpha_s,
             warmup_schedule=cfg.warmup_schedule,
             cooldown_schedule=cfg.cooldown_schedule,
+            t_max=cfg.t_max,
         )
     if cfg.name == "one_minus_sqrt":
         return OneMinusSqrtScheduler(t_decay=cfg.t_decay, t_max=cfg.t_max, alpha_f=cfg.alpha_f)
@@ -145,6 +147,8 @@ def build_optimizer(cfg: OptimizerConfig, model: nn.Module):
             raise ImportError("Install torch-optimi for StableAdamW: uv sync --extra pretrain") from exc
 
         decouple_lr = cfg.name == "decoupled_stableadamw"
+        # optimi requires max_lr (the peak scheduled LR) when decouple_lr=True so it
+        # can normalize fully-decoupled weight decay; WSD peaks at cfg.lr.
         return StableAdamW(
             params,
             lr=cfg.lr,
@@ -152,6 +156,7 @@ def build_optimizer(cfg: OptimizerConfig, model: nn.Module):
             eps=cfg.eps,
             weight_decay=cfg.weight_decay,
             decouple_lr=decouple_lr,
+            max_lr=cfg.lr if decouple_lr else None,
         )
     raise ValueError(f"Not sure how to build optimizer: {cfg.name}")
 

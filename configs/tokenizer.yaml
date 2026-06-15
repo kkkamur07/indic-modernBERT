@@ -28,6 +28,6 @@ tokenizer:
         - ai4bharat/IndicBERTv2-MLM-only
         - sarvamai/sarvam-1
         - google/gemma-4-E4B-it
-        - meta-llama/Llama-4-Scout-17B-16E-Instruct  # gated; Scout/Maverick share this tokenizer
+        # meta-llama/Llama-4-Scout-17B-16E-Instruct is gated; add manually if you have HF access
       reference_tokenizer_name: ai4bharat/IndicBERTv2-MLM-only
       renyi_alpha: 2.5

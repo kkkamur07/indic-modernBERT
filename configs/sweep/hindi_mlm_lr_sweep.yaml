@@ -49,6 +49,10 @@ pretrain:
   eval_num_workers: 3
   packing_prefetch_factor: 5
   dataloader_prefetch_factor: 4
+  # Workers persist across epochs within a trial (perf); the explicit teardown in
+  # _release_training_resources reaps them between Optuna trials so they don't
+  # accumulate to OOM across the in-process multirun.
+  dataloader_persistent_workers: true
 
   loggers:
     tensorboard:

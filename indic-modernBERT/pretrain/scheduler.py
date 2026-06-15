@@ -73,12 +73,17 @@ def _inverse_sqrt_schedule(x: Union[int, float], alpha: float = 1.0, beta: float
     return alpha / math.sqrt(max(x, 0.0) + beta)
 
 
-def _get_scheduler(scheduler_type: Schedule):
+def _get_scheduler(scheduler_type: Schedule, *, for_bounded: bool = False):
     if scheduler_type == Schedule.LINEAR:
         return _linear_schedule
     elif scheduler_type == Schedule.COSINE:
         return _cosine_schedule
     elif scheduler_type == Schedule.INVERSE_SQRT:
+        if for_bounded:
+            raise ValueError(
+                "inverse_sqrt is not supported as a warmup or cooldown schedule because it "
+                "expects (alpha, beta) parameters but warmup/cooldown paths supply (start_y, finish_y)."
+            )
         return _inverse_sqrt_schedule
     else:
         raise ValueError(f"Invalid scheduler type: {scheduler_type}")
@@ -138,7 +143,8 @@ class WarmupStableDecayScheduler(ComposerScheduler):
                 The warmup duration is 0. If you specified warmup as a fraction of total
                 training duration, take note that the warmup duration is calculated in the
                 same unit as the trainer's max_duration parameter."""
-                )
+                ),
+                stacklevel=2,
             )
 
         timestamp = state.timestamp.get(schedule_unit)
@@ -214,8 +220,8 @@ class CosineInverseSqrtScheduler(ComposerScheduler):
         self.scale_schedules = scale_schedules
         self.gamma = None
         self.delta = None
-        self._warmup_schedule = _get_scheduler(Schedule(warmup_schedule))
-        self._cooldown_schedule = _get_scheduler(Schedule(cooldown_schedule))
+        self._warmup_schedule = _get_scheduler(Schedule(warmup_schedule), for_bounded=True)
+        self._cooldown_schedule = _get_scheduler(Schedule(cooldown_schedule), for_bounded=True)
         self._last_t_max = None
 
     def __call__(self, state: State, ssr: float = 1.0):
@@ -247,7 +253,7 @@ class CosineInverseSqrtScheduler(ComposerScheduler):
         if v_step < v_warmup:
             return self._warmup_schedule(v_step / v_warmup, start_y=self.alpha_s, finish_y=1)
 
-        if v_step >= v_max - v_cooldown:
+        if v_cooldown > 0 and v_step >= v_max - v_cooldown:
             return self._cooldown_schedule(
                 (v_step - (v_max - v_cooldown)) / v_cooldown,
                 start_y=self.cooldown_start,
@@ -274,13 +280,14 @@ class CosineInverseSqrtScheduler(ComposerScheduler):
 
         self._last_t_max = t_max
 
-    def _warmup_cooldown_warning(self, type: str):
+    def _warmup_cooldown_warning(self, schedule_type: str):
         warnings.warn(
             textwrap.dedent(
-                f"The {type} duration is 0. If you specified {type} as a fraction of total"
-                f"training duration, take note that the {type} duration is calculated in the"
+                f"The {schedule_type} duration is 0. If you specified {schedule_type} as a fraction of total"
+                f"training duration, take note that the {schedule_type} duration is calculated in the"
                 f"same unit as the trainer's max_duration parameter."
             ),
+            stacklevel=2,
         )
 
 

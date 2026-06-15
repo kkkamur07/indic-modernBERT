@@ -11,6 +11,8 @@ class PackingEfficency(Callback):
     """Records the packing efficiency for each batch."""
 
     def __init__(self, log_interval: int = 100):
+        if log_interval <= 0:
+            raise ValueError(f"`log_interval` must be > 0, got {log_interval}")
         self.log_interval = log_interval
 
     def after_dataloader(self, state: State, logger: Logger) -> None:
