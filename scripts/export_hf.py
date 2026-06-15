@@ -13,7 +13,7 @@ if str(_SRC_ROOT) not in sys.path:
 import torch
 import transformers
 from loguru import logger
-from transformers.modeling_utils import consume_prefix_in_state_dict_if_present
+from torch.nn.modules.utils import consume_prefix_in_state_dict_if_present
 
 from config import load_modernbert_arch_config
 from model.factory import build_modernbert_config

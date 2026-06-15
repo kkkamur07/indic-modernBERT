@@ -154,16 +154,6 @@ class SequencePacker(ABC):
         else:
             self.batch_size_scheduler = None
 
-    @property
-    def seqs_emitted(self):
-        "Number of seqs, incoming from src_iterable, which have been emitted in OUTGOING batches."
-        return self._seqs_emitted
-
-    @property
-    def seqs_consumed(self):
-        "Number of seqs, incoming from src_iterable, which have been consumed."
-        return self._seqs_consumed
-
     def _reset_state(self):
         self.epoch += 1
         self.buffer.clear()
