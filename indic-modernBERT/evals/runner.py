@@ -28,15 +28,14 @@ def run_eval_suite(cfg: EvalSuiteConfig) -> dict[str, Any]:
         results.append(_safe_layer("mlm_holdout", lambda: run_mlm_eval(cfg, output_dir)))
 
     for task_name in cfg.tasks:
-        spec = get_task_spec(task_name)
-        logger.info("Running supervised task: {} ({})", spec.name, spec.display_name)
-
         def _run_task(name: str = task_name) -> dict[str, Any]:
+            spec = get_task_spec(name)
+            logger.info("Running supervised task: {} ({})", spec.name, spec.display_name)
             task_result = run_supervised_task(cfg, name, output_dir)
             _write_result(output_dir / "supervised" / name / "metrics.json", task_result)
             return task_result
 
-        results.append(_safe_layer(spec.name, _run_task))
+        results.append(_safe_layer(task_name, _run_task))
 
     if cfg.efficiency.enabled:
         logger.info("Running efficiency sweep")

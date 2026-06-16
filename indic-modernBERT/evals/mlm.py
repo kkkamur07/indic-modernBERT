@@ -68,7 +68,7 @@ def run_mlm_eval(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, object]:
     texts = load_eval_texts(
         mlm_cfg.data_root,
         mlm_cfg.text_column,
-        max_rows=mlm_cfg.max_samples or 1_000_000_000,
+        max_rows=mlm_cfg.max_samples if mlm_cfg.max_samples is not None else 1_000_000_000,
     )
     dataset = ListMLMDataset(texts)
     dataloader = DataLoader(

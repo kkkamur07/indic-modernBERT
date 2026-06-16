@@ -21,7 +21,7 @@ from utils.log_helpers import setup_run_log, slug
 
 
 @hydra.main(version_base=None, config_path="../configs/evals", config_name="hindi_phase1")
-def main(cfg: DictConfig) -> float:
+def main(cfg: DictConfig) -> None:
     eval_cfg = load_eval_suite_config(cfg)
     setup_run_log(f"evals__model-{slug(eval_cfg.model.model_name_or_path)}.log")
     logger.info("Evaluating model: {}", eval_cfg.model.model_name_or_path)
@@ -36,7 +36,7 @@ def main(cfg: DictConfig) -> float:
     logger.info("Wrote reports: {}", summary["report_paths"])
 
     failures = [row for row in summary["results"] if row.get("status") != "completed"]
-    return float(len(failures))
+    sys.exit(len(failures))
 
 
 if __name__ == "__main__":

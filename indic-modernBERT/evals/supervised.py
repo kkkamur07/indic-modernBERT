@@ -474,10 +474,12 @@ def _run_multiple_choice(
             truncation=True,
             max_length=task_cfg.max_seq_length,
         )
-        return {
+        features = {
             key: [value[i : i + len(ending_names)] for i in range(0, len(value), len(ending_names))]
             for key, value in tokenized.items()
         }
+        features["labels"] = examples[spec.label_column]
+        return features
 
     train_dataset = None
     if task_cfg.do_train and train_split is not None:

@@ -45,10 +45,7 @@ TASK_REGISTRY: dict[str, TaskSpec] = {
         text_columns=("INDIC REVIEW", "sentence1", "text", "review_body"),
         max_seq_length=128,
         num_labels=2,
-        # IndicSentiment has no train split — only a test set.
-        # Fine-tuning cannot happen; the model is evaluated zero-shot with a fresh
-        # randomly-initialised classification head. Treat this metric as a
-        # representation-quality signal, not a fine-tuned accuracy number.
+        # Keep training enabled when the configured dataset exposes a train split.
         train_split="train",
     ),
     "ner": TaskSpec(

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from omegaconf import DictConfig, OmegaConf
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from utils.paths import resolve_from_cwd
 
@@ -42,6 +42,12 @@ class SupervisedDefaultsConfig(BaseModel):
     save_total_limit: int = Field(default=1, ge=1)
     report_to: list[str] = Field(default_factory=list)
 
+    @model_validator(mode="after")
+    def validate_mixed_precision(self) -> SupervisedDefaultsConfig:
+        if self.fp16 and self.bf16:
+            raise ValueError("fp16 and bf16 cannot both be enabled for supervised evaluation")
+        return self
+
 
 class TaskOverrideConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -60,6 +66,12 @@ class TaskOverrideConfig(BaseModel):
     fp16: bool | None = None
     bf16: bool | None = None
 
+    @model_validator(mode="after")
+    def validate_mixed_precision(self) -> TaskOverrideConfig:
+        if self.fp16 is True and self.bf16 is True:
+            raise ValueError("fp16 and bf16 cannot both be enabled in a task override")
+        return self
+
     def apply_to(self, defaults: SupervisedDefaultsConfig) -> SupervisedDefaultsConfig:
         payload = defaults.model_dump()
         for key, value in self.model_dump(exclude_none=True).items():
@@ -76,7 +88,7 @@ class MlmEvalConfig(BaseModel):
     max_seq_length: int = Field(default=1024, ge=1)
     mlm_probability: float = Field(default=0.15, gt=0.0, lt=1.0)
     batch_size: int = Field(default=8, ge=1)
-    max_samples: int | None = Field(default=1024, ge=1)
+    max_samples: int | None = Field(default=1024, ge=0)
     max_batches: int | None = Field(default=None, ge=1)
     num_workers: int = Field(default=0, ge=0)
     seed: int = 17
