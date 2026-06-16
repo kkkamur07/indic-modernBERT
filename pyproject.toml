@@ -24,6 +24,13 @@ dependencies = [
 package = false
 
 [project.optional-dependencies]
+evals = [
+    "accelerate",
+    "datasets>=2.19,<3",
+    "evaluate",
+    "nvidia-ml-py>=13.610.43",
+    "seqeval",
+]
 viz = [
     "matplotlib",
 ]

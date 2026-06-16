@@ -1,0 +1,172 @@
+"""Pydantic schemas for Hydra-driven evaluation runs."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, Literal
+
+from omegaconf import DictConfig, OmegaConf
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from utils.paths import resolve_from_cwd
+
+
+class ModelEvalConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model_name_or_path: str
+    tokenizer_name_or_path: str | None = None
+    trust_remote_code: bool = False
+
+    @property
+    def tokenizer_source(self) -> str:
+        return self.tokenizer_name_or_path or self.model_name_or_path
+
+
+class SupervisedDefaultsConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    do_train: bool = True
+    do_eval: bool = True
+    max_train_samples: int | None = Field(default=None, ge=1)
+    max_eval_samples: int | None = Field(default=None, ge=1)
+    num_train_epochs: float = Field(default=3.0, gt=0.0)
+    learning_rate: float = Field(default=3e-5, gt=0.0)
+    weight_decay: float = Field(default=0.01, ge=0.0)
+    warmup_ratio: float = Field(default=0.1, ge=0.0, le=1.0)
+    per_device_train_batch_size: int = Field(default=16, ge=1)
+    per_device_eval_batch_size: int = Field(default=32, ge=1)
+    max_seq_length: int = Field(default=128, ge=1)
+    fp16: bool = False
+    bf16: bool = False
+    save_total_limit: int = Field(default=1, ge=1)
+    report_to: list[str] = Field(default_factory=list)
+
+
+class TaskOverrideConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    do_train: bool | None = None
+    do_eval: bool | None = None
+    max_train_samples: int | None = Field(default=None, ge=1)
+    max_eval_samples: int | None = Field(default=None, ge=1)
+    num_train_epochs: float | None = Field(default=None, gt=0.0)
+    learning_rate: float | None = Field(default=None, gt=0.0)
+    weight_decay: float | None = Field(default=None, ge=0.0)
+    warmup_ratio: float | None = Field(default=None, ge=0.0, le=1.0)
+    per_device_train_batch_size: int | None = Field(default=None, ge=1)
+    per_device_eval_batch_size: int | None = Field(default=None, ge=1)
+    max_seq_length: int | None = Field(default=None, ge=1)
+    fp16: bool | None = None
+    bf16: bool | None = None
+
+    def apply_to(self, defaults: SupervisedDefaultsConfig) -> SupervisedDefaultsConfig:
+        payload = defaults.model_dump()
+        for key, value in self.model_dump(exclude_none=True).items():
+            payload[key] = value
+        return SupervisedDefaultsConfig.model_validate(payload)
+
+
+class MlmEvalConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    data_root: Path = Path("data/eval/hi")
+    text_column: str = "text"
+    max_seq_length: int = Field(default=1024, ge=1)
+    mlm_probability: float = Field(default=0.15, gt=0.0, lt=1.0)
+    batch_size: int = Field(default=8, ge=1)
+    max_samples: int | None = Field(default=1024, ge=1)
+    max_batches: int | None = Field(default=None, ge=1)
+    num_workers: int = Field(default=0, ge=0)
+    seed: int = 17
+
+    @field_validator("data_root", mode="before")
+    @classmethod
+    def resolve_path(cls, value: Path | str) -> Path:
+        return resolve_from_cwd(value)
+
+
+class EfficiencyConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    sequence_lengths: list[int] = Field(default_factory=lambda: [128, 256, 512, 1024])
+    batch_size: int = Field(default=8, ge=1)
+    warmup_steps: int = Field(default=2, ge=0)
+    measured_steps: int = Field(default=5, ge=1)
+    use_mlm_head: bool = False
+    use_bf16_autocast: bool = True
+    measure_power: bool = False
+    gpu_index: int = Field(default=0, ge=0)
+    sample_texts: list[str] = Field(
+        default_factory=lambda: [
+            "भारत में हिंदी भाषा अनेक रूपों में बोली और लिखी जाती है।",
+            "यह मूल्यांकन छोटे बैचों पर अनुमान गति और स्मृति उपयोग मापता है।",
+        ]
+    )
+
+    @field_validator("sequence_lengths")
+    @classmethod
+    def validate_lengths(cls, value: list[int]) -> list[int]:
+        if not value:
+            raise ValueError("sequence_lengths must contain at least one length")
+        if any(length < 1 for length in value):
+            raise ValueError("sequence_lengths must be positive")
+        return value
+
+
+class ReportingConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    write_json: bool = True
+    write_csv: bool = True
+    write_markdown: bool = True
+
+
+class EvalSuiteConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model: ModelEvalConfig
+    output_dir: Path = Path("artifacts/evals")
+    seed: int = 17
+    device: Literal["auto", "cpu", "cuda", "mps"] = "auto"
+    tasks: list[str] = Field(default_factory=lambda: ["sentiment", "ner", "qa", "copa"])
+    supervised: SupervisedDefaultsConfig = Field(default_factory=SupervisedDefaultsConfig)
+    task_overrides: dict[str, TaskOverrideConfig] = Field(default_factory=dict)
+    mlm: MlmEvalConfig = Field(default_factory=MlmEvalConfig)
+    efficiency: EfficiencyConfig = Field(default_factory=EfficiencyConfig)
+    reporting: ReportingConfig = Field(default_factory=ReportingConfig)
+
+    @field_validator("output_dir", mode="before")
+    @classmethod
+    def resolve_path(cls, value: Path | str) -> Path:
+        return resolve_from_cwd(value)
+
+    def task_config(self, name: str) -> SupervisedDefaultsConfig:
+        override = self.task_overrides.get(name)
+        if override is None:
+            return self.supervised
+        return override.apply_to(self.supervised)
+
+
+class EvalJobConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    eval: EvalSuiteConfig
+
+
+def load_eval_suite_config(cfg: DictConfig) -> EvalSuiteConfig:
+    if "eval" not in cfg:
+        raise ValueError("Hydra config must contain a top-level 'eval' key.")
+    eval_container = OmegaConf.to_container(cfg.eval, resolve=True)
+    if not isinstance(eval_container, dict):
+        raise ValueError("Resolved eval config must be a mapping")
+    return EvalSuiteConfig.model_validate(eval_container)
+
+
+def config_to_jsonable(cfg: DictConfig) -> dict[str, Any]:
+    payload = OmegaConf.to_container(cfg, resolve=True)
+    if not isinstance(payload, dict):
+        raise ValueError("Resolved Hydra config must be a mapping")
+    return payload
