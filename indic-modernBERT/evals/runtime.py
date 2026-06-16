@@ -16,10 +16,20 @@ def choose_device(name: str) -> torch.device:
     if name == "auto":
         if torch.cuda.is_available():
             return torch.device("cuda")
-        if torch.backends.mps.is_available():
-            return torch.device("mps")
         return torch.device("cpu")
     return torch.device(name)
+
+
+def bf16_supported(device: torch.device | None = None) -> bool:
+    if not torch.cuda.is_available():
+        return False
+    if device is not None and device.type != "cuda":
+        return False
+    return bool(torch.cuda.is_bf16_supported())
+
+
+def should_use_bf16(requested: bool, device: torch.device | None = None) -> bool:
+    return requested and bf16_supported(device)
 
 
 def set_eval_seed(seed: int) -> None:

@@ -17,6 +17,7 @@ from evals.tasks import (
     run_sequence_classification,
     run_token_classification,
 )
+from evals.tasks.common import resolve_max_seq_length
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 TaskRunner = Callable[
@@ -77,7 +78,9 @@ def run_supervised_task(cfg: EvalSuiteConfig, task_name: str, output_dir: Path) 
             "dataset_config": spec.dataset_config,
             "train_split": train_split,
             "eval_split": eval_split,
-            "max_seq_length": task_cfg.max_seq_length,
+            "max_seq_length": resolve_max_seq_length(cfg, task_cfg),
+            "configured_max_seq_length": task_cfg.max_seq_length,
+            "context_mode": cfg.model.context_mode,
             "max_train_samples": task_cfg.max_train_samples,
             "max_eval_samples": task_cfg.max_eval_samples,
         },

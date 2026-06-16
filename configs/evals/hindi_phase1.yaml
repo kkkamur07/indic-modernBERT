@@ -12,6 +12,9 @@ eval:
     model_name_or_path: ai4bharat/IndicBERTv2-MLM-only
     tokenizer_name_or_path: null
     trust_remote_code: false
+    # common_128 is fair across IndicBERT-style baselines; model_max showcases long-context checkpoints.
+    max_sequence_length: 128
+    context_mode: common_128
 
   output_dir: artifacts/evals
   seed: 17
@@ -36,7 +39,7 @@ eval:
     per_device_eval_batch_size: 32
     max_seq_length: 128
     fp16: false
-    bf16: false
+    bf16: true
     save_total_limit: 1
     report_to: []
 
@@ -64,7 +67,8 @@ eval:
 
   efficiency:
     enabled: true
-    sequence_lengths: [128, 256, 512, 1024]
+    # Smoke-only latency check; broaden this manually for dedicated profiling runs.
+    sequence_lengths: [128]
     batch_size: 8
     warmup_steps: 2
     measured_steps: 5
@@ -72,7 +76,6 @@ eval:
     use_bf16_autocast: true
     # Optional ModernBERT-style NVML power readings. Keep off unless pynvml/NVML is available.
     measure_power: false
-    gpu_index: 0
     sample_texts:
       - भारत में हिंदी भाषा अनेक रूपों में बोली और लिखी जाती है।
       - यह मूल्यांकन छोटे बैचों पर अनुमान गति और स्मृति उपयोग मापता है।

@@ -11,7 +11,7 @@ import torch
 from transformers import AutoModel, AutoModelForMaskedLM, AutoTokenizer
 
 from evals.config import EvalSuiteConfig
-from evals.runtime import choose_device, set_eval_seed
+from evals.runtime import choose_device, set_eval_seed, should_use_bf16
 
 
 def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, Any]:
@@ -33,6 +33,7 @@ def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, An
     model.eval()
     num_parameters = _num_parameters(model)
     num_parameters_m = num_parameters / 1_000_000
+    use_bf16_autocast = should_use_bf16(eff_cfg.use_bf16_autocast, device)
 
     rows = []
     for seq_len in eff_cfg.sequence_lengths:
@@ -41,16 +42,16 @@ def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, An
         if device.type == "cuda":
             torch.cuda.reset_peak_memory_stats(device)
         for _ in range(eff_cfg.warmup_steps):
-            _forward(model, batch, device, use_bf16_autocast=eff_cfg.use_bf16_autocast)
+            _forward(model, batch, device, use_bf16_autocast=use_bf16_autocast)
 
         latencies = []
         power_readings = []
         for _ in range(eff_cfg.measured_steps):
             start = time.perf_counter()
-            _forward(model, batch, device, use_bf16_autocast=eff_cfg.use_bf16_autocast)
+            _forward(model, batch, device, use_bf16_autocast=use_bf16_autocast)
             latencies.append(time.perf_counter() - start)
             if eff_cfg.measure_power:
-                reading = _gpu_power_watts(eff_cfg.gpu_index)
+                reading = _gpu_power_watts()
                 if reading is not None:
                     power_readings.append(reading)
 
@@ -89,9 +90,8 @@ def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, An
             "warmup_steps": eff_cfg.warmup_steps,
             "measured_steps": eff_cfg.measured_steps,
             "use_mlm_head": eff_cfg.use_mlm_head,
-            "use_bf16_autocast": eff_cfg.use_bf16_autocast,
+            "use_bf16_autocast": use_bf16_autocast,
             "measure_power": eff_cfg.measure_power,
-            "gpu_index": eff_cfg.gpu_index,
         },
     }
     (output_dir / "efficiency_metrics.json").write_text(_json_dumps(result), encoding="utf-8")
@@ -148,12 +148,12 @@ def _num_parameters(model: torch.nn.Module) -> int:
     return int(sum(parameter.numel() for parameter in model.parameters()))
 
 
-def _gpu_power_watts(gpu_index: int) -> float | None:
+def _gpu_power_watts() -> float | None:
     try:
         import pynvml  # type: ignore[import-not-found]
 
         pynvml.nvmlInit()
-        handle = pynvml.nvmlDeviceGetHandleByIndex(gpu_index)
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
         return float(pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0)
     except Exception:
         return None

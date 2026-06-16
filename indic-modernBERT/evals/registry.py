@@ -22,7 +22,6 @@ class TaskSpec:
     num_labels: int | None = None
     label_column: str = "label"
     text_columns: tuple[str, ...] = ()
-    remove_columns: tuple[str, ...] = ()
     max_seq_length: int = 128
     trust_remote_code: bool = True
     # When True, continuation subword tokens get the same NER label as their first

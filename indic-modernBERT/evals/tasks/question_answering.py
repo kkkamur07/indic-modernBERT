@@ -12,7 +12,7 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 from evals.config import EvalSuiteConfig, SupervisedDefaultsConfig
 from evals.registry import TaskSpec
-from evals.tasks.common import select_rows, trainer_processing_kwargs, training_args
+from evals.tasks.common import resolve_max_seq_length, select_rows, trainer_processing_kwargs, training_args
 
 
 def run_question_answering(
@@ -28,13 +28,14 @@ def run_question_answering(
     doc_stride = int(spec.extra["doc_stride"])
     max_answer_length = int(spec.extra["max_answer_length"])
     n_best = int(spec.extra["n_best"])
+    max_seq_length = resolve_max_seq_length(cfg, task_cfg)
 
     def preprocess_training_examples(examples: dict[str, list[Any]]) -> dict[str, Any]:
         questions = [question.strip() for question in examples["question"]]
         inputs = tokenizer(
             questions,
             examples["context"],
-            max_length=task_cfg.max_seq_length,
+            max_length=max_seq_length,
             truncation="only_second",
             stride=doc_stride,
             return_overflowing_tokens=True,
@@ -81,7 +82,7 @@ def run_question_answering(
         inputs = tokenizer(
             questions,
             examples["context"],
-            max_length=task_cfg.max_seq_length,
+            max_length=max_seq_length,
             truncation="only_second",
             stride=doc_stride,
             return_overflowing_tokens=True,

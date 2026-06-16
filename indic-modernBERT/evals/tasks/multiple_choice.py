@@ -12,7 +12,7 @@ from transformers.tokenization_utils_base import PaddingStrategy, PreTrainedToke
 
 from evals.config import EvalSuiteConfig, SupervisedDefaultsConfig
 from evals.registry import TaskSpec
-from evals.tasks.common import accuracy_metrics, select_rows, trainer_processing_kwargs, training_args
+from evals.tasks.common import accuracy_metrics, resolve_max_seq_length, select_rows, trainer_processing_kwargs, training_args
 
 
 @dataclass
@@ -52,6 +52,8 @@ def run_multiple_choice(
     tokenizer: PreTrainedTokenizerBase,
     task_dir: Path,
 ) -> dict[str, float]:
+    max_seq_length = resolve_max_seq_length(cfg, task_cfg)
+
     def preprocess(examples: dict[str, list[Any]]) -> dict[str, Any]:
         ending_names = ["choice1", "choice2"]
         first_sentences = [[premise] * len(ending_names) for premise in examples["premise"]]
@@ -65,7 +67,7 @@ def run_multiple_choice(
             flat_first,
             flat_second,
             truncation=True,
-            max_length=task_cfg.max_seq_length,
+            max_length=max_seq_length,
         )
         features = {
             key: [value[i : i + len(ending_names)] for i in range(0, len(value), len(ending_names))]

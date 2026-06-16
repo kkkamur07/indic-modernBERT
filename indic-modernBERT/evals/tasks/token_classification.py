@@ -11,7 +11,7 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 from evals.config import EvalSuiteConfig, SupervisedDefaultsConfig
 from evals.registry import TaskSpec
-from evals.tasks.common import select_rows, trainer_processing_kwargs, training_args
+from evals.tasks.common import resolve_max_seq_length, select_rows, trainer_processing_kwargs, training_args
 
 
 def run_token_classification(
@@ -25,13 +25,14 @@ def run_token_classification(
     task_dir: Path,
 ) -> dict[str, float]:
     label_list = raw_dataset[eval_split].features[spec.label_column].feature.names
+    max_seq_length = resolve_max_seq_length(cfg, task_cfg)
 
     def tokenize_and_align_labels(examples: dict[str, list[Any]]) -> dict[str, Any]:
         tokenized = tokenizer(
             examples["tokens"],
             truncation=True,
             is_split_into_words=True,
-            max_length=task_cfg.max_seq_length,
+            max_length=max_seq_length,
         )
         labels = []
         for row_idx, label in enumerate(examples[spec.label_column]):

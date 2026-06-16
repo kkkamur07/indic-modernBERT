@@ -29,6 +29,7 @@ evals = [
     "datasets>=2.19,<3",
     "evaluate",
     "nvidia-ml-py>=13.610.43",
+    "scikit-learn",
     "seqeval",
 ]
 viz = [

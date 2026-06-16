@@ -11,7 +11,14 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 from evals.config import EvalSuiteConfig, SupervisedDefaultsConfig
 from evals.registry import TaskSpec
-from evals.tasks.common import classification_metrics, first_present, select_rows, trainer_processing_kwargs, training_args
+from evals.tasks.common import (
+    classification_metrics,
+    first_present,
+    resolve_max_seq_length,
+    select_rows,
+    trainer_processing_kwargs,
+    training_args,
+)
 
 
 def run_sequence_classification(
@@ -24,6 +31,8 @@ def run_sequence_classification(
     tokenizer: PreTrainedTokenizerBase,
     task_dir: Path,
 ) -> dict[str, float]:
+    max_seq_length = resolve_max_seq_length(cfg, task_cfg)
+
     def normalize(batch: dict[str, list[Any]]) -> dict[str, list[Any]]:
         text_col = first_present(batch, spec.text_columns)
         texts = [str(value) for value in batch[text_col]]
@@ -39,7 +48,7 @@ def run_sequence_classification(
         return {"text": texts, "labels": labels}
 
     def tokenize_text(batch: dict[str, list[Any]]) -> dict[str, Any]:
-        tokenized = tokenizer(batch["text"], truncation=True, max_length=task_cfg.max_seq_length)
+        tokenized = tokenizer(batch["text"], truncation=True, max_length=max_seq_length)
         tokenized["labels"] = batch["labels"]
         return tokenized
 

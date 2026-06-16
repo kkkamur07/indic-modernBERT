@@ -1209,6 +1209,7 @@ evals = [
     { name = "datasets" },
     { name = "evaluate" },
     { name = "nvidia-ml-py" },
+    { name = "scikit-learn" },
     { name = "seqeval" },
 ]
 pretrain = [
@@ -1244,6 +1245,7 @@ requires-dist = [
     { name = "pyarrow" },
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "scikit-learn", marker = "extra == 'evals'" },
     { name = "seqeval", marker = "extra == 'evals'" },
     { name = "tensorboard", marker = "extra == 'pretrain'" },
     { name = "tokenizers", specifier = ">=0.22.0,<=0.23.0" },

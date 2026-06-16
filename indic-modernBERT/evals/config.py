@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from omegaconf import DictConfig, OmegaConf
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -17,6 +17,8 @@ class ModelEvalConfig(BaseModel):
     model_name_or_path: str
     tokenizer_name_or_path: str | None = None
     trust_remote_code: bool = False
+    max_sequence_length: int = Field(default=128, ge=1)
+    context_mode: Literal["common_128", "model_max"] = "common_128"
 
     @property
     def tokenizer_source(self) -> str:
@@ -38,7 +40,7 @@ class SupervisedDefaultsConfig(BaseModel):
     per_device_eval_batch_size: int = Field(default=32, ge=1)
     max_seq_length: int = Field(default=128, ge=1)
     fp16: bool = False
-    bf16: bool = False
+    bf16: bool = True
     save_total_limit: int = Field(default=1, ge=1)
     report_to: list[str] = Field(default_factory=list)
 
@@ -103,14 +105,13 @@ class EfficiencyConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     enabled: bool = True
-    sequence_lengths: list[int] = Field(default_factory=lambda: [128, 256, 512, 1024])
+    sequence_lengths: list[Annotated[int, Field(ge=1)]] = Field(default_factory=lambda: [128, 256, 512, 1024])
     batch_size: int = Field(default=8, ge=1)
     warmup_steps: int = Field(default=2, ge=0)
     measured_steps: int = Field(default=5, ge=1)
     use_mlm_head: bool = False
     use_bf16_autocast: bool = True
     measure_power: bool = False
-    gpu_index: int = Field(default=0, ge=0)
     sample_texts: list[str] = Field(
         default_factory=lambda: [
             "भारत में हिंदी भाषा अनेक रूपों में बोली और लिखी जाती है।",
@@ -123,8 +124,6 @@ class EfficiencyConfig(BaseModel):
     def validate_lengths(cls, value: list[int]) -> list[int]:
         if not value:
             raise ValueError("sequence_lengths must contain at least one length")
-        if any(length < 1 for length in value):
-            raise ValueError("sequence_lengths must be positive")
         return value
 
 
@@ -142,7 +141,7 @@ class EvalSuiteConfig(BaseModel):
     model: ModelEvalConfig
     output_dir: Path = Path("artifacts/evals")
     seed: int = 17
-    device: Literal["auto", "cpu", "cuda", "mps"] = "auto"
+    device: Literal["auto", "cpu", "cuda"] = "auto"
     tasks: list[str] = Field(default_factory=lambda: ["sentiment", "ner", "qa", "copa"])
     supervised: SupervisedDefaultsConfig = Field(default_factory=SupervisedDefaultsConfig)
     task_overrides: dict[str, TaskOverrideConfig] = Field(default_factory=dict)
