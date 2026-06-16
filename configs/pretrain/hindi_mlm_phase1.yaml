@@ -34,6 +34,11 @@
 #   Best trial: eval loss 2.3911 @ ba=1000
 #   Sweep config: configs/sweep/hindi_mlm_lr_sweep.yaml
 #   Results:      multirun/2026-06-15/14-01-20/optimization_results.yaml
+#
+# CHECKPOINTS
+#   See hindi_mlm.yaml header for why .pt files are ~1.8 GB (weights + optimizer).
+#   Best-by-eval-loss live in save_folder/best/; manifest.json lists top-3.
+#   Export for inference: make export-hf ARGS=".../best/best-ba<N>-rank0 out/ --tokenizer ..."
 # ─────────────────────────────────────────────────────────────────────────────
 defaults:
   - hindi_mlm

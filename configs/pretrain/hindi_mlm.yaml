@@ -1,4 +1,14 @@
 # Shared hydra config for all pretrain configs.
+#
+# CHECKPOINTS (Composer saves full training state, weights_only=False)
+#   modernbert_base (~188M params) checkpoints are ~1.8 GB on disk, not ~188 MB.
+#   Params ≠ megabytes: 188M weights × 4 bytes (fp32) ≈ 0.75 GB for model weights alone.
+#   The rest is optimizer state — StableAdamW keeps exp_avg, exp_avg_sq, eps_sq per param
+#   (~1.2 GB), plus RNG/scheduler/metadata. Needed for autoresume; not needed for inference.
+#   Top-N best: callbacks.save_best_checkpoints writes to {save_folder}/best/ with
+#   manifest.json (ranked by eval loss; lowest loss wins).
+#   For HuggingFace / inference only: `make export-hf ARGS="<ckpt> out/ --tokenizer ..."`
+#   exports weights only (~0.75 GB fp32).
 
 hydra:
   job:
