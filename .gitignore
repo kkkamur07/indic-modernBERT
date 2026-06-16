@@ -26,10 +26,4 @@ data/
 _support_repo/**/target/
 _support_repo/**/tokenizer_json/
 # Artifacts — ignore all except tensorboard event logs
-artifacts/*
-!artifacts/model/
-artifacts/model/*
-!artifacts/model/modernbert/
-artifacts/model/modernbert/*
-!artifacts/model/modernbert/tensorboard/
-!artifacts/model/modernbert/tensorboard/**
+artifacts/
