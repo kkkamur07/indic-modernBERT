@@ -23,6 +23,8 @@ multirun/
 data/
 
 # SuperBPE Patch
+_support_repo/IndicBERT/
+_support_repo/ModernBERT/
 _support_repo/**/target/
 _support_repo/**/tokenizer_json/
 # Artifacts — ignore all except tensorboard event logs

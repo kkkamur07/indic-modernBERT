@@ -6,7 +6,7 @@ TMPDIR_ENV := TMPDIR=$(PWD)/.tmp TORCHINDUCTOR_CACHE_DIR=$(PWD)/.tmp/torchinduct
 .PHONY: train-bpe train-bpe-nohup eval-bpe eval-bpe-nohup pretokenization \
         train-pretrain train-phase1 train-phase1-nohup \
         train-smoke-50ba train-smoke-50ba-nohup lr-sweep lr-sweep-nohup \
-        export-hf pipeline-trace
+        run-evals run-evals-smoke export-hf pipeline-trace
 
 # --- Tokenizer ---
 
@@ -65,6 +65,18 @@ lr-sweep:
 lr-sweep-nohup:
 	mkdir -p logs/lr_sweep .tmp
 	PYTHONUNBUFFERED=1 nohup $(MAKE) lr-sweep > logs/lr_sweep/nohup.log 2>&1 &
+
+# --- Evaluation ---
+
+run-evals:
+	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_evals.py $(ARGS)
+
+run-evals-smoke:
+	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_evals.py \
+	  eval.supervised.max_train_samples=8 eval.supervised.max_eval_samples=8 \
+	  eval.supervised.num_train_epochs=0.01 eval.mlm.max_samples=8 eval.mlm.max_batches=1 \
+	  eval.efficiency.sequence_lengths='[128]' eval.efficiency.warmup_steps=0 \
+	  eval.efficiency.measured_steps=1 $(ARGS)
 
 # --- Utilities ---
 

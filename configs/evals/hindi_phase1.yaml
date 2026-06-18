@@ -1,0 +1,86 @@
+# Hindi phase-1 evaluation suite.
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: logs/${now:%Y-%m-%d}_${now:%H-%M-%S}_evals
+
+eval:
+  model:
+    # Override this with any HF Hub ID or local HF export directory.
+    model_name_or_path: ai4bharat/IndicBERTv2-MLM-only
+    tokenizer_name_or_path: null
+    trust_remote_code: false
+    # common_128 is fair across IndicBERT-style baselines; model_max showcases long-context checkpoints.
+    max_sequence_length: 128
+    context_mode: common_128
+
+  output_dir: artifacts/evals
+  seed: 17
+  device: auto
+
+  tasks:
+    - sentiment
+    - ner
+    - qa
+    - copa
+
+  supervised:
+    do_train: true
+    do_eval: true
+    max_train_samples: null
+    max_eval_samples: null
+    num_train_epochs: 3.0
+    learning_rate: 3.0e-5
+    weight_decay: 0.01
+    warmup_ratio: 0.1
+    per_device_train_batch_size: 16
+    per_device_eval_batch_size: 32
+    max_seq_length: 128
+    fp16: false
+    bf16: true
+    save_total_limit: 1
+    report_to: []
+
+  task_overrides:
+    qa:
+      max_seq_length: 384
+      per_device_train_batch_size: 8
+      per_device_eval_batch_size: 16
+    copa:
+      max_seq_length: 512
+      per_device_train_batch_size: 8
+      per_device_eval_batch_size: 16
+
+  mlm:
+    enabled: true
+    data_root: data/eval/hi
+    text_column: text
+    max_seq_length: 1024
+    mlm_probability: 0.15
+    batch_size: 8
+    max_samples: 1024
+    max_batches: null
+    num_workers: 0
+    seed: ${eval.seed}
+
+  efficiency:
+    enabled: true
+    # Smoke-only latency check; broaden this manually for dedicated profiling runs.
+    sequence_lengths: [128]
+    batch_size: 8
+    warmup_steps: 2
+    measured_steps: 5
+    use_mlm_head: false
+    use_bf16_autocast: true
+    # Optional ModernBERT-style NVML power readings. Keep off unless pynvml/NVML is available.
+    measure_power: false
+    sample_texts:
+      - भारत में हिंदी भाषा अनेक रूपों में बोली और लिखी जाती है।
+      - यह मूल्यांकन छोटे बैचों पर अनुमान गति और स्मृति उपयोग मापता है।
+
+  reporting:
+    write_json: true
+    write_csv: true
+    write_markdown: true

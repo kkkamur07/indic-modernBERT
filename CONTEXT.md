@@ -28,12 +28,34 @@ _Avoid_: Stage 2 (ambiguous outside SuperBPE context)
 A pre-tokenization chunk that corresponds to a meaningful text fragment — a word, punctuation mark, digit group, or whitespace run.
 _Avoid_: Token (tokens are produced later by BPE)
 
+**Downstream evaluation**:
+Fine-tuning or probing an exported encoder on task datasets after MLM pretraining.
+_Avoid_: Pretraining eval, tokenizer eval
+
+**Supervised gate**:
+The first Hindi-only downstream checkpoint check: IndicSentiment, Naamapadam NER, IndicQA, and IndicCOPA.
+_Avoid_: Final benchmark, retrieval benchmark
+
+**MLM holdout**:
+Masked-language-model loss and masked-token accuracy on the withheld Hindi parquet shard under `data/eval/hi/`.
+_Avoid_: Training loss
+
+**Efficiency sweep**:
+Inference-only length sweep over fixed Hindi inputs that reports latency, throughput, and CUDA peak memory.
+_Avoid_: Training speed, dataloader speed
+
+**Retrieval evaluation**:
+Ranking/query-document evaluation for retrieval-tuned encoders. It is deferred until context-extension or retrieval-specific fine-tuning exists.
+_Avoid_: QA, MLM holdout
+
 ## Relationships
 
 - **Script normalization** runs first, then **Normalization** (NFKC), then **Pre-tokenization**
 - **Pre-tokenization** produces **Semantic units** that constrain BPE merging
 - **Subword stage** pre-tokenization is used by BPE and by the first phase of SuperBPE
 - **Superword stage** pre-tokenization replaces **Subword stage** during the second phase of SuperBPE
+- **MLM holdout**, **Supervised gate**, and **Efficiency sweep** form the phase-1 checkpoint evaluation suite
+- **Retrieval evaluation** is a later phase and should not be used as the first Hindi checkpoint gate
 
 ## Example dialogue
 

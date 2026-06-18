@@ -45,6 +45,7 @@ After that, the main commands are:
 | Run an Optuna LR sweep to find the best learning rate | `make lr-sweep` |
 | Full phase-1 pretrain | `uv sync --extra pretrain && make train-pretrain` |
 | Export a checkpoint to HuggingFace format | `make export-hf ARGS="ckpt.pt out/ --tokenizer artifacts/tokenizer/bpe_vs50368"` |
+| Evaluate an HF export / Hub model | `make run-evals ARGS="eval.model.model_name_or_path=<hf-id-or-path>"` |
 | Explore the pipeline interactively ( Debugging purposes as well ) | open `notebook/pipeline_map.ipynb` |
 
 Artifacts are written to `artifacts/tokenizer/bpe_vs{V}/` and `artifacts/model/modernbert/`.
@@ -176,6 +177,33 @@ make lr-sweep-nohup    # runs in background, logs to logs/lr_sweep/nohup.log
 ```
 
 8 Optuna trials, log-uniform 3e-5–3e-4, 1000 batches each. Results in `artifacts/model/modernbert/lr_sweep/`; each trial writes `sweep_summary.json` with `eval_loss` and `lr`.
+
+---
+
+## Evaluation
+
+The first checkpoint gate is Hindi-only and runs from a Hugging Face model ID or a local HF export directory. It combines:
+
+- **MLM holdout:** loss and masked accuracy on `data/eval/hi/`
+- **Supervised gate:** IndicSentiment, Naamapadam NER, IndicQA, and IndicCOPA
+- **Efficiency sweep:** ModernBERT-style inference latency, examples/sec, tokens/sec, tokens/sec per million parameters, CUDA allocated/reserved memory, and optional NVML power readings at 128, 256, 512, and 1024 tokens
+
+Run a full configured suite:
+
+```bash
+uv sync --extra evals
+make run-evals ARGS="eval.model.model_name_or_path=artifacts/model/modernbert/hf_export"
+```
+
+Run a tiny smoke path that caps data and benchmark steps:
+
+```bash
+make run-evals-smoke ARGS="eval.model.model_name_or_path=ai4bharat/IndicBERTv2-MLM-only"
+```
+
+Hydra config lives at `configs/evals/hindi_phase1.yaml`. Prefer command-line overrides like `eval.model.model_name_or_path=...`, `eval.tasks='[sentiment,ner]'`, `eval.efficiency.sequence_lengths='[128,512]'`, or `eval.efficiency.measure_power=true` rather than editing code. Reports are written under `artifacts/evals/<checkpoint>/` as JSON, CSV, and Markdown.
+
+Retrieval is intentionally deferred for phase 1. The current model has only MLM pretraining, so retrieval numbers would mostly measure an untuned pooling/indexing setup rather than Hindi representation quality.
 
 ---
 
