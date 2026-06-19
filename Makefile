@@ -45,16 +45,6 @@ train-phase1-nohup:
 tensorboard-phase1:
 	tensorboard --logdir artifacts/model/modernbert/tensorboard/phase1
 
-# Test Pretrain runs
-train-smoke-50ba:
-	mkdir -p .tmp logs/smoke_50ba
-	rm -rf artifacts/model/modernbert/checkpoints/smoke_50ba artifacts/model/modernbert/tensorboard/smoke_50ba
-	script -q -e -f logs/smoke_50ba/train.log -c "$(TMPDIR_ENV) TRAIN_PROGRESS_BAR=1 TRAIN_STEP_LOG=0 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 uv run --extra pretrain python scripts/run_pretrain.py --config-name hindi_mlm_smoke_50ba"
-
-train-smoke-50ba-nohup:
-	mkdir -p logs/smoke_50ba .tmp
-	PYTHONUNBUFFERED=1 nohup $(MAKE) train-smoke-50ba > logs/smoke_50ba/nohup.log 2>&1 &
-
 # Optuna LR sweep — same stack as hindi_mlm_phase1 (modernbert_base, micro=8, 500M warmup).
 lr-sweep:
 	mkdir -p .tmp logs/lr_sweep

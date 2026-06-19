@@ -11,7 +11,7 @@ import torch
 from transformers import AutoModel, AutoModelForMaskedLM, AutoTokenizer
 
 from evals.config import EvalSuiteConfig
-from evals.runtime import choose_device, set_eval_seed, should_use_bf16
+from evals.runtime import active_context_length, choose_device, set_eval_seed, should_use_bf16
 
 
 def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, Any]:
@@ -34,9 +34,10 @@ def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, An
     num_parameters = _num_parameters(model)
     num_parameters_m = num_parameters / 1_000_000
     use_bf16_autocast = should_use_bf16(eff_cfg.use_bf16_autocast, device)
+    sequence_lengths = eff_cfg.sequence_lengths or [active_context_length(cfg.model)]
 
     rows = []
-    for seq_len in eff_cfg.sequence_lengths:
+    for seq_len in sequence_lengths:
         batch = _build_batch(tokenizer, eff_cfg.sample_texts, eff_cfg.batch_size, seq_len)
         batch = {key: value.to(device) for key, value in batch.items()}
         if device.type == "cuda":
@@ -85,7 +86,8 @@ def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, An
         "status": "completed",
         "metrics": {"lengths": rows},
         "config": {
-            "sequence_lengths": eff_cfg.sequence_lengths,
+            "sequence_lengths": sequence_lengths,
+            "configured_sequence_lengths": eff_cfg.sequence_lengths,
             "batch_size": eff_cfg.batch_size,
             "warmup_steps": eff_cfg.warmup_steps,
             "measured_steps": eff_cfg.measured_steps,

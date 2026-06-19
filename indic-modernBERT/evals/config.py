@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from utils.paths import resolve_from_cwd
 
+ContextMode = Literal["common_128", "model_max"]
+
 
 class ModelEvalConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -18,7 +20,7 @@ class ModelEvalConfig(BaseModel):
     tokenizer_name_or_path: str | None = None
     trust_remote_code: bool = False
     max_sequence_length: int = Field(default=128, ge=1)
-    context_mode: Literal["common_128", "model_max"] = "common_128"
+    context_mode: ContextMode = "common_128"
 
     @property
     def tokenizer_source(self) -> str:
@@ -87,7 +89,7 @@ class MlmEvalConfig(BaseModel):
     enabled: bool = True
     data_root: Path = Path("data/eval/hi")
     text_column: str = "text"
-    max_seq_length: int = Field(default=1024, ge=1)
+    max_seq_length: int | None = Field(default=None, ge=1)
     mlm_probability: float = Field(default=0.15, gt=0.0, lt=1.0)
     batch_size: int = Field(default=8, ge=1)
     max_samples: int | None = Field(default=1024, ge=0)
@@ -105,7 +107,7 @@ class EfficiencyConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     enabled: bool = True
-    sequence_lengths: list[Annotated[int, Field(ge=1)]] = Field(default_factory=lambda: [128, 256, 512, 1024])
+    sequence_lengths: list[Annotated[int, Field(ge=1)]] | None = None
     batch_size: int = Field(default=8, ge=1)
     warmup_steps: int = Field(default=2, ge=0)
     measured_steps: int = Field(default=5, ge=1)
@@ -121,8 +123,8 @@ class EfficiencyConfig(BaseModel):
 
     @field_validator("sequence_lengths")
     @classmethod
-    def validate_lengths(cls, value: list[int]) -> list[int]:
-        if not value:
+    def validate_lengths(cls, value: list[int] | None) -> list[int] | None:
+        if value is not None and not value:
             raise ValueError("sequence_lengths must contain at least one length")
         return value
 
@@ -139,6 +141,8 @@ class EvalSuiteConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     model: ModelEvalConfig
+    models: list[ModelEvalConfig] = Field(default_factory=list)
+    context_modes: list[ContextMode] | None = None
     output_dir: Path = Path("artifacts/evals")
     seed: int = 17
     device: Literal["auto", "cpu", "cuda"] = "auto"
@@ -160,6 +164,29 @@ class EvalSuiteConfig(BaseModel):
             return self.supervised
         return override.apply_to(self.supervised)
 
+    @model_validator(mode="after")
+    def populate_models(self) -> EvalSuiteConfig:
+        base_models = self.models or [self.model]
+
+        if self.context_modes is None:
+            self.models = base_models
+        else:
+            self.models = [
+                model.model_copy(update={"context_mode": mode})
+                for model in base_models
+                for mode in self.context_modes
+                if mode != "model_max" or model.max_sequence_length != 128
+            ]
+
+        if not self.models:
+            raise ValueError("eval.models must contain at least one model after context expansion")
+        
+        self.model = self.models[0]
+        return self
+
+    def for_model(self, model: ModelEvalConfig) -> EvalSuiteConfig:
+        return self.model_copy(update={"model": model, "models": [model]}, deep=True)
+
 
 class EvalJobConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -173,6 +200,17 @@ def load_eval_suite_config(cfg: DictConfig) -> EvalSuiteConfig:
     eval_container = OmegaConf.to_container(cfg.eval, resolve=True)
     if not isinstance(eval_container, dict):
         raise ValueError("Resolved eval config must be a mapping")
+        
+    if "model" not in eval_container and "models" in eval_container:
+        models = eval_container["models"]
+
+        if not isinstance(models, list) or not models:
+            raise ValueError("eval.models must contain at least one model when eval.model is omitted")
+        eval_container["model"] = models[0]
+
+    elif "model" in eval_container and "models" not in eval_container:
+        eval_container["models"] = [eval_container["model"]]
+
     return EvalSuiteConfig.model_validate(eval_container)
 
 

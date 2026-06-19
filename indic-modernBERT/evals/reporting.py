@@ -15,6 +15,8 @@ def write_reports(cfg: EvalSuiteConfig, output_dir: Path, results: list[dict[str
     summary = {
         "model_name_or_path": cfg.model.model_name_or_path,
         "tokenizer_name_or_path": cfg.model.tokenizer_source,
+        "context_mode": cfg.model.context_mode,
+        "max_sequence_length": cfg.model.max_sequence_length,
         "seed": cfg.seed,
         "results": results,
     }
@@ -58,6 +60,8 @@ def _write_csv(path: Path, cfg: EvalSuiteConfig, results: list[dict[str, Any]]) 
                     rows.append(
                         {
                             "model": cfg.model.model_name_or_path,
+                            "context_mode": cfg.model.context_mode,
+                            "max_sequence_length": cfg.model.max_sequence_length,
                             "task": result["name"],
                             "status": result["status"],
                             "metric": metric,
@@ -70,6 +74,8 @@ def _write_csv(path: Path, cfg: EvalSuiteConfig, results: list[dict[str, Any]]) 
             rows.append(
                 {
                     "model": cfg.model.model_name_or_path,
+                    "context_mode": cfg.model.context_mode,
+                    "max_sequence_length": cfg.model.max_sequence_length,
                     "task": result["name"],
                     "status": result["status"],
                     "metric": metric,
@@ -81,6 +87,8 @@ def _write_csv(path: Path, cfg: EvalSuiteConfig, results: list[dict[str, Any]]) 
             rows.append(
                 {
                     "model": cfg.model.model_name_or_path,
+                    "context_mode": cfg.model.context_mode,
+                    "max_sequence_length": cfg.model.max_sequence_length,
                     "task": result["name"],
                     "status": result["status"],
                     "metric": "",
@@ -92,7 +100,16 @@ def _write_csv(path: Path, cfg: EvalSuiteConfig, results: list[dict[str, Any]]) 
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(
             handle,
-            fieldnames=["model", "task", "status", "metric", "value", "sequence_length"],
+            fieldnames=[
+                "model",
+                "context_mode",
+                "max_sequence_length",
+                "task",
+                "status",
+                "metric",
+                "value",
+                "sequence_length",
+            ],
         )
         writer.writeheader()
         writer.writerows(rows)
@@ -104,6 +121,7 @@ def _markdown_report(cfg: EvalSuiteConfig, results: list[dict[str, Any]]) -> str
         "",
         f"- Model: `{cfg.model.model_name_or_path}`",
         f"- Tokenizer: `{cfg.model.tokenizer_source}`",
+        f"- Context: `{cfg.model.context_mode}` (max_sequence_length={cfg.model.max_sequence_length})",
         f"- Seed: `{cfg.seed}`",
         "",
         "## Results",

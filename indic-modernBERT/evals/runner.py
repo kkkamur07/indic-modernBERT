@@ -18,7 +18,7 @@ from evals.supervised import run_supervised_task
 
 
 def run_eval_suite(cfg: EvalSuiteConfig) -> dict[str, Any]:
-    output_dir = checkpoint_output_dir(cfg.output_dir, cfg.model.model_name_or_path)
+    output_dir = checkpoint_output_dir(cfg.output_dir, cfg.model)
     output_dir.mkdir(parents=True, exist_ok=True)
     logger.info("Evaluation output directory: {}", output_dir)
 

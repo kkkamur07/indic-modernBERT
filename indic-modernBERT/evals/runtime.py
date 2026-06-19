@@ -40,7 +40,25 @@ def set_eval_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
-def checkpoint_output_dir(base: Path, model_name_or_path: str) -> Path:
+def active_context_length(model: Any) -> int:
+    if model.context_mode == "common_128":
+        return 128
+    return int(model.max_sequence_length)
+
+
+def model_run_slug(model: Any) -> str:
+    name = Path(model.model_name_or_path).name if "/" in model.model_name_or_path else model.model_name_or_path
+    if not name:
+        name = model.model_name_or_path
+    context = "common_128" if model.context_mode == "common_128" else f"model_max_{model.max_sequence_length}"
+    return slug(f"{name}__{context}")
+
+
+def checkpoint_output_dir(base: Path, model: Any) -> Path:
+    return base / model_run_slug(model)
+
+
+def legacy_checkpoint_output_dir(base: Path, model_name_or_path: str) -> Path:
     name = Path(model_name_or_path).name if "/" in model_name_or_path else model_name_or_path
     if not name:
         name = model_name_or_path

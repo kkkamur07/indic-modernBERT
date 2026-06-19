@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 from evals.config import EvalSuiteConfig
-from evals.runtime import choose_device, set_eval_seed
+from evals.runtime import active_context_length, choose_device, set_eval_seed
 from pretrain.evals.mlm import MlmEvalMetrics, masked_accuracy
 from pretrain.parquet_mlm import ListMLMDataset, MLMCollator, load_eval_texts
 
@@ -55,6 +55,7 @@ def _evaluate_hf_mlm(
 
 def run_mlm_eval(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, object]:
     mlm_cfg = cfg.mlm
+    max_seq_length = resolve_mlm_max_seq_length(cfg)
     set_eval_seed(mlm_cfg.seed)
     tokenizer = AutoTokenizer.from_pretrained(
         cfg.model.tokenizer_source,
@@ -78,7 +79,7 @@ def run_mlm_eval(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, object]:
         num_workers=mlm_cfg.num_workers,
         collate_fn=MLMCollator(
             tokenizer,
-            max_seq_len=mlm_cfg.max_seq_length,
+            max_seq_len=max_seq_length,
             mlm_probability=mlm_cfg.mlm_probability,
         ),
     )
@@ -96,7 +97,8 @@ def run_mlm_eval(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, object]:
         "metrics": asdict(metrics),
         "config": {
             "data_root": str(mlm_cfg.data_root),
-            "max_seq_length": mlm_cfg.max_seq_length,
+            "max_seq_length": max_seq_length,
+            "configured_max_seq_length": mlm_cfg.max_seq_length,
             "mlm_probability": mlm_cfg.mlm_probability,
             "batch_size": mlm_cfg.batch_size,
             "max_samples": mlm_cfg.max_samples,
@@ -105,6 +107,13 @@ def run_mlm_eval(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, object]:
     }
     (output_dir / "mlm_metrics.json").write_text(_json_dumps(result), encoding="utf-8")
     return result
+
+
+def resolve_mlm_max_seq_length(cfg: EvalSuiteConfig) -> int:
+    model_limit = active_context_length(cfg.model)
+    if cfg.mlm.max_seq_length is None:
+        return model_limit
+    return min(cfg.mlm.max_seq_length, model_limit)
 
 
 def _json_dumps(payload: object) -> str:

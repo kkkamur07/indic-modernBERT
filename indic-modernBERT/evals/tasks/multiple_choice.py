@@ -94,6 +94,7 @@ def run_multiple_choice(
         trust_remote_code=cfg.model.trust_remote_code,
         ignore_mismatched_sizes=True,
     )
+    _ensure_xlm_roberta_pooler(model)
     trainer = Trainer(
         model=model,
         args=training_args(task_cfg, task_dir, do_train=train_dataset is not None),
@@ -106,3 +107,17 @@ def run_multiple_choice(
     if train_dataset is not None:
         trainer.train()
     return trainer.evaluate(eval_dataset=eval_dataset)
+
+
+def _ensure_xlm_roberta_pooler(model: torch.nn.Module) -> None:
+    """Work around a Transformers XLM-R multiple-choice head that expects a pooler."""
+    if model.__class__.__name__ != "XLMRobertaForMultipleChoice":
+        return
+        
+    encoder = getattr(model, "roberta", None)
+    if encoder is None or getattr(encoder, "pooler", None) is not None:
+        return
+
+    from transformers.models.xlm_roberta.modeling_xlm_roberta import XLMRobertaPooler
+
+    encoder.pooler = XLMRobertaPooler(model.config)

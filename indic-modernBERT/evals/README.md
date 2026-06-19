@@ -67,7 +67,8 @@ make run-evals ARGS="eval.model.model_name_or_path=<model> eval.efficiency.measu
 make run-evals ARGS="eval.model.model_name_or_path=<model> eval.model.context_mode=model_max eval.model.max_sequence_length=1024"
 ```
 
-Outputs are written under `artifacts/evals/<model-slug>/`:
+Outputs are written under `artifacts/evals/<model-slug>__<context>/`, for example
+`xlm-roberta-base__common_128` followed by `xlm-roberta-base__model_max_512`:
 
 - `suite_summary.json`
 - `suite_metrics.csv`
@@ -95,6 +96,14 @@ The supervised tasks support two sequence-length modes:
 
 - `common_128`: caps all supervised tasks at 128 tokens for fair comparison with older IndicBERT-style baselines.
 - `model_max`: caps each task by `eval.model.max_sequence_length`, while still respecting the task's own configured upper bound.
+
+For multi-model suites, list each checkpoint once under `eval.models` and set `eval.context_modes`
+to the ordered passes to run, for example `[common_128, model_max]`. The loader expands this into
+one run per checkpoint/context pair and skips `model_max` when a checkpoint already has
+`max_sequence_length: 128`.
+
+When `eval.efficiency.sequence_lengths: null`, the efficiency sweep uses the active context length for that pass:
+128 for `common_128`, and `eval.model.max_sequence_length` for `model_max`.
 
 The current phase-1 suite keeps efficiency as smoke coverage, not a final benchmark. TODOs that can be done sometime reporting: add multi-seed averaging and optional hyperparameter optimization.
 

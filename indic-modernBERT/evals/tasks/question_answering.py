@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from loguru import logger
 from transformers import AutoModelForQuestionAnswering, Trainer
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
@@ -25,10 +26,10 @@ def run_question_answering(
     tokenizer: PreTrainedTokenizerBase,
     task_dir: Path,
 ) -> dict[str, float]:
-    doc_stride = int(spec.extra["doc_stride"])
     max_answer_length = int(spec.extra["max_answer_length"])
     n_best = int(spec.extra["n_best"])
     max_seq_length = resolve_max_seq_length(cfg, task_cfg)
+    doc_stride = _resolve_doc_stride(tokenizer, max_seq_length, int(spec.extra["doc_stride"]))
 
     def preprocess_training_examples(examples: dict[str, list[Any]]) -> dict[str, Any]:
         questions = [question.strip() for question in examples["question"]]
@@ -132,6 +133,28 @@ def run_question_answering(
     predictions, _, _ = trainer.predict(eval_dataset)
     start_logits, end_logits = predictions
     return _qa_metrics(start_logits, end_logits, eval_dataset, eval_examples, n_best, max_answer_length)
+
+# Edit the context length by using effective doc size. 
+def _resolve_doc_stride(
+    tokenizer: PreTrainedTokenizerBase,
+    max_seq_length: int,
+    configured_doc_stride: int,
+) -> int:
+    effective_context_length = max(max_seq_length - tokenizer.num_special_tokens_to_add(pair=True), 1)
+
+    if configured_doc_stride < effective_context_length:
+        return configured_doc_stride
+
+    doc_stride = max(effective_context_length // 2, 0)
+
+    logger.info(
+        "Reducing QA doc_stride from {} to {} for effective max context length {}",
+        configured_doc_stride,
+        doc_stride,
+        effective_context_length,
+    )
+
+    return doc_stride
 
 
 def _qa_metrics(

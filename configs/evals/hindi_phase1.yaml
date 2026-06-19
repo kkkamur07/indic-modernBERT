@@ -7,14 +7,33 @@ hydra:
     dir: logs/${now:%Y-%m-%d}_${now:%H-%M-%S}_evals
 
 eval:
-  model:
-    # Override this with any HF Hub ID or local HF export directory.
-    model_name_or_path: ai4bharat/IndicBERTv2-MLM-only
-    tokenizer_name_or_path: null
-    trust_remote_code: false
-    # common_128 is fair across IndicBERT-style baselines; model_max showcases long-context checkpoints.
-    max_sequence_length: 128
-    context_mode: common_128
+  # Each checkpoint below runs these contexts in order. model_max is skipped
+  # automatically for checkpoints whose max_sequence_length is already 128.
+  context_modes:
+    - common_128
+    - model_max
+
+  models:
+    - model_name_or_path: ai4bharat/IndicBERTv2-MLM-only
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 512
+    - model_name_or_path: google/muril-base-cased
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 512
+    - model_name_or_path: xlm-roberta-base
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 512
+    - model_name_or_path: jhu-clsp/mmBERT-small
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 8192
+    - model_name_or_path: artifacts/model/modernbert/hf_export/phase1
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 1024
 
   output_dir: artifacts/evals
   seed: 17
@@ -57,19 +76,22 @@ eval:
     enabled: true
     data_root: data/eval/hi
     text_column: text
-    max_seq_length: 1024
+    # null inherits the active model context; set a smaller integer to force a cap.
+    max_seq_length: null
     mlm_probability: 0.15
-    batch_size: 8
-    max_samples: 1024
+    # Keep this feasible for the 8192-token model_max MLM pass.
+    batch_size: 1
+    # null consumes the whole local holdout shard listed in data/eval/hi/holdout_manifest.txt.
+    max_samples: null
     max_batches: null
     num_workers: 0
     seed: ${eval.seed}
 
   efficiency:
     enabled: true
-    # Smoke-only latency check; broaden this manually for dedicated profiling runs.
-    sequence_lengths: [128]
-    batch_size: 8
+    # null inherits the active context: 128 for common_128, model max for model_max.
+    sequence_lengths: null
+    batch_size: 1
     warmup_steps: 2
     measured_steps: 5
     use_mlm_head: false
