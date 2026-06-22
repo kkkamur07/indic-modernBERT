@@ -20,8 +20,9 @@ def run_question_answering(
     cfg: EvalSuiteConfig,
     task_cfg: SupervisedDefaultsConfig,
     spec: TaskSpec,
-    raw_dataset: Any,
+    train_raw_dataset: Any,
     train_split: str | None,
+    eval_raw_dataset: Any,
     eval_split: str,
     tokenizer: PreTrainedTokenizerBase,
     task_dir: Path,
@@ -105,17 +106,17 @@ def run_question_answering(
 
     train_dataset = None
     if task_cfg.do_train and train_split is not None:
-        train_dataset = select_rows(raw_dataset[train_split], task_cfg.max_train_samples).map(
+        train_dataset = select_rows(train_raw_dataset[train_split], task_cfg.max_train_samples).map(
             preprocess_training_examples,
             batched=True,
-            remove_columns=raw_dataset[train_split].column_names,
+            remove_columns=train_raw_dataset[train_split].column_names,
         )
 
-    eval_examples = select_rows(raw_dataset[eval_split], task_cfg.max_eval_samples)
+    eval_examples = select_rows(eval_raw_dataset[eval_split], task_cfg.max_eval_samples)
     eval_dataset = eval_examples.map(
         preprocess_validation_examples,
         batched=True,
-        remove_columns=raw_dataset[eval_split].column_names,
+        remove_columns=eval_raw_dataset[eval_split].column_names,
     )
     model = AutoModelForQuestionAnswering.from_pretrained(
         cfg.model.model_name_or_path,
@@ -145,7 +146,7 @@ def _resolve_doc_stride(
     if configured_doc_stride < effective_context_length:
         return configured_doc_stride
 
-    doc_stride = max(effective_context_length // 2, 0)
+    doc_stride = max(effective_context_length // 2 - 1, 0)
 
     logger.info(
         "Reducing QA doc_stride from {} to {} for effective max context length {}",

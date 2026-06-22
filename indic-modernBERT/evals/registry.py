@@ -16,6 +16,9 @@ class TaskSpec:
     dataset_name: str
     dataset_config: str | None
     metric_names: tuple[str, ...]
+    train_dataset_name: str | None = None
+    train_dataset_config: str | None = None
+    train_dataset_trust_remote_code: bool | None = None
     train_split: str = "train"
     eval_split: str = "validation"
     test_split: str | None = "test"
@@ -38,6 +41,11 @@ TASK_REGISTRY: dict[str, TaskSpec] = {
         task_type="sequence_classification",
         dataset_name="ai4bharat/IndicSentiment",
         dataset_config="translation-hi",
+        # IndicXTREME follows cross-lingual transfer: train on English Amazon
+        # reviews, then evaluate zero-shot on IndicSentiment target splits.
+        # The original HF dataset is defunct; this is a loadable mirror.
+        train_dataset_name="buruzaemon/amazon_reviews_multi",
+        train_dataset_config="en",
         metric_names=("accuracy", "macro_f1"),
         # Actual HF column name is "LABEL", not "label".
         label_column="LABEL",
@@ -61,12 +69,27 @@ TASK_REGISTRY: dict[str, TaskSpec] = {
         # F1 scores are comparable with published Naamapadam results.
         label_all_tokens=True,
     ),
+    "massive_intent": TaskSpec(
+        name="massive_intent",
+        display_name="MASSIVE Hindi Intent",
+        task_type="sequence_classification",
+        dataset_name="AmazonScience/massive",
+        dataset_config="hi-IN",
+        metric_names=("accuracy", "macro_f1"),
+        label_column="intent",
+        text_columns=("utt",),
+        max_seq_length=128,
+        num_labels=60,
+    ),
     "qa": TaskSpec(
         name="qa",
         display_name="IndicQA Hindi",
         task_type="question_answering",
         dataset_name="ai4bharat/IndicQA",
         dataset_config="indicqa.hi",
+        # Official IndicBERT fine-tunes QA on English SQuAD via XTREME.
+        train_dataset_name="google/xtreme",
+        train_dataset_config="SQuAD",
         metric_names=("exact_match", "f1"),
         label_column="answers",
         text_columns=("question", "context"),
@@ -79,6 +102,9 @@ TASK_REGISTRY: dict[str, TaskSpec] = {
         task_type="multiple_choice",
         dataset_name="ai4bharat/IndicCOPA",
         dataset_config="translation-hi",
+        # Official IndicBERT fine-tunes XCOPA transfer on English Social IQa.
+        train_dataset_name="allenai/social_i_qa",
+        train_dataset_config=None,
         metric_names=("accuracy",),
         label_column="label",
         text_columns=("premise", "question", "choice1", "choice2"),

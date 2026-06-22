@@ -46,8 +46,9 @@ def run_multiple_choice(
     cfg: EvalSuiteConfig,
     task_cfg: SupervisedDefaultsConfig,
     spec: TaskSpec,
-    raw_dataset: Any,
+    train_raw_dataset: Any,
     train_split: str | None,
+    eval_raw_dataset: Any,
     eval_split: str,
     tokenizer: PreTrainedTokenizerBase,
     task_dir: Path,
@@ -55,8 +56,9 @@ def run_multiple_choice(
     max_seq_length = resolve_max_seq_length(cfg, task_cfg)
 
     def preprocess(examples: dict[str, list[Any]]) -> dict[str, Any]:
-        ending_names = ["choice1", "choice2"]
-        first_sentences = [[premise] * len(ending_names) for premise in examples["premise"]]
+        ending_names = _choice_columns(examples)
+        context_col = "premise" if "premise" in examples else "context"
+        first_sentences = [[premise] * len(ending_names) for premise in examples[context_col]]
         second_sentences = [
             [f"{question} {examples[end][idx]}" for end in ending_names]
             for idx, question in enumerate(examples["question"])
@@ -73,20 +75,20 @@ def run_multiple_choice(
             key: [value[i : i + len(ending_names)] for i in range(0, len(value), len(ending_names))]
             for key, value in tokenized.items()
         }
-        features["labels"] = examples[spec.label_column]
+        features["labels"] = [_label_to_id(label, num_choices=len(ending_names)) for label in examples[spec.label_column]]
         return features
 
     train_dataset = None
     if task_cfg.do_train and train_split is not None:
-        train_dataset = select_rows(raw_dataset[train_split], task_cfg.max_train_samples).map(
+        train_dataset = select_rows(train_raw_dataset[train_split], task_cfg.max_train_samples).map(
             preprocess,
             batched=True,
-            remove_columns=raw_dataset[train_split].column_names,
+            remove_columns=train_raw_dataset[train_split].column_names,
         )
-    eval_dataset = select_rows(raw_dataset[eval_split], task_cfg.max_eval_samples).map(
+    eval_dataset = select_rows(eval_raw_dataset[eval_split], task_cfg.max_eval_samples).map(
         preprocess,
         batched=True,
-        remove_columns=raw_dataset[eval_split].column_names,
+        remove_columns=eval_raw_dataset[eval_split].column_names,
     )
 
     model = AutoModelForMultipleChoice.from_pretrained(
@@ -107,6 +109,22 @@ def run_multiple_choice(
     if train_dataset is not None:
         trainer.train()
     return trainer.evaluate(eval_dataset=eval_dataset)
+
+
+def _choice_columns(examples: dict[str, list[Any]]) -> list[str]:
+    if {"choice1", "choice2"}.issubset(examples):
+        return ["choice1", "choice2"]
+    if {"answerA", "answerB", "answerC"}.issubset(examples):
+        return ["answerA", "answerB", "answerC"]
+    raise KeyError(f"Could not infer multiple-choice columns from {sorted(examples)}")
+
+
+def _label_to_id(label: Any, *, num_choices: int) -> int:
+    value = int(label)
+    # Social IQa labels are 1-based strings; IndicCOPA labels are already 0/1.
+    if num_choices == 3 and value in (1, 2, 3):
+        return value - 1
+    return value
 
 
 def _ensure_xlm_roberta_pooler(model: torch.nn.Module) -> None:

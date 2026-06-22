@@ -18,13 +18,14 @@ def run_token_classification(
     cfg: EvalSuiteConfig,
     task_cfg: SupervisedDefaultsConfig,
     spec: TaskSpec,
-    raw_dataset: Any,
+    train_raw_dataset: Any,
     train_split: str | None,
+    eval_raw_dataset: Any,
     eval_split: str,
     tokenizer: PreTrainedTokenizerBase,
     task_dir: Path,
 ) -> dict[str, float]:
-    label_list = raw_dataset[eval_split].features[spec.label_column].feature.names
+    label_list = eval_raw_dataset[eval_split].features[spec.label_column].feature.names
     max_seq_length = resolve_max_seq_length(cfg, task_cfg)
 
     def tokenize_and_align_labels(examples: dict[str, list[Any]]) -> dict[str, Any]:
@@ -55,16 +56,16 @@ def run_token_classification(
 
     train_dataset = None
     if task_cfg.do_train and train_split is not None:
-        train_dataset = select_rows(raw_dataset[train_split], task_cfg.max_train_samples).map(
+        train_dataset = select_rows(train_raw_dataset[train_split], task_cfg.max_train_samples).map(
             tokenize_and_align_labels,
             batched=True,
-            remove_columns=raw_dataset[train_split].column_names,
+            remove_columns=train_raw_dataset[train_split].column_names,
         )
 
-    eval_dataset = select_rows(raw_dataset[eval_split], task_cfg.max_eval_samples).map(
+    eval_dataset = select_rows(eval_raw_dataset[eval_split], task_cfg.max_eval_samples).map(
         tokenize_and_align_labels,
         batched=True,
-        remove_columns=raw_dataset[eval_split].column_names,
+        remove_columns=eval_raw_dataset[eval_split].column_names,
     )
 
     def compute_metrics(eval_pred: Any) -> dict[str, float]:

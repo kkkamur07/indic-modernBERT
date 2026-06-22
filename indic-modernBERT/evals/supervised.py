@@ -21,7 +21,7 @@ from evals.tasks.common import resolve_max_seq_length
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 TaskRunner = Callable[
-    [EvalSuiteConfig, SupervisedDefaultsConfig, TaskSpec, Any, str | None, str, PreTrainedTokenizerBase, Path],
+    [EvalSuiteConfig, SupervisedDefaultsConfig, TaskSpec, Any, str | None, Any, str, PreTrainedTokenizerBase, Path],
     dict[str, float],
 ]
 
@@ -39,14 +39,15 @@ def run_supervised_task(cfg: EvalSuiteConfig, task_name: str, output_dir: Path) 
     set_eval_seed(cfg.seed)
 
     try:
-        raw_dataset = _load_dataset(spec)
+        eval_dataset = _load_eval_dataset(spec)
+        train_dataset = _load_train_dataset(spec)
     except Exception as exc:  # pragma: no cover - depends on network/cache.
         return _blocked_result(spec, "dataset_load_failed", exc)
 
-    train_split = _pick_split(raw_dataset, preferred=spec.train_split, fallback=("train",))
-    eval_split = _pick_split(raw_dataset, preferred=spec.eval_split, fallback=("validation", "test", "train"))
+    train_split = _pick_split(train_dataset, preferred=spec.train_split, fallback=("train",))
+    eval_split = _pick_split(eval_dataset, preferred=spec.eval_split, fallback=("validation", "test", "train"))
     if eval_split is None:
-        return _blocked_result(spec, "missing_eval_split", ValueError(f"No eval split in {list(raw_dataset)}"))
+        return _blocked_result(spec, "missing_eval_split", ValueError(f"No eval split in {list(eval_dataset)}"))
 
     tokenizer = AutoTokenizer.from_pretrained(
         cfg.model.tokenizer_source,
@@ -61,7 +62,17 @@ def run_supervised_task(cfg: EvalSuiteConfig, task_name: str, output_dir: Path) 
 
     try:
         runner = TASK_RUNNERS[spec.task_type]
-        metrics = runner(cfg, task_cfg, spec, raw_dataset, train_split, eval_split, tokenizer, task_dir)
+        metrics = runner(
+            cfg,
+            task_cfg,
+            spec,
+            train_dataset,
+            train_split,
+            eval_dataset,
+            eval_split,
+            tokenizer,
+            task_dir,
+        )
     except KeyError as exc:
         return _blocked_result(spec, "unsupported_task_type", ValueError(f"Unsupported task type: {spec.task_type}"))
     except Exception as exc:  # pragma: no cover - runtime/model/dataset dependent.
@@ -74,8 +85,10 @@ def run_supervised_task(cfg: EvalSuiteConfig, task_name: str, output_dir: Path) 
         "status": "completed",
         "metrics": _clean_metric_keys(metrics),
         "config": {
-            "dataset": spec.dataset_name,
-            "dataset_config": spec.dataset_config,
+            "train_dataset": spec.train_dataset_name or spec.dataset_name,
+            "train_dataset_config": spec.train_dataset_config if spec.train_dataset_name else spec.dataset_config,
+            "eval_dataset": spec.dataset_name,
+            "eval_dataset_config": spec.dataset_config,
             "train_split": train_split,
             "eval_split": eval_split,
             "max_seq_length": resolve_max_seq_length(cfg, task_cfg),
@@ -87,12 +100,34 @@ def run_supervised_task(cfg: EvalSuiteConfig, task_name: str, output_dir: Path) 
     }
 
 
-def _load_dataset(spec: TaskSpec) -> Any:
+def _load_eval_dataset(spec: TaskSpec) -> Any:
+    return _load_dataset(
+        spec.dataset_name,
+        spec.dataset_config,
+        trust_remote_code=spec.trust_remote_code,
+    )
+
+
+def _load_train_dataset(spec: TaskSpec) -> Any:
+    if spec.train_dataset_name is None:
+        return _load_eval_dataset(spec)
+    return _load_dataset(
+        spec.train_dataset_name,
+        spec.train_dataset_config,
+        trust_remote_code=(
+            spec.train_dataset_trust_remote_code
+            if spec.train_dataset_trust_remote_code is not None
+            else spec.trust_remote_code
+        ),
+    )
+
+
+def _load_dataset(name: str, config: str | None, *, trust_remote_code: bool) -> Any:
     from datasets import load_dataset
 
-    if spec.dataset_config is None:
-        return load_dataset(spec.dataset_name, trust_remote_code=spec.trust_remote_code)
-    return load_dataset(spec.dataset_name, spec.dataset_config, trust_remote_code=spec.trust_remote_code)
+    if config is None:
+        return load_dataset(name, trust_remote_code=trust_remote_code)
+    return load_dataset(name, config, trust_remote_code=trust_remote_code)
 
 
 def _pick_split(dataset: Any, *, preferred: str, fallback: tuple[str, ...]) -> str | None:

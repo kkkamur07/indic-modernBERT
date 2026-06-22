@@ -1,20 +1,26 @@
-# Hindi phase-1 evaluation suite.
+# IndicXTREME-compatible Hindi transfer evaluation.
+#
+# This is intentionally separate from hindi_phase1.yaml. The phase-1 gate measures
+# Hindi MLM + Hindi NER + efficiency. This config follows the IndicBERT/IndicXTREME
+# transfer pattern for tasks whose Hindi target datasets are eval-only:
+# train on English/source task data, then evaluate zero-shot on Hindi target data.
 
 hydra:
   job:
     chdir: false
   run:
-    dir: logs/${now:%Y-%m-%d}_${now:%H-%M-%S}_evals
+    dir: logs/${now:%Y-%m-%d}_${now:%H-%M-%S}_transfer_evals
 
 eval:
-  # Full model matrix for Hindi-only phase-1 checks. Per-model batch_size is used
-  # by MLM holdout and efficiency; supervised fine-tuning uses eval.supervised
-  # plus task_overrides below.
+  # Full comparison matrix for transfer tasks. Per-model batch_size is kept in
+  # sync with hindi_phase1.yaml for optional MLM/efficiency overrides, but this
+  # config disables both layers and uses supervised/task_overrides batch sizes.
   #
   # Pre-flight checks verified 2026-06-22:
   # - This expands to 9 unique model/context output slugs.
   # - All unique model configs/tokenizers load with trust_remote_code=false.
-  # - All tokenizers expose pad and mask tokens for MLM/data collators.
+  # - All tokenizers expose pad and mask tokens; MLM is disabled here, but this
+  #   keeps the matrix compatible with optional overrides.
   # - Configured max_sequence_length values are within each model's advertised
   #   context limit: IndicBERTv2=128, MuRIL=512, XLM-R=512, phase1=1024,
   #   mmBERT-small=8192.
@@ -74,44 +80,37 @@ eval:
       context_mode: model_max
       batch_size: 1
 
-  output_dir: artifacts/evals
+  output_dir: artifacts/evals_transfer
   seed: 17
   device: auto
 
   tasks:
-    # Hindi checkpoint gate:
-    # - MLM holdout capped to one Hindi parquet shard.
-    # - Naamapadam Hindi NER fine-tuning/eval.
-    # - MASSIVE Hindi intent fine-tuning/eval.
-    # - Efficiency sweep on fixed Hindi inputs.
-    #
-    # IndicXTREME transfer tasks live in hindi_transfer.yaml:
-    # sentiment/QA/COPA fine-tune on English/source datasets, then evaluate on
-    # Hindi target sets. Keep them separate so this checkpoint gate stays honest
-    # for a Hindi-only phase-1 model.
-    #
-    # Current HF target split sizes:
-    # - ner (Naamapadam hi): train=985787, validation=13460, test=867
-    # - massive_intent (MASSIVE hi-IN): train=11514, validation=2033, test=2974
-    - ner
-    - massive_intent
+    # Source train -> Hindi target eval:
+    # - sentiment: buruzaemon/amazon_reviews_multi en train=200000, validation=5000
+    #              -> ai4bharat/IndicSentiment translation-hi validation=156/test=1000
+    # - qa: google/xtreme SQuAD train=87599, validation=10570
+    #       -> ai4bharat/IndicQA indicqa.hi test=1547
+    # - copa: allenai/social_i_qa train=33410, validation=1954
+    #         -> ai4bharat/IndicCOPA translation-hi test=449
+    - sentiment
+    - qa
+    - copa
 
   supervised:
     do_train: true
     do_eval: true
-
-    # null means full available split; for this gate that is full Naamapadam train/eval.
     max_train_samples: null
     max_eval_samples: null
+    # Official IndicBERT scripts use 5 epochs for these tasks. Keep this at 1.0
+    # for a practical phase-1 transfer pass; raise to 5.0 for closer reproduction.
     num_train_epochs: 1.0
     learning_rate: 3.0e-5
     weight_decay: 0.01
     warmup_ratio: 0.1
-    # Conservative full-matrix fine-tune batch. Higher values can be tried for a
-    # single model, but 128 avoids waiting for late OOMs across the baselines.
+    # Conservative full-matrix fine-tune batch. Increase only for targeted
+    # single-model transfer runs after confirming memory headroom.
     per_device_train_batch_size: 128
     per_device_eval_batch_size: 256
-    # Gate supervised tasks (NER + MASSIVE intent) stay at 128 even on model_max runs.
     max_seq_length: 128
     fp16: false
     bf16: true
@@ -122,7 +121,7 @@ eval:
     qa:
       max_seq_length: 384
       # QA creates overflowed context features, so keep train batches lower than
-      # sentence/token classification even though this phase1 gate does not run QA.
+      # sentence classification.
       per_device_train_batch_size: 32
       per_device_eval_batch_size: 64
     copa:
@@ -132,45 +131,11 @@ eval:
       per_device_eval_batch_size: 32
 
   mlm:
-    enabled: true
-    data_root: data/eval/hi
-    text_column: text
-    # Verified locally: data/eval/hi contains parquet holdout shards. Keep
-    # max_shards=1 below so the MLM holdout does not run over the full holdout set
-    # for every model/context entry in this matrix.
-
-    # null inherits the active model context: 128 for common_128, otherwise the
-    # model's max_sequence_length (512/1024/8192 for model_max runs).
-    max_seq_length: null
-    mlm_probability: 0.15
-
-    # Used only when a model entry omits batch_size; all configured models above
-    # set an explicit value so long-context runs can stay conservative.
-    batch_size: 32
-    # One local holdout shard is enough for a phase-1 checkpoint gate.
-    # load_eval_texts caps the sorted parquet list before reading rows.
-    max_shards: 1
-    max_samples: null
-    max_batches: null
-    num_workers: 0
-    seed: ${eval.seed}
+    # Transfer pass is supervised-only; keep MLM holdout in hindi_phase1.yaml.
+    enabled: false
 
   efficiency:
-    enabled: true
-
-    # null inherits the active context: 128 for common_128, model max for model_max.
-    sequence_lengths: null
-    batch_size: 32
-    warmup_steps: 1
-    measured_steps: 3
-    use_mlm_head: false
-    use_bf16_autocast: true
-
-    # Optional ModernBERT-style NVML power readings. Keep off unless pynvml/NVML is available.
-    measure_power: false
-    sample_texts:
-      - भारत में हिंदी भाषा अनेक रूपों में बोली और लिखी जाती है।
-      - यह मूल्यांकन छोटे बैचों पर अनुमान गति और स्मृति उपयोग मापता है।
+    enabled: false
 
   reporting:
     write_json: true

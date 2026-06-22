@@ -25,8 +25,9 @@ def run_sequence_classification(
     cfg: EvalSuiteConfig,
     task_cfg: SupervisedDefaultsConfig,
     spec: TaskSpec,
-    raw_dataset: Any,
+    train_raw_dataset: Any,
     train_split: str | None,
+    eval_raw_dataset: Any,
     eval_split: str,
     tokenizer: PreTrainedTokenizerBase,
     task_dir: Path,
@@ -41,7 +42,7 @@ def run_sequence_classification(
             raw = batch[label_col]
             labels = [1 if str(v).lower() == "positive" else 0 if str(v).lower() == "negative" else int(v) for v in raw]
         elif "stars" in batch:
-            labels = [1 if int(value) > 3 else 0 for value in batch["stars"]]
+            labels = [1 if int(value) > 3 else 0 if int(value) < 3 else -1 for value in batch["stars"]]
         else:
             raw = batch.get("label", [])
             labels = [int(v) for v in raw]
@@ -52,10 +53,16 @@ def run_sequence_classification(
         tokenized["labels"] = batch["labels"]
         return tokenized
 
+    def has_valid_label(row: dict[str, Any]) -> bool:
+        label = int(row["labels"])
+        if spec.num_labels is None:
+            return label >= 0
+        return 0 <= label < spec.num_labels
+
     train_dataset = None
     if task_cfg.do_train and train_split is not None:
-        train_dataset = select_rows(raw_dataset[train_split], task_cfg.max_train_samples).map(normalize, batched=True)
-        train_dataset = train_dataset.filter(lambda row: row["labels"] in (0, 1))
+        train_dataset = select_rows(train_raw_dataset[train_split], task_cfg.max_train_samples).map(normalize, batched=True)
+        train_dataset = train_dataset.filter(has_valid_label)
         train_dataset = train_dataset.map(
             tokenize_text,
             batched=True,
@@ -68,8 +75,8 @@ def run_sequence_classification(
             spec.name,
         )
 
-    eval_raw = select_rows(raw_dataset[eval_split], task_cfg.max_eval_samples).map(normalize, batched=True)
-    eval_raw = eval_raw.filter(lambda row: row["labels"] in (0, 1))
+    eval_raw = select_rows(eval_raw_dataset[eval_split], task_cfg.max_eval_samples).map(normalize, batched=True)
+    eval_raw = eval_raw.filter(has_valid_label)
     eval_dataset = eval_raw.map(
         tokenize_text,
         batched=True,

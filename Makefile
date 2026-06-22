@@ -6,7 +6,7 @@ TMPDIR_ENV := TMPDIR=$(PWD)/.tmp TORCHINDUCTOR_CACHE_DIR=$(PWD)/.tmp/torchinduct
 .PHONY: train-bpe train-bpe-nohup eval-bpe eval-bpe-nohup pretokenization \
         train-pretrain train-phase1 train-phase1-nohup \
         train-smoke-50ba train-smoke-50ba-nohup lr-sweep lr-sweep-nohup \
-        run-evals run-evals-smoke export-hf pipeline-trace
+        run-evals run-evals-transfer run-evals-smoke export-hf pipeline-trace
 
 # --- Tokenizer ---
 
@@ -60,6 +60,9 @@ lr-sweep-nohup:
 
 run-evals:
 	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_evals.py $(ARGS)
+
+run-evals-transfer:
+	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_evals.py --config-name hindi_transfer $(ARGS)
 
 run-evals-smoke:
 	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_evals.py \
