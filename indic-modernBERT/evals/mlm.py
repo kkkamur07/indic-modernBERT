@@ -70,11 +70,13 @@ def run_mlm_eval(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, object]:
         mlm_cfg.data_root,
         mlm_cfg.text_column,
         max_rows=mlm_cfg.max_samples if mlm_cfg.max_samples is not None else 1_000_000_000,
+        max_shards=mlm_cfg.max_shards,
     )
     dataset = ListMLMDataset(texts)
+    batch_size = resolve_mlm_batch_size(cfg, max_seq_length)
     dataloader = DataLoader(
         dataset,
-        batch_size=mlm_cfg.batch_size,
+        batch_size=batch_size,
         shuffle=False,
         num_workers=mlm_cfg.num_workers,
         collate_fn=MLMCollator(
@@ -100,7 +102,10 @@ def run_mlm_eval(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, object]:
             "max_seq_length": max_seq_length,
             "configured_max_seq_length": mlm_cfg.max_seq_length,
             "mlm_probability": mlm_cfg.mlm_probability,
-            "batch_size": mlm_cfg.batch_size,
+            "batch_size": batch_size,
+            "configured_batch_size": mlm_cfg.batch_size,
+            "model_batch_size": cfg.model.batch_size,
+            "max_shards": mlm_cfg.max_shards,
             "max_samples": mlm_cfg.max_samples,
             "max_batches": mlm_cfg.max_batches,
         },
@@ -114,6 +119,10 @@ def resolve_mlm_max_seq_length(cfg: EvalSuiteConfig) -> int:
     if cfg.mlm.max_seq_length is None:
         return model_limit
     return min(cfg.mlm.max_seq_length, model_limit)
+
+
+def resolve_mlm_batch_size(cfg: EvalSuiteConfig, max_seq_length: int) -> int:
+    return cfg.model.batch_size or cfg.mlm.batch_size
 
 
 def _json_dumps(payload: object) -> str:

@@ -151,11 +151,16 @@ def load_eval_texts(
     text_column: str,
     *,
     max_rows: int,
+    max_shards: int | None = None,
     use_script_norm: bool = True,
 ) -> list[str]:
     texts: list[str] = []
 
-    for path in iter_parquet_paths(data_root):
+    paths = iter_parquet_paths(data_root)
+    if max_shards is not None:
+        paths = paths[:max_shards]
+
+    for path in paths:
         table = pq.read_table(path, columns=[text_column], memory_map=True)
         for value in table.column(text_column):
             text = _text_from_value(value.as_py(), use_script_norm=use_script_norm)

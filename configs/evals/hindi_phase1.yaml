@@ -7,39 +7,71 @@ hydra:
     dir: logs/${now:%Y-%m-%d}_${now:%H-%M-%S}_evals
 
 eval:
-  # Each checkpoint below runs these contexts in order. model_max is skipped
-  # automatically for checkpoints whose max_sequence_length is already 128.
-  context_modes:
-    - common_128
-    - model_max
-
   models:
     - model_name_or_path: ai4bharat/IndicBERTv2-MLM-only
       tokenizer_name_or_path: null
       trust_remote_code: false
-      max_sequence_length: 512
+      max_sequence_length: 128
+      batch_size: 64
     - model_name_or_path: google/muril-base-cased
       tokenizer_name_or_path: null
       trust_remote_code: false
       max_sequence_length: 512
+      context_mode: common_128
+      batch_size: 96
+    - model_name_or_path: google/muril-base-cased
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 512
+      context_mode: model_max
+      batch_size: 24
     - model_name_or_path: xlm-roberta-base
       tokenizer_name_or_path: null
       trust_remote_code: false
       max_sequence_length: 512
-    - model_name_or_path: jhu-clsp/mmBERT-small
+      context_mode: common_128
+      batch_size: 64
+    - model_name_or_path: xlm-roberta-base
       tokenizer_name_or_path: null
       trust_remote_code: false
-      max_sequence_length: 8192
+      max_sequence_length: 512
+      context_mode: model_max
+      batch_size: 16
     - model_name_or_path: artifacts/model/modernbert/hf_export/phase1
       tokenizer_name_or_path: null
       trust_remote_code: false
       max_sequence_length: 1024
+      context_mode: common_128
+      batch_size: 256
+    - model_name_or_path: artifacts/model/modernbert/hf_export/phase1
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 1024
+      context_mode: model_max
+      batch_size: 32
+    - model_name_or_path: jhu-clsp/mmBERT-small
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 8192
+      context_mode: common_128
+      batch_size: 64
+    - model_name_or_path: jhu-clsp/mmBERT-small
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 8192
+      context_mode: model_max
+      batch_size: 1
 
   output_dir: artifacts/evals
   seed: 17
   device: auto
 
   tasks:
+    # Current HF split sizes:
+    # - sentiment (IndicSentiment translation-hi): validation=156, test=1000, no train split
+    # - ner (Naamapadam hi): train=985787, validation=13460, test=867
+    # - qa (IndicQA indicqa.hi): test=1547, no train/validation split
+    # - copa (IndicCOPA translation-hi): test=449, no train/validation split
     - sentiment
     - ner
     - qa
@@ -48,14 +80,17 @@ eval:
   supervised:
     do_train: true
     do_eval: true
+    
+    # null means full available split. In this suite, full supervised training only
+    # applies to NER; sentiment, QA, and COPA currently have no train split.
     max_train_samples: null
     max_eval_samples: null
-    num_train_epochs: 3.0
+    num_train_epochs: 1.0
     learning_rate: 3.0e-5
     weight_decay: 0.01
     warmup_ratio: 0.1
-    per_device_train_batch_size: 16
-    per_device_eval_batch_size: 32
+    per_device_train_batch_size: 256
+    per_device_eval_batch_size: 256
     max_seq_length: 128
     fp16: false
     bf16: true
@@ -65,23 +100,26 @@ eval:
   task_overrides:
     qa:
       max_seq_length: 384
-      per_device_train_batch_size: 8
-      per_device_eval_batch_size: 16
+      per_device_train_batch_size: 64
+      per_device_eval_batch_size: 64
     copa:
       max_seq_length: 512
-      per_device_train_batch_size: 8
-      per_device_eval_batch_size: 16
+      per_device_train_batch_size: 32
+      per_device_eval_batch_size: 32
 
   mlm:
     enabled: true
     data_root: data/eval/hi
     text_column: text
+
     # null inherits the active model context; set a smaller integer to force a cap.
     max_seq_length: null
     mlm_probability: 0.15
-    # Keep this feasible for the 8192-token model_max MLM pass.
-    batch_size: 1
-    # null consumes the whole local holdout shard listed in data/eval/hi/holdout_manifest.txt.
+
+    batch_size: 32
+    # One local holdout shard is enough for a phase-1 checkpoint gate.
+    # load_eval_texts caps the sorted parquet list before reading rows.
+    max_shards: 1
     max_samples: null
     max_batches: null
     num_workers: 0
@@ -89,13 +127,15 @@ eval:
 
   efficiency:
     enabled: true
+
     # null inherits the active context: 128 for common_128, model max for model_max.
     sequence_lengths: null
-    batch_size: 1
-    warmup_steps: 2
-    measured_steps: 5
+    batch_size: 32
+    warmup_steps: 1
+    measured_steps: 3
     use_mlm_head: false
     use_bf16_autocast: true
+
     # Optional ModernBERT-style NVML power readings. Keep off unless pynvml/NVML is available.
     measure_power: false
     sample_texts:

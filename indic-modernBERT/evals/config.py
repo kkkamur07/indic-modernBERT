@@ -20,6 +20,7 @@ class ModelEvalConfig(BaseModel):
     tokenizer_name_or_path: str | None = None
     trust_remote_code: bool = False
     max_sequence_length: int = Field(default=128, ge=1)
+    batch_size: int | None = Field(default=None, ge=1)
     context_mode: ContextMode = "common_128"
 
     @property
@@ -92,6 +93,7 @@ class MlmEvalConfig(BaseModel):
     max_seq_length: int | None = Field(default=None, ge=1)
     mlm_probability: float = Field(default=0.15, gt=0.0, lt=1.0)
     batch_size: int = Field(default=8, ge=1)
+    max_shards: int | None = Field(default=None, ge=1)
     max_samples: int | None = Field(default=1024, ge=0)
     max_batches: int | None = Field(default=None, ge=1)
     num_workers: int = Field(default=0, ge=0)

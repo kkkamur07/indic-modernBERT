@@ -38,7 +38,8 @@ def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, An
 
     rows = []
     for seq_len in sequence_lengths:
-        batch = _build_batch(tokenizer, eff_cfg.sample_texts, eff_cfg.batch_size, seq_len)
+        batch_size = resolve_efficiency_batch_size(cfg, seq_len)
+        batch = _build_batch(tokenizer, eff_cfg.sample_texts, batch_size, seq_len)
         batch = {key: value.to(device) for key, value in batch.items()}
         if device.type == "cuda":
             torch.cuda.reset_peak_memory_stats(device)
@@ -58,13 +59,13 @@ def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, An
 
         mean_latency = statistics.fmean(latencies)
         std_latency = statistics.pstdev(latencies) if len(latencies) > 1 else 0.0
-        examples = eff_cfg.batch_size
-        tokens = eff_cfg.batch_size * seq_len
+        examples = batch_size
+        tokens = batch_size * seq_len
         tokens_per_second = tokens / mean_latency if mean_latency else float("inf")
         rows.append(
             {
                 "sequence_length": seq_len,
-                "batch_size": eff_cfg.batch_size,
+                "batch_size": batch_size,
                 "num_parameters": num_parameters,
                 "num_parameters_m": num_parameters_m,
                 "latency_mean_s": mean_latency,
@@ -89,6 +90,7 @@ def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, An
             "sequence_lengths": sequence_lengths,
             "configured_sequence_lengths": eff_cfg.sequence_lengths,
             "batch_size": eff_cfg.batch_size,
+            "model_batch_size": cfg.model.batch_size,
             "warmup_steps": eff_cfg.warmup_steps,
             "measured_steps": eff_cfg.measured_steps,
             "use_mlm_head": eff_cfg.use_mlm_head,
@@ -98,6 +100,10 @@ def run_efficiency_sweep(cfg: EvalSuiteConfig, output_dir: Path) -> dict[str, An
     }
     (output_dir / "efficiency_metrics.json").write_text(_json_dumps(result), encoding="utf-8")
     return result
+
+
+def resolve_efficiency_batch_size(cfg: EvalSuiteConfig, seq_len: int) -> int:
+    return cfg.model.batch_size or cfg.efficiency.batch_size
 
 
 def _build_batch(tokenizer: Any, sample_texts: list[str], batch_size: int, seq_len: int) -> dict[str, torch.Tensor]:
