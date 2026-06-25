@@ -4,7 +4,8 @@ export PYTHONPATH := indic-modernBERT
 TMPDIR_ENV := TMPDIR=$(PWD)/.tmp TORCHINDUCTOR_CACHE_DIR=$(PWD)/.tmp/torchinductor
 
 .PHONY: train-bpe train-bpe-nohup eval-bpe eval-bpe-nohup pretokenization \
-        train-pretrain train-phase1 train-phase1-nohup \
+        convert-indiccorp \
+        train-pretrain train-phase1 train-phase1-nohup train-smoke-phase2 \
         train-smoke-50ba train-smoke-50ba-nohup lr-sweep lr-sweep-nohup \
         run-evals run-evals-transfer run-evals-smoke export-hf pipeline-trace
 
@@ -27,6 +28,11 @@ eval-bpe-nohup:
 pretokenization:
 	uv run python -m tokenizer.pretokenization
 
+# --- Data ---
+# Convert from txt to parquet. 
+convert-indiccorp:
+	uv run python -m dataset.indiccorp_dataset
+
 # --- Pretrain ---
 
 train-pretrain:
@@ -41,6 +47,18 @@ train-phase1:
 train-phase1-nohup:
 	mkdir -p logs/phase1 .tmp
 	PYTHONUNBUFFERED=1 nohup $(MAKE) train-phase1 > logs/phase1/nohup.log 2>&1 &
+
+# Phase-2 (context extension @ 8192) VRAM smoke: short run to measure GPU memory.
+# Override the microbatch to probe VRAM, e.g.:
+#   make train-smoke-phase2 ARGS="pretrain.device_train_microbatch_size=4"
+# Watch in another shell: watch -n1 nvidia-smi
+train-smoke-phase2:
+	mkdir -p .tmp logs/phase2_smoke
+	$(TMPDIR_ENV) TRAIN_STEP_LOG=0 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 \
+	  uv run --extra pretrain python scripts/run_pretrain.py --config-name hindi_mlm_context_extension \
+	  pretrain.max_duration=20ba pretrain.eval_interval=10ba pretrain.save_interval=10ba \
+	  pretrain.autoresume=false pretrain.save_overwrite=true \
+	  pretrain.save_folder=artifacts/model/modernbert/checkpoints/context_extension_smoke $(ARGS)
 
 tensorboard-phase1:
 	tensorboard --logdir artifacts/model/modernbert/tensorboard/phase1
