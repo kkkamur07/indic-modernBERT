@@ -1,0 +1,12 @@
+2026-06-22 13:30:20 | INFO | Evaluating model 1/9: ai4bharat/IndicBERTv2-MLM-only | context_mode=common_128 | active_context_length=128 | max_sequence_length=128
+2026-06-22 13:30:20 | INFO | Selected supervised tasks: ['ner', 'massive_intent']
+2026-06-22 13:30:20 | INFO | Evaluation output directory: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/IndicBERTv2-MLM-only__common_128
+2026-06-22 13:30:20 | INFO | Running MLM holdout
+2026-06-22 13:30:31 | INFO | data | eval tokenize+mlm start | #1 | n_texts=64 | max_seq_len=128 prob=0.15
+2026-06-22 13:30:31 | INFO | data | eval tokenize+mlm done | #1 | shape=(64, 128) masked=1169 | 0.1s
+2026-06-22 13:30:34 | INFO | data | eval tokenize+mlm start | #2 | n_texts=64 | max_seq_len=128 prob=0.15
+2026-06-22 13:30:34 | INFO | data | eval tokenize+mlm done | #2 | shape=(64, 128) masked=1206 | 0.1s
+2026-06-22 13:30:34 | INFO | Running supervised task: ner (Naamapadam Hindi NER)
+2026-06-22 13:44:56 | INFO | Running supervised task: massive_intent (MASSIVE Hindi Intent)
+2026-06-22 13:45:06 | INFO | Running efficiency sweep
+2026-06-22 13:45:08 | INFO | Wrote reports: {'json': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/IndicBERTv2-MLM-only__common_128/suite_summary.json', 'csv': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/IndicBERTv2-MLM-only__common_128/suite_metrics.csv', 'markdown': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/IndicBERTv2-MLM-only__common_128/suite_report.md'}

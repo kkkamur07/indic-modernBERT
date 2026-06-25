@@ -1,0 +1,12 @@
+2026-06-22 14:14:22 | INFO | Evaluating model 4/9: xlm-roberta-base | context_mode=common_128 | active_context_length=128 | max_sequence_length=512
+2026-06-22 14:14:22 | INFO | Selected supervised tasks: ['ner', 'massive_intent']
+2026-06-22 14:14:22 | INFO | Evaluation output directory: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/xlm-roberta-base__common_128
+2026-06-22 14:14:22 | INFO | Running MLM holdout
+2026-06-22 14:14:34 | INFO | data | eval tokenize+mlm start | #7 | n_texts=64 | max_seq_len=128 prob=0.15
+2026-06-22 14:14:34 | INFO | data | eval tokenize+mlm done | #7 | shape=(64, 128) masked=1190 | 0.1s
+2026-06-22 14:14:36 | INFO | data | eval tokenize+mlm start | #8 | n_texts=64 | max_seq_len=128 prob=0.15
+2026-06-22 14:14:36 | INFO | data | eval tokenize+mlm done | #8 | shape=(64, 128) masked=1211 | 0.1s
+2026-06-22 14:14:36 | INFO | Running supervised task: ner (Naamapadam Hindi NER)
+2026-06-22 14:32:01 | INFO | Running supervised task: massive_intent (MASSIVE Hindi Intent)
+2026-06-22 14:32:14 | INFO | Running efficiency sweep
+2026-06-22 14:32:17 | INFO | Wrote reports: {'json': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/xlm-roberta-base__common_128/suite_summary.json', 'csv': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/xlm-roberta-base__common_128/suite_metrics.csv', 'markdown': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/xlm-roberta-base__common_128/suite_report.md'}

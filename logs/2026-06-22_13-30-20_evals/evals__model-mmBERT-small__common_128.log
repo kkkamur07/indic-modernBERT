@@ -1,0 +1,8 @@
+2026-06-22 16:03:41 | INFO | Evaluating model 8/9: jhu-clsp/mmBERT-small | context_mode=common_128 | active_context_length=128 | max_sequence_length=8192
+2026-06-22 16:03:41 | INFO | Selected supervised tasks: ['ner', 'massive_intent']
+2026-06-22 16:03:41 | INFO | Evaluation output directory: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/mmBERT-small__common_128
+2026-06-22 16:03:41 | INFO | Running MLM holdout
+2026-06-22 16:03:56 | INFO | Running supervised task: ner (Naamapadam Hindi NER)
+2026-06-22 16:19:33 | INFO | Running supervised task: massive_intent (MASSIVE Hindi Intent)
+2026-06-22 16:19:43 | INFO | Running efficiency sweep
+2026-06-22 16:19:46 | INFO | Wrote reports: {'json': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/mmBERT-small__common_128/suite_summary.json', 'csv': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/mmBERT-small__common_128/suite_metrics.csv', 'markdown': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/mmBERT-small__common_128/suite_report.md'}

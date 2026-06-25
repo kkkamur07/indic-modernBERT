@@ -1,0 +1,12 @@
+2026-06-22 14:00:05 | INFO | Evaluating model 3/9: google/muril-base-cased | context_mode=model_max | active_context_length=512 | max_sequence_length=512
+2026-06-22 14:00:05 | INFO | Selected supervised tasks: ['ner', 'massive_intent']
+2026-06-22 14:00:05 | INFO | Evaluation output directory: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/muril-base-cased__model_max_512
+2026-06-22 14:00:05 | INFO | Running MLM holdout
+2026-06-22 14:00:16 | INFO | data | eval tokenize+mlm start | #5 | n_texts=24 | max_seq_len=512 prob=0.15
+2026-06-22 14:00:16 | INFO | data | eval tokenize+mlm done | #5 | shape=(24, 512) masked=1126 | 0.0s
+2026-06-22 14:00:18 | INFO | data | eval tokenize+mlm start | #6 | n_texts=24 | max_seq_len=512 prob=0.15
+2026-06-22 14:00:18 | INFO | data | eval tokenize+mlm done | #6 | shape=(24, 512) masked=1125 | 0.1s
+2026-06-22 14:00:18 | INFO | Running supervised task: ner (Naamapadam Hindi NER)
+2026-06-22 14:14:12 | INFO | Running supervised task: massive_intent (MASSIVE Hindi Intent)
+2026-06-22 14:14:20 | INFO | Running efficiency sweep
+2026-06-22 14:14:22 | INFO | Wrote reports: {'json': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/muril-base-cased__model_max_512/suite_summary.json', 'csv': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/muril-base-cased__model_max_512/suite_metrics.csv', 'markdown': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/muril-base-cased__model_max_512/suite_report.md'}

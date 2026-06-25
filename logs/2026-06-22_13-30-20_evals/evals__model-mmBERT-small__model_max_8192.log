@@ -1,0 +1,9 @@
+2026-06-22 16:19:46 | INFO | Evaluating model 9/9: jhu-clsp/mmBERT-small | context_mode=model_max | active_context_length=8192 | max_sequence_length=8192
+2026-06-22 16:19:46 | INFO | Selected supervised tasks: ['ner', 'massive_intent']
+2026-06-22 16:19:46 | INFO | Evaluation output directory: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/mmBERT-small__model_max_8192
+2026-06-22 16:19:46 | INFO | Running MLM holdout
+2026-06-22 16:20:01 | INFO | Running supervised task: ner (Naamapadam Hindi NER)
+2026-06-22 16:34:51 | INFO | Running supervised task: massive_intent (MASSIVE Hindi Intent)
+2026-06-22 16:35:02 | INFO | Running efficiency sweep
+2026-06-22 16:35:04 | INFO | Wrote reports: {'json': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/mmBERT-small__model_max_8192/suite_summary.json', 'csv': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/mmBERT-small__model_max_8192/suite_metrics.csv', 'markdown': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/mmBERT-small__model_max_8192/suite_report.md'}
+2026-06-22 16:35:04 | INFO | Wrote multi-model summary: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/multi_model_summary.json

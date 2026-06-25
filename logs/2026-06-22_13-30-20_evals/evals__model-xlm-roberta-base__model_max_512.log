@@ -1,0 +1,10 @@
+2026-06-22 14:32:17 | INFO | Evaluating model 5/9: xlm-roberta-base | context_mode=model_max | active_context_length=512 | max_sequence_length=512
+2026-06-22 14:32:17 | INFO | Selected supervised tasks: ['ner', 'massive_intent']
+2026-06-22 14:32:17 | INFO | Evaluation output directory: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/xlm-roberta-base__model_max_512
+2026-06-22 14:32:17 | INFO | Running MLM holdout
+2026-06-22 14:32:29 | INFO | data | eval tokenize+mlm start | #9 | n_texts=16 | max_seq_len=512 prob=0.15
+2026-06-22 14:32:29 | INFO | data | eval tokenize+mlm done | #9 | shape=(16, 512) masked=852 | 0.1s
+2026-06-22 14:32:31 | INFO | Running supervised task: ner (Naamapadam Hindi NER)
+2026-06-22 14:49:15 | INFO | Running supervised task: massive_intent (MASSIVE Hindi Intent)
+2026-06-22 14:49:28 | INFO | Running efficiency sweep
+2026-06-22 14:49:31 | INFO | Wrote reports: {'json': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/xlm-roberta-base__model_max_512/suite_summary.json', 'csv': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/xlm-roberta-base__model_max_512/suite_metrics.csv', 'markdown': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/xlm-roberta-base__model_max_512/suite_report.md'}

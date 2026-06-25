@@ -1,0 +1,8 @@
+2026-06-22 14:49:31 | INFO | Evaluating model 6/9: artifacts/model/modernbert/hf_export/phase1 | context_mode=common_128 | active_context_length=128 | max_sequence_length=1024
+2026-06-22 14:49:31 | INFO | Selected supervised tasks: ['ner', 'massive_intent']
+2026-06-22 14:49:31 | INFO | Evaluation output directory: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/phase1__common_128
+2026-06-22 14:49:31 | INFO | Running MLM holdout
+2026-06-22 15:13:34 | INFO | Running supervised task: ner (Naamapadam Hindi NER)
+2026-06-22 15:38:39 | INFO | Running supervised task: massive_intent (MASSIVE Hindi Intent)
+2026-06-22 15:38:48 | INFO | Running efficiency sweep
+2026-06-22 15:38:48 | INFO | Wrote reports: {'json': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/phase1__common_128/suite_summary.json', 'csv': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/phase1__common_128/suite_metrics.csv', 'markdown': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals/phase1__common_128/suite_report.md'}
