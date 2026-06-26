@@ -11,6 +11,7 @@ The runner combines three evaluation layers:
 - **MLM holdout**: evaluates masked-language-model loss and masked accuracy on `data/eval/hi`.
 - **Supervised Hindi gate**: fine-tunes and evaluates one representative task per major downstream task type.
 - **Efficiency smoke**: measures a small single-GPU/CPU inference path over Hindi inputs. Broaden it manually for dedicated profiling runs.
+- **Retrieval benchmark**: optional, separate `nDCG@10` evaluation for retrieval-finetuned checkpoints.
 
 The supervised gate starts with:
 
@@ -19,7 +20,7 @@ The supervised gate starts with:
 - **IndicQA** for question answering.
 - **IndicCOPA** for multiple-choice commonsense reasoning.
 
-Retrieval is intentionally deferred for now. During phase 1, the model has only MLM pretraining, so retrieval scores would mostly reflect an untuned pooling/indexing choice rather than the mature retrieval strength ModernBERT is known for.
+Retrieval is intentionally separate from the phase-1/phase-2 checkpoint gates. During MLM-only phases, retrieval scores mostly reflect an untuned pooling/indexing choice rather than the mature retrieval strength ModernBERT is known for. For fair benchmarking, first fine-tune each backbone with the same retrieval recipe, select the best checkpoint/hyperparameters, and then run `configs/evals/hindi_retrieval.yaml`.
 
 ## Why This Shape
 
@@ -65,6 +66,7 @@ make run-evals ARGS="eval.model.model_name_or_path=<model> eval.tasks='[sentimen
 make run-evals ARGS="eval.model.model_name_or_path=<model> eval.efficiency.sequence_lengths='[128,1024]'"
 make run-evals ARGS="eval.model.model_name_or_path=<model> eval.efficiency.measure_power=true"
 make run-evals ARGS="eval.model.model_name_or_path=<model> eval.model.context_mode=model_max eval.model.max_sequence_length=1024"
+make run-evals-retrieval ARGS="eval.models.0.model_name_or_path=<retrieval-finetuned-checkpoint>"
 ```
 
 Outputs are written under `artifacts/evals/<model-slug>__<context>/`, for example
@@ -75,6 +77,7 @@ Outputs are written under `artifacts/evals/<model-slug>__<context>/`, for exampl
 - `suite_report.md`
 - per-task supervised metrics
 - `efficiency_metrics.json`
+- `retrieval_metrics.json` for retrieval runs
 
 ## Benchmark Policy
 
@@ -106,6 +109,13 @@ When `eval.efficiency.sequence_lengths: null`, the efficiency sweep uses the act
 128 for `common_128`, and `eval.model.max_sequence_length` for `model_max`.
 
 The current phase-1 suite keeps efficiency as smoke coverage, not a final benchmark. TODOs that can be done sometime reporting: add multi-seed averaging and optional hyperparameter optimization.
+
+Retrieval follows the upstream ModernBERT evaluation policy:
+
+- Train/fine-tune every backbone with the same retrieval recipe before comparing scores.
+- Report `nDCG@10` as the headline metric.
+- Use `AIhnIndicRag/mmarco_hindi` for Hindi MS-MARCO-style retrieval quality.
+- Use `Shitao/MLDR` with `language=hi` for long-document retrieval capacity at 8192 context.
 
 
 ### Learnings and checks : 

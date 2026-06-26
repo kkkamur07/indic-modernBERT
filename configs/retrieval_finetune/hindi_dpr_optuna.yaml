@@ -1,0 +1,41 @@
+# Learning-oriented Optuna LR exploration for retrieval fine-tuning.
+#
+# Samples 10 learning rates from 1e-6..1e-2 on a log scale. Each trial uses
+# trainer early stopping on held-out Hindi triplet accuracy, then returns
+# nDCG@10 on a carved Hindi mmarco_hindi subset as the Optuna objective.
+#
+# Run:
+#   make retrieval-optuna
+defaults:
+  - hindi_dpr
+  - override hydra/sweeper: optuna
+  - _self_
+
+hydra:
+  run:
+    dir: logs/${now:%Y-%m-%d}_${now:%H-%M-%S}_retrieval_optuna
+  sweep:
+    subdir: ${hydra.job.num}
+  sweeper:
+    sampler:
+      _target_: optuna.samplers.TPESampler
+      seed: 17
+      n_startup_trials: 3
+    direction: maximize
+    study_name: hindi_dpr_lr
+    n_trials: 10
+    n_jobs: 1
+    params:
+      retrieval_ft.learning_rate: tag(log, interval(1e-6, 1e-2))
+
+retrieval_ft:
+  # Keep each LR trial cheap: train on a 200k-triple subsample instead of the
+  # full 1.25M. At effective batch 512 that's ~390 steps/trial, enough to rank
+  # learning rates. Re-run the winning LR with the full hindi_dpr config.
+  max_train_samples: 200_000
+  # Eval/checkpoint often enough that early stopping and best-model selection
+  # actually fire within the short run (must divide evenly: save_steps multiple
+  # of eval_steps for load_best_model_at_end).
+  eval_steps: 100
+  save_steps: 100
+  # early_stopping_* inherit from hindi_dpr (patience=2, threshold=0.0).

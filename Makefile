@@ -5,9 +5,14 @@ TMPDIR_ENV := TMPDIR=$(PWD)/.tmp TORCHINDUCTOR_CACHE_DIR=$(PWD)/.tmp/torchinduct
 
 .PHONY: train-bpe train-bpe-nohup eval-bpe eval-bpe-nohup pretokenization \
         convert-indiccorp \
-        train-pretrain train-phase1 train-phase1-nohup train-smoke-phase2 \
+        train-pretrain train-phase1 train-phase1-nohup \
+        train-phase2 train-phase2-nohup train-smoke-phase2 \
         train-smoke-50ba train-smoke-50ba-nohup lr-sweep lr-sweep-nohup \
-        run-evals run-evals-transfer run-evals-smoke export-hf pipeline-trace
+        run-evals run-evals-transfer run-evals-phase2 run-evals-phase2-nohup \
+        run-evals-retrieval run-evals-smoke export-hf pipeline-trace \
+        retrieval-finetune retrieval-finetune-nohup \
+        retrieval-optuna retrieval-optuna-nohup \
+        retrieval-optuna-all retrieval-optuna-all-nohup
 
 # --- Tokenizer ---
 
@@ -48,6 +53,16 @@ train-phase1-nohup:
 	mkdir -p logs/phase1 .tmp
 	PYTHONUNBUFFERED=1 nohup $(MAKE) train-phase1 > logs/phase1/nohup.log 2>&1 &
 
+# Phase-2 production context extension (~4.85B tok @ 8192, configs/pretrain/hindi_mlm_context_extension.yaml).
+train-phase2:
+	mkdir -p .tmp logs/phase2
+	$(TMPDIR_ENV) TRAIN_STEP_LOG=0 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 \
+	  uv run --extra pretrain python scripts/run_pretrain.py --config-name hindi_mlm_context_extension $(ARGS)
+
+train-phase2-nohup:
+	mkdir -p logs/phase2 .tmp
+	PYTHONUNBUFFERED=1 nohup $(MAKE) train-phase2 > logs/phase2/nohup.log 2>&1 &
+
 # Phase-2 (context extension @ 8192) VRAM smoke: short run to measure GPU memory.
 # Override the microbatch to probe VRAM, e.g.:
 #   make train-smoke-phase2 ARGS="pretrain.device_train_microbatch_size=4"
@@ -55,10 +70,7 @@ train-phase1-nohup:
 train-smoke-phase2:
 	mkdir -p .tmp logs/phase2_smoke
 	$(TMPDIR_ENV) TRAIN_STEP_LOG=0 PYTHONPATH=indic-modernBERT PYTHONUNBUFFERED=1 \
-	  uv run --extra pretrain python scripts/run_pretrain.py --config-name hindi_mlm_context_extension \
-	  pretrain.max_duration=20ba pretrain.eval_interval=10ba pretrain.save_interval=10ba \
-	  pretrain.autoresume=false pretrain.save_overwrite=true \
-	  pretrain.save_folder=artifacts/model/modernbert/checkpoints/context_extension_smoke $(ARGS)
+	  uv run --extra pretrain python scripts/run_pretrain.py --config-name hindi_mlm_context_extension_smoke $(ARGS)
 
 tensorboard-phase1:
 	tensorboard --logdir artifacts/model/modernbert/tensorboard/phase1
@@ -82,12 +94,55 @@ run-evals:
 run-evals-transfer:
 	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_evals.py --config-name hindi_transfer $(ARGS)
 
-run-evals-smoke:
-	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_evals.py \
-	  eval.supervised.max_train_samples=8 eval.supervised.max_eval_samples=8 \
-	  eval.supervised.num_train_epochs=0.01 eval.mlm.max_samples=8 eval.mlm.max_batches=1 \
-	  eval.efficiency.sequence_lengths='[128]' eval.efficiency.warmup_steps=0 \
-	  eval.efficiency.measured_steps=1 $(ARGS)
+# Phase-2 selected checkpoint (full-corpus ba1157), downstream-only
+# (NER + MASSIVE intent). See configs/evals/hindi_phase2.yaml.
+run-evals-phase2:
+	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_evals.py --config-name hindi_phase2 $(ARGS)
+
+run-evals-phase2-nohup:
+	mkdir -p logs/evals_phase2
+	PYTHONUNBUFFERED=1 nohup $(MAKE) run-evals-phase2 > logs/evals_phase2/nohup.log 2>&1 &
+
+run-evals-retrieval:
+	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_evals.py --config-name hindi_retrieval $(ARGS)
+
+# --- Retrieval Fine-tuning (upstream DPR recipe) ---
+
+# Single-LR retrieval fine-tune. Override LR or backbone:
+#   make retrieval-finetune ARGS="retrieval_ft.learning_rate=8e-5"
+#   make retrieval-finetune ARGS="retrieval_ft.backbone=artifacts/model/modernbert/hf_export/phase2_latest_ba1157"
+retrieval-finetune:
+	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/run_retrieval_finetune.py $(ARGS)
+
+retrieval-finetune-nohup:
+	mkdir -p logs/retrieval_finetune
+	PYTHONUNBUFFERED=1 nohup $(MAKE) retrieval-finetune ARGS="$(ARGS)" > logs/retrieval_finetune/nohup.log 2>&1 &
+
+# For optuna to not mix the different backbones. 
+RETRIEVAL_SWEEP_BACKBONES ?= \
+	artifacts/model/modernbert/hf_export/phase2_latest_ba1157 \
+	ai4bharat/IndicBERTv2-MLM-only \
+	jhu-clsp/mmBERT-small
+
+# Optuna LR exploration: 10 log-scale trials over 1e-6..1e-2 with trainer early
+# stopping inside each trial, maximizing Hindi mmarco_hindi selection nDCG@10.
+retrieval-optuna:
+	PYTHONPATH=indic-modernBERT uv run --extra evals --extra sweep python scripts/run_retrieval_finetune.py \
+	  --config-name hindi_dpr_optuna -m $(ARGS)
+
+retrieval-optuna-nohup:
+	mkdir -p logs/retrieval_optuna
+	PYTHONUNBUFFERED=1 nohup $(MAKE) retrieval-optuna ARGS="$(ARGS)" > logs/retrieval_optuna/nohup.log 2>&1 &
+
+retrieval-optuna-all:
+	for backbone in $(RETRIEVAL_SWEEP_BACKBONES); do \
+	  echo "=== Retrieval Optuna sweep: $$backbone ==="; \
+	  $(MAKE) retrieval-optuna ARGS="retrieval_ft.backbone=$$backbone $(ARGS)"; \
+	done
+
+retrieval-optuna-all-nohup:
+	mkdir -p logs/retrieval_optuna_all
+	PYTHONUNBUFFERED=1 nohup $(MAKE) retrieval-optuna-all ARGS="$(ARGS)" > logs/retrieval_optuna_all/nohup.log 2>&1 &
 
 # --- Utilities ---
 

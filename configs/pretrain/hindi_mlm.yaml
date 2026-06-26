@@ -37,6 +37,7 @@ pretrain:
   dataloader_prefetch_factor: 4
   eval_num_workers: 3
   max_duration: 100ba
+  save_overwrite: false
   sequence_packing: true
   eval_sequence_packing: false
   count_padding_tokens: false
@@ -47,7 +48,7 @@ pretrain:
   seed: 17
   precision: amp_bf16
   log_to_console: true
-  console_log_interval: 100ba
+  console_log_interval: 5ba
   # Phase-1 optimizer — modernbert-base-pretrain.yaml (decoupled_stableadamw).
   optimizer:
     name: decoupled_stableadamw

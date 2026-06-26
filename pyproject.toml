@@ -28,8 +28,10 @@ evals = [
     "accelerate",
     "datasets>=2.19,<3",
     "evaluate",
+    "mteb",
     "nvidia-ml-py>=13.610.43",
     "scikit-learn",
+    "sentence-transformers",
     "seqeval",
 ]
 viz = [

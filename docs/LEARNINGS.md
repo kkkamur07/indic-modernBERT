@@ -17,6 +17,7 @@ Running notes on every non-obvious decision, fix, and "why does this work this w
 9. [Smoke pretrain launcher fixes](#9-smoke-pretrain-launcher-fixes)
 10. [Code-review correctness fixes](#10-code-review-correctness-fixes)
 11. [Vendored SuperBPE patch](#11-vendored-superbpe-patch)
+12. [IndicCorp V2 ingestion + phase-2 setup](#12-indiccorp-v2-ingestion--phase-2-setup)
 
 ---
 
@@ -392,3 +393,63 @@ uv pip install -e _support_repo/superbpe/tokenizers_superbpe/bindings/python --f
 ```
 
 Run a smoke check after rebuilding: tokenize a short Hindi phrase and verify the word-initial space handling is correct before retraining.
+
+---
+
+## 12. IndicCorp V2 ingestion + phase-2 setup
+
+Notes from adding IndicCorp V2 (Hindi) as the phase-2 context-extension corpus.
+
+### Source format — one document per line, blank-line separated
+
+IndicCorp V2 (`ai4bharat/IndicCorpV2`) ships Hindi as plain `.txt` (`hi-1.txt`, `hi-3.txt`, ~26.66 GB each — download `hi-1` + `hi-3`, `hi-2` was not used). **Measured fact:** every document is exactly one non-empty line, and blank lines are pure separators (the max run of consecutive non-empty lines across 2M lines is 1). So there's no multi-line document grouping to do — iterate non-empty lines, skip empties. This killed an earlier `doc_mode`/`buffer` design: it was dead weight on this corpus.
+
+### Converter — `dataset/indiccorp_dataset.py`
+
+Streams the `.txt` line by line (a 25 GB file never lands in RAM) and writes parquet shards with the **exact Sangraha `verified/hin` schema** so all downstream readers work unchanged:
+
+```
+doc_id: large_string   # sha1(text), same convention as Sangraha
+text:   large_string   # the document
+type:   large_string   # "indiccorp_v2"
+```
+
+- Config is a constants block at the top of the file (no argparse) — edit + run `make convert-indiccorp`.
+- The only bounded buffer is the current shard's rows (`ROWS_PER_SHARD`), flushed + cleared per shard. **Shards never split a document** (flush happens on whole-doc count), so words/text are never broken.
+- `tqdm` is byte-based (`total = file size`, update by raw line bytes) so a 25 GB file shows a real %/ETA bar, not just a counter.
+
+### Shard sizing
+
+Hindi docs average ~752 utf-8 bytes (median 549, p99 4334). `ROWS_PER_SHARD = 200_000` → ~150 MB uncompressed text/shard, ~43 MB on disk after **zstd** — in line with Sangraha's ~175k-row shards.
+
+### Token count — `one_shard_extrapolation`
+
+Mirror the existing `artifacts/corpus_stats/hindi_bpe_vs50368_estimate.json` method: tokenize one full shard with `bpe_vs50368` (apply `preprocess_for_tokenizer` first), get tokens/row, multiply by shard count.
+
+| metric | IndicCorp V2 shard | Sangraha verified (ref) |
+|---|---|---|
+| tokens/shard (200k rows) | 13,679,809 | 92,454,616 |
+| tokens/row | 68.4 | 529.0 |
+| utf-8 bytes/token | 11.0 | 10.6 |
+
+Low tokens/row (68 vs 529) is expected: IndicCorp rows are single lines (~752 B), Sangraha rows are multi-paragraph docs. **IndicCorp V2 (hi-1+hi-3) = 70,923,978 docs across 356 shards = 4.851 B tokens.** Sangraha (phase-1) = 23.617 B.
+
+### Duplicates are expected, not a bug
+
+`doc_id = sha1(text)`, so identical text → identical id. IndicCorp has ~0.08% duplicate docs — short repeated web/Wikipedia boilerplate headers like `इतिहास.` (History.), `बाहरी कड़ियाँ.` (External links.). Inherent to a web crawl; no dedup was applied (deferred).
+
+### Phase-2 config (`configs/pretrain/hindi_mlm_context_extension.yaml`) gotchas
+
+- **Batch size is NOT safely inherited.** Base `hindi_mlm` sets `global_train_batch_size: 8`; phase-1 overrides to 512 but phase-2 originally did **not** → it silently ran at batch 8. Always set `global_train_batch_size` explicitly in phase-2.
+- **`autoresume: true` needs `run_name`.** `train.py` only passes `run_name` to Composer when set; without it autoresume can't find prior checkpoints across launches. Phase-2 was missing it (phase-1 had it). Added `run_name: hindi_modernbert_context_extension`.
+- **Batch-scoped intervals must be re-derived per phase.** At seq 8192, `tokens/step = global_batch × 8192`. With all IndicCorp (4.851 B tok) and `global_batch=512` → only ~1,156 batches total. Phase-1's `eval_interval: 450ba` would give ~2 evals; use `12ba` for ~96 evals.
+- **100 evals cost ~fixed compute, independent of batch size.** Eval work = `n_evals × eval_subset_num_batches × eval_batch × seq`; training work = fixed tokens. At `eval_subset_num_batches=50`, 100 evals ≈ +54% compute. Dropped to 10 (~+11%).
+- **`grad_accum_steps = global_train_batch_size // device_train_microbatch_size`.** Effective optimization batch is always `global_train_batch_size`; raising the microbatch only changes speed/VRAM, not the math. Schema enforces `global % microbatch == 0`, so use divisors of 512 (1, 2, 4, 8…).
+- **Scheduler:** upstream phase-2 is `constant_with_warmup` with `t_warmup: 0tok` (no warmup; the 3B-tok warmup is phase-1 only). The wiring's `constant_with_warmup` path uses only `t_warmup` — `alpha_f`/`t_decay` are no-ops there.
+- **LR:** upstream used a *lower* phase-2 LR (8e-4 → 3e-4). We instead reuse phase-1's Optuna lr `4.88e-4` (validated on this model+data); `restart_override: true` makes the yaml's LR/WD/microbatch win over the checkpoint's.
+- **Arch:** `configs/model/modernbert_context_extension.yaml` extends base and bumps `rotary_emb_base` 10000 → **160000** for the 8192 context (local-attn RoPE base stays 10000).
+- **Cross-corpus eval:** phase-2 trains on IndicCorp but `eval_data_root` inherits `data/eval/hi` (Sangraha holdout). Deliberate — keeps eval loss comparable to phase-1; just know it measures Sangraha-domain generalization.
+
+### VRAM probing
+
+Box is an RTX 4090 (24 GB). `make train-smoke-phase2` runs a 20-batch slice of the real phase-2 config (loads the phase-1 checkpoint, evals too, throwaway save folder, `autoresume=false`). Override microbatch to probe: `ARGS="pretrain.device_train_microbatch_size=4"`, watch `nvidia-smi`. Eval at 8192 is often the real memory peak, so the smoke evals on purpose.
