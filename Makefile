@@ -12,6 +12,7 @@ TMPDIR_ENV := TMPDIR=$(PWD)/.tmp TORCHINDUCTOR_CACHE_DIR=$(PWD)/.tmp/torchinduct
         run-evals-retrieval run-evals-smoke export-hf pipeline-trace \
         retrieval-finetune retrieval-finetune-nohup \
         retrieval-optuna retrieval-optuna-nohup \
+        retrieval-prepare-optuna-subset \
         retrieval-optuna-all retrieval-optuna-all-nohup
 
 # --- Tokenizer ---
@@ -123,6 +124,7 @@ RETRIEVAL_SWEEP_BACKBONES ?= \
 	artifacts/model/modernbert/hf_export/phase2_latest_ba1157 \
 	ai4bharat/IndicBERTv2-MLM-only \
 	jhu-clsp/mmBERT-small
+RETRIEVAL_OPTUNA_SUBSET ?= artifacts/retrieval_finetune/subsets/mmarco_hindi_train100k_eval1k_seed17.jsonl
 
 # Optuna LR exploration: 10 log-scale trials over 1e-6..1e-2 with trainer early
 # stopping inside each trial, maximizing Hindi mmarco_hindi selection nDCG@10.
@@ -134,7 +136,12 @@ retrieval-optuna-nohup:
 	mkdir -p logs/retrieval_optuna
 	PYTHONUNBUFFERED=1 nohup $(MAKE) retrieval-optuna ARGS="$(ARGS)" > logs/retrieval_optuna/nohup.log 2>&1 &
 
-retrieval-optuna-all:
+retrieval-prepare-optuna-subset:
+	PYTHONPATH=indic-modernBERT uv run --extra evals python scripts/prepare_retrieval_subset.py \
+	  --train-samples 100000 --eval-samples 1000 --candidate-triples 1000000 \
+	  --output $(RETRIEVAL_OPTUNA_SUBSET)
+
+retrieval-optuna-all: retrieval-prepare-optuna-subset
 	for backbone in $(RETRIEVAL_SWEEP_BACKBONES); do \
 	  echo "=== Retrieval Optuna sweep: $$backbone ==="; \
 	  $(MAKE) retrieval-optuna ARGS="retrieval_ft.backbone=$$backbone $(ARGS)"; \

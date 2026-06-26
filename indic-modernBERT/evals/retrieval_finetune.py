@@ -34,6 +34,13 @@ class RetrievalFinetuneConfig:
     train_dataset_split: str = "train"
     # mMARCO ships as a loading script, so it needs trust_remote_code at load time.
     train_trust_remote_code: bool = True
+    # Stream large triplet datasets so Optuna/full runs only materialize the
+    # capped sample budget instead of building the full 39.8M-row Arrow cache.
+    train_streaming: bool = True
+    train_shuffle_buffer: int = 100_000
+    # Optional local JSONL triplet subset with query/positive/negative columns.
+    # Use this for Optuna so all LR trials reuse the exact same carved data.
+    train_local_path: str | None = None
     max_train_samples: int = 1_250_000
 
     loss: str = "CachedMultipleNegativesRankingLoss"
@@ -90,7 +97,7 @@ class RetrievalFinetuneConfig:
 
 def run_retrieval_finetune(cfg: RetrievalFinetuneConfig) -> dict[str, Any]:
     """Fine-tune a backbone for DPR retrieval and return metrics."""
-    from datasets import load_dataset
+    from datasets import Dataset, load_dataset
     from sentence_transformers import (
         SentenceTransformer,
         SentenceTransformerTrainer,
@@ -114,21 +121,7 @@ def run_retrieval_finetune(cfg: RetrievalFinetuneConfig) -> dict[str, Any]:
     )
     model.max_seq_length = cfg.max_seq_length
 
-    dataset = load_dataset(
-        cfg.train_dataset,
-        cfg.train_dataset_config,
-        split=cfg.train_dataset_split,
-        trust_remote_code=cfg.train_trust_remote_code,
-    )
-    dataset_dict = dataset.train_test_split(
-        test_size=cfg.eval_split_size, seed=cfg.seed
-    )
-    train_dataset = dataset_dict["train"]
-
-    if cfg.max_train_samples and len(train_dataset) > cfg.max_train_samples:
-        train_dataset = train_dataset.select(range(cfg.max_train_samples))
-        
-    eval_dataset = dataset_dict["test"]
+    train_dataset, eval_dataset = _load_train_eval_datasets(cfg, Dataset, load_dataset)
 
     logger.info(
         "Train samples: {} | Eval samples: {}",
@@ -206,6 +199,81 @@ def run_retrieval_finetune(cfg: RetrievalFinetuneConfig) -> dict[str, Any]:
         json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     return result
+
+
+def _load_train_eval_datasets(
+    cfg: RetrievalFinetuneConfig, dataset_cls: Any, load_dataset: Any
+) -> tuple[Any, Any]:
+    """Load only the capped triplet budget needed for this run.
+
+    `unicamp-dl/mmarco` has ~39.8M Hindi triplets. Calling `load_dataset`
+    without streaming first builds the full train Arrow cache, which is wasted
+    for Optuna trials that use a 200k subset. Streaming lets us take exactly the
+    train cap plus the held-out dev examples.
+    """
+    total_needed = cfg.max_train_samples + cfg.eval_split_size
+
+    if cfg.train_local_path:
+        local_dataset = load_dataset(
+            "json",
+            data_files=cfg.train_local_path,
+            split="train",
+        )
+        if len(local_dataset) < total_needed:
+            raise ValueError(
+                f"Local train subset {cfg.train_local_path} has "
+                f"{len(local_dataset)} rows, needs {total_needed}"
+            )
+
+        if len(local_dataset) > total_needed:
+            local_dataset = local_dataset.select(range(total_needed))
+
+        train_dataset = local_dataset.select(range(cfg.max_train_samples))
+        eval_dataset = local_dataset.select(
+            range(cfg.max_train_samples, total_needed)
+        )
+        return train_dataset, eval_dataset
+
+    if cfg.train_streaming:
+        if cfg.max_train_samples <= 0:
+            raise ValueError("train_streaming requires max_train_samples > 0")
+
+        stream = load_dataset(
+            cfg.train_dataset,
+            cfg.train_dataset_config,
+            split=cfg.train_dataset_split,
+            trust_remote_code=cfg.train_trust_remote_code,
+            streaming=True,
+        )
+        if cfg.train_shuffle_buffer > 0:
+            stream = stream.shuffle(
+                buffer_size=cfg.train_shuffle_buffer, seed=cfg.seed
+            )
+
+        rows = list(stream.take(total_needed))
+        if len(rows) < total_needed:
+            raise ValueError(
+                f"Requested {total_needed} training/eval rows from "
+                f"{cfg.train_dataset}:{cfg.train_dataset_config}, got {len(rows)}"
+            )
+
+        train_dataset = dataset_cls.from_list(rows[: cfg.max_train_samples])
+        eval_dataset = dataset_cls.from_list(rows[cfg.max_train_samples :])
+        return train_dataset, eval_dataset
+
+    dataset = load_dataset(
+        cfg.train_dataset,
+        cfg.train_dataset_config,
+        split=cfg.train_dataset_split,
+        trust_remote_code=cfg.train_trust_remote_code,
+    )
+    dataset_dict = dataset.train_test_split(test_size=cfg.eval_split_size, seed=cfg.seed)
+    train_dataset = dataset_dict["train"]
+
+    if cfg.max_train_samples and len(train_dataset) > cfg.max_train_samples:
+        train_dataset = train_dataset.select(range(cfg.max_train_samples))
+
+    return train_dataset, dataset_dict["test"]
 
 
 def _build_loss(cfg: RetrievalFinetuneConfig, model: Any) -> Any:

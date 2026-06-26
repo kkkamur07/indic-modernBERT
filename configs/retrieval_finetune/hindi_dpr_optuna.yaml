@@ -29,13 +29,16 @@ hydra:
       retrieval_ft.learning_rate: tag(log, interval(1e-6, 1e-2))
 
 retrieval_ft:
-  # Keep each LR trial cheap: train on a 200k-triple subsample instead of the
-  # full 1.25M. At effective batch 512 that's ~390 steps/trial, enough to rank
+  # Reuse one fixed local subset across all trials/models. Prepare it with:
+  #   make retrieval-prepare-optuna-subset
+  train_local_path: artifacts/retrieval_finetune/subsets/mmarco_hindi_train100k_eval1k_seed17.jsonl
+  # Keep each LR trial cheap: train on a 100k-triple subsample instead of the
+  # full 1.25M. At effective batch 512 that's ~195 steps/trial, enough to rank
   # learning rates. Re-run the winning LR with the full hindi_dpr config.
-  max_train_samples: 200_000
+  max_train_samples: 100_000
   # Eval/checkpoint often enough that early stopping and best-model selection
   # actually fire within the short run (must divide evenly: save_steps multiple
   # of eval_steps for load_best_model_at_end).
-  eval_steps: 100
-  save_steps: 100
+  eval_steps: 50
+  save_steps: 50
   # early_stopping_* inherit from hindi_dpr (patience=2, threshold=0.0).

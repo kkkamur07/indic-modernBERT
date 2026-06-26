@@ -48,6 +48,11 @@ retrieval_ft:
   train_dataset_split: train
   # mMARCO is a loading-script dataset, so it must be trusted at load time.
   train_trust_remote_code: true
+  # Stream only the capped sample budget instead of building the full 39.8M-row
+  # Arrow cache. This is especially important for Optuna, which only needs
+  # max_train_samples + eval_split_size rows per trial.
+  train_streaming: true
+  train_shuffle_buffer: 100000
   # Hindi mMARCO train has ~39.8M triples; cap to match upstream's 1.25M budget.
   max_train_samples: 1_250_000
 
