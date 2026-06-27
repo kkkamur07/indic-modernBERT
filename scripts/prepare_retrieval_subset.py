@@ -1,9 +1,11 @@
-"""Prepare a fixed local Hindi mMARCO triplet subset for LR sweeps.
+"""Prepare fixed local Hindi mMARCO triplet splits.
 
 The Hugging Face ``unicamp-dl/mmarco`` builder loads the full collection/query
-maps before yielding its first text triplet. For a 100k-row Optuna subset that is
-unnecessarily slow. This script instead samples triplet IDs first, then streams
-the query/collection TSVs once and resolves only the IDs needed for the subset.
+maps before yielding its first text triplet. For fixed 100k Optuna subsets and
+1.25M full-budget DPR runs, that is unnecessarily slow and can make each run see
+different streamed rows. This script samples triplet IDs first, then streams the
+query/collection TSVs once and resolves only the IDs needed for the local JSONL
+split.
 """
 
 from __future__ import annotations
@@ -126,9 +128,9 @@ def _count_lines(path: Path) -> int:
 def _iter_url_lines(url: str):
     with requests.get(url, stream=True, timeout=60) as response:
         response.raise_for_status()
-        for line in response.iter_lines(decode_unicode=True):
+        for line in response.iter_lines(decode_unicode=False):
             if line:
-                yield line
+                yield line.decode("utf-8")
 
 
 def _sample_triples(

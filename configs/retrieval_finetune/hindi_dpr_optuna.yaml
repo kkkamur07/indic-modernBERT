@@ -1,8 +1,9 @@
 # Learning-oriented Optuna LR exploration for retrieval fine-tuning.
 #
-# Samples 10 learning rates from 1e-6..1e-2 on a log scale. Each trial uses
-# trainer early stopping on held-out Hindi triplet accuracy, then returns
-# nDCG@10 on a carved Hindi mmarco_hindi subset as the Optuna objective.
+# Samples 10 learning rates from 1e-6..1e-2 on a log scale. Each short trial
+# trains for one 100k-row epoch, evaluates held-out Hindi triplet accuracy during
+# training, then returns nDCG@10 on a carved Hindi mmarco_hindi subset as the
+# Optuna objective. Trials intentionally avoid saving checkpoints/models.
 #
 # Run:
 #   make retrieval-optuna
@@ -36,9 +37,11 @@ retrieval_ft:
   # full 1.25M. At effective batch 512 that's ~195 steps/trial, enough to rank
   # learning rates. Re-run the winning LR with the full hindi_dpr config.
   max_train_samples: 100_000
-  # Eval/checkpoint often enough that early stopping and best-model selection
-  # actually fire within the short run (must divide evenly: save_steps multiple
-  # of eval_steps for load_best_model_at_end).
+  # Evaluate often enough to monitor the short run, but do not save checkpoints
+  # during LR search. Checkpoints/final models are only needed for the selected
+  # LR full run with hindi_dpr.yaml.
   eval_steps: 50
-  save_steps: 50
-  # early_stopping_* inherit from hindi_dpr (patience=2, threshold=0.0).
+  save_strategy: "no"
+  load_best_model_at_end: false
+  early_stopping_patience: null
+  save_final_model: false

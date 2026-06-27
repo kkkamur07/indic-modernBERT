@@ -116,6 +116,12 @@ A good tokenizer has low fertility (few splits per word), high bytes/token (long
 
 ## 4. Data: why Parquet instead of MDS
 
+### Retrieval mMARCO TSV encoding (fixed 2026-06-26)
+
+When preparing local Hindi mMARCO retrieval splits, do not use `requests.iter_lines(decode_unicode=True)`. Hugging Face serves UTF-8 TSV bytes, but `requests` can infer a Latin-1-style response encoding and persist mojibake such as `à¤à¤¿...` instead of Devanagari. Stream raw bytes and decode each line explicitly with UTF-8 before writing JSONL.
+
+The full DPR training split should be prepared once as local JSONL with `make retrieval-prepare-full-subset`; it writes 1,250,000 train rows plus the 1,000-row held-out triplet dev split expected by `configs/retrieval_finetune/hindi_dpr.yaml`. The Optuna LR sweep keeps its smaller fixed 100k+1k JSONL split.
+
 **MDS (Mosaic Streaming Dataset)** is MosaicML's binary shard format with an `index.json` for fast lookup. Upstream ModernBERT stores pretokenized samples in MDS. We use **Parquet instead**, for these reasons:
 
 - Sangraha data is already in Parquet — converting adds a multi-hour preprocessing step with no benefit at ~100 GB scale

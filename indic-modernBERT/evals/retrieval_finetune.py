@@ -45,7 +45,6 @@ class RetrievalFinetuneConfig:
 
     loss: str = "CachedMultipleNegativesRankingLoss"
     mini_batch_size: int = 16
-
     num_train_epochs: int = 1
     per_device_train_batch_size: int = 64
     per_device_eval_batch_size: int = 64
@@ -59,6 +58,7 @@ class RetrievalFinetuneConfig:
     save_strategy: str = "steps"
     save_steps: int = 500
     save_total_limit: int = 2
+    save_final_model: bool = True
     logging_steps: int = 100
 
     eval_strategy: str = "steps"
@@ -182,9 +182,12 @@ def run_retrieval_finetune(cfg: RetrievalFinetuneConfig) -> dict[str, Any]:
     logger.info("Post-training eval:")
     dev_evaluator(model)
 
-    final_dir = run_output / "final"
-    model.save_pretrained(str(final_dir))
-    logger.info("Saved fine-tuned model to {}", final_dir)
+    final_model_path: str | None = None
+    if cfg.save_final_model:
+        final_dir = run_output / "final"
+        model.save_pretrained(str(final_dir))
+        final_model_path = str(final_dir)
+        logger.info("Saved fine-tuned model to {}", final_dir)
 
     selection_score = _run_selection_eval(cfg, model)
 
@@ -192,9 +195,10 @@ def run_retrieval_finetune(cfg: RetrievalFinetuneConfig) -> dict[str, Any]:
         "backbone": cfg.backbone,
         "learning_rate": cfg.learning_rate,
         "run_name": run_name,
-        "final_model_path": str(final_dir),
+        "final_model_path": final_model_path,
         "selection_score": selection_score,
     }
+    run_output.mkdir(parents=True, exist_ok=True)
     (run_output / "finetune_result.json").write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )

@@ -1,0 +1,127 @@
+make[1]: Entering directory '/home/krrish/Desktop/Programming/indic-modernBERT'
+PYTHONPATH=indic-modernBERT uv run --extra evals --extra sweep python scripts/run_retrieval_finetune.py \
+  --config-name hindi_dpr_optuna -m retrieval_ft.backbone=ai4bharat/IndicBERTv2-MLM-only retrieval_ft.max_seq_length=512
+[2026-06-27 15:26:53,262][HYDRA] setup plugin alembic.autogenerate.schemas
+[2026-06-27 15:26:53,262][HYDRA] setup plugin alembic.autogenerate.tables
+[2026-06-27 15:26:53,262][HYDRA] setup plugin alembic.autogenerate.types
+[2026-06-27 15:26:53,263][HYDRA] setup plugin alembic.autogenerate.constraints
+[2026-06-27 15:26:53,263][HYDRA] setup plugin alembic.autogenerate.defaults
+[2026-06-27 15:26:53,263][HYDRA] setup plugin alembic.autogenerate.comments
+[32m[I 2026-06-27 15:26:54,101][0m A new study created in memory with name: hindi_dpr_lr[0m
+[2026-06-27 15:26:54,101][HYDRA] Study name: hindi_dpr_lr
+[2026-06-27 15:26:54,101][HYDRA] Storage: None
+[2026-06-27 15:26:54,101][HYDRA] Sampler: TPESampler
+[2026-06-27 15:26:54,101][HYDRA] Directions: ['maximize']
+[2026-06-27 15:26:54,103][HYDRA] Launching 1 jobs locally
+[2026-06-27 15:26:54,103][HYDRA] 	#0 : retrieval_ft.learning_rate=1.5088984442133082e-05 retrieval_ft.backbone=ai4bharat/IndicBERTv2-MLM-only retrieval_ft.max_seq_length=512
+15:26:54 | INFO | Retrieval fine-tune config:
+backbone: ai4bharat/IndicBERTv2-MLM-only
+trust_remote_code: false
+max_seq_length: 512
+train_dataset: unicamp-dl/mmarco
+train_dataset_config: hindi
+train_dataset_split: train
+train_trust_remote_code: true
+train_streaming: true
+train_shuffle_buffer: 100000
+train_local_path: artifacts/retrieval_finetune/subsets/mmarco_hindi_train100k_eval1k_seed17.jsonl
+max_train_samples: 100000
+loss: CachedMultipleNegativesRankingLoss
+mini_batch_size: 16
+num_train_epochs: 1
+per_device_train_batch_size: 64
+per_device_eval_batch_size: 64
+gradient_accumulation_steps: 8
+learning_rate: 1.5088984442133082e-05
+warmup_ratio: 0.05
+bf16: true
+fp16: false
+batch_sampler: NO_DUPLICATES
+save_strategy: 'no'
+save_steps: 500
+save_total_limit: 2
+logging_steps: 100
+eval_strategy: steps
+eval_steps: 50
+eval_split_size: 1000
+load_best_model_at_end: false
+metric_for_best_model: eval_train-dev_cosine_accuracy
+greater_is_better: true
+early_stopping_patience: null
+early_stopping_threshold: 0.0
+selection_dataset_name: AIhnIndicRag/mmarco_hindi
+selection_kind: hf_beir
+selection_trust_remote_code: false
+selection_corpus_config: corpus
+selection_corpus_split: corpus
+selection_queries_config: queries
+selection_queries_split: queries
+selection_qrels_config: default
+selection_qrels_split: test
+selection_max_corpus_docs: 50000
+selection_max_queries: 500
+selection_top_k: 10
+selection_batch_size: 32
+selection_corpus_chunk_size: 50000
+output_dir: artifacts/retrieval_finetune
+seed: 17
+eval_config: hindi_retrieval
+save_final_model: false
+
+[2026-06-27 15:26:54,323][datasets][INFO] - PyTorch version 2.7.0+cu126 available.
+[2026-06-27 15:26:54,323][datasets][INFO] - Polars version 1.42.0 available.
+15:26:57 | INFO | Retrieval fine-tune | backbone=ai4bharat/IndicBERTv2-MLM-only | lr=1.5088984442133082e-05 | output=artifacts/retrieval_finetune/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-1.5088984442133082e-05
+[2026-06-27 15:26:57,584][sentence_transformers.base.model][INFO] - No device provided, using cuda:0
+[2026-06-27 15:26:57,729][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/modules.json "HTTP/1.1 404 Not Found"
+[2026-06-27 15:26:57,730][sentence_transformers.base.model][INFO] - No modules.json found for ai4bharat/IndicBERTv2-MLM-only, initializing a new SentenceTransformer model.
+[2026-06-27 15:26:57,850][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 15:26:57,975][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 15:26:57,988][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/config.json "HTTP/1.1 200 OK"
+[2026-06-27 15:26:58,127][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+[2026-06-27 15:26:58,321][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only "HTTP/1.1 200 OK"
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 52399.18it/s]
+[transformers] [1mBertModel LOAD REPORT[0m from: ai4bharat/IndicBERTv2-MLM-only
+Key                                        | Status     |  | 
+-------------------------------------------+------------+--+-
+cls.predictions.bias                       | UNEXPECTED |  | 
+cls.predictions.decoder.bias               | UNEXPECTED |  | 
+cls.predictions.transform.dense.weight     | UNEXPECTED |  | 
+cls.seq_relationship.weight                | UNEXPECTED |  | 
+cls.predictions.transform.LayerNorm.bias   | UNEXPECTED |  | 
+cls.predictions.transform.LayerNorm.weight | UNEXPECTED |  | 
+cls.seq_relationship.bias                  | UNEXPECTED |  | 
+cls.predictions.decoder.weight             | UNEXPECTED |  | 
+cls.predictions.transform.dense.bias       | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+[2026-06-27 15:26:58,462][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/commits/main "HTTP/1.1 200 OK"
+[2026-06-27 15:26:58,484][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 15:26:58,597][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/discussions?p=0 "HTTP/1.1 200 OK"
+[2026-06-27 15:26:58,608][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 15:26:58,732][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/commits/refs%2Fpr%2F2 "HTTP/1.1 200 OK"
+[2026-06-27 15:26:58,736][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 15:26:58,855][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 15:26:58,935][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/refs%2Fpr%2F2/model.safetensors.index.json "HTTP/1.1 404 Not Found"
+[2026-06-27 15:26:58,983][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 15:26:58,996][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-27 15:26:59,056][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/refs%2Fpr%2F2/model.safetensors "HTTP/1.1 302 Found"
+[2026-06-27 15:26:59,116][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 15:26:59,129][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/config.json "HTTP/1.1 200 OK"
+[2026-06-27 15:26:59,256][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 15:26:59,269][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/config.json "HTTP/1.1 200 OK"
+[2026-06-27 15:26:59,389][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 15:26:59,401][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-27 15:26:59,521][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 15:26:59,534][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-27 15:26:59,653][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+[2026-06-27 15:26:59,777][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+[2026-06-27 15:27:00,314][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only "HTTP/1.1 200 OK"
+[2026-06-27 15:27:00,462][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only "HTTP/1.1 200 OK"
+15:27:01 | INFO | Train samples: 100000 | Eval samples: 1000
+[2026-06-27 15:27:01,008][sentence_transformers.base.training_args][WARNING] - The `warmup_ratio` argument is deprecated in Transformers v5+, and will also be removed from Sentence Transformers once support for Transformers v4 is dropped. Since you're using Transformers v5+, please use `warmup_steps` (as a float) to specify the warmup ratio instead.
+15:27:01 | INFO | Baseline eval (before fine-tuning):
+[2026-06-27 15:27:01,023][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset:
+[2026-06-27 15:27:02,948][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	73.10%
+Computing widget examples:   0%|          | 0/1 [00:00<?, ?example/s]                                                                     [transformers] The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'pad_token_id': 3}.
+  0%|          | 0/196 [00:00<?, ?it/s]  1%|          | 1/196 [00:03<11:30,  3.54s/it]  1%|          | 2/196 [00:06<10:47,  3.34s/it]  2%|▏         | 3/196 [00:09<10:35,  3.29s/it]  2%|▏         | 4/196 [00:13<10:27,  3.27s/it]  3%|▎         | 5/196 [00:16<10:33,  3.32s/it]  3%|▎         | 6/196 [00:19<10:21,  3.27s/it]  4%|▎         | 7/196 [00:22<10:13,  3.25s/it]  4%|▍         | 8/196 [00:26<10:10,  3.25s/it]  5%|▍         | 9/196 [00:29<10:12,  3.28s/it]  5%|▌         | 10/196 [00:32<10:16,  3.31s/it]  6%|▌         | 11/196 [00:36<10:05,  3.27s/it]  6%|▌         | 12/196 [00:39<10:00,  3.26s/it]  7%|▋         | 13/196 [00:42<09:58,  3.27s/it]  7%|▋         | 14/196 [00:45<09:52,  3.26s/it]  8%|▊         | 15/196 [00:49<10:12,  3.38s/it]  8%|▊         | 16/196 [00:52<10:03,  3.35s/it]  9%|▊         | 17/196 [00:56<09:53,  3.32s/it]

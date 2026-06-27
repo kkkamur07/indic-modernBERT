@@ -53,6 +53,9 @@ retrieval_ft:
   # max_train_samples + eval_split_size rows per trial.
   train_streaming: true
   train_shuffle_buffer: 100000
+  # Fixed local full-budget split prepared from raw UTF-8 mMARCO TSV bytes:
+  #   make retrieval-prepare-full-subset
+  train_local_path: artifacts/retrieval_finetune/subsets/mmarco_hindi_train1250k_eval1k_seed17.jsonl
   # Hindi mMARCO train has ~39.8M triples; cap to match upstream's 1.25M budget.
   max_train_samples: 1_250_000
 
