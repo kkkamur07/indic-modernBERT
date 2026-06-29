@@ -43,7 +43,7 @@ def _log_comparison_table(rows: list[tuple[str, dict]]) -> None:
         )
 
 
-@hydra.main(version_base=None, config_path="../configs", config_name="tokenizer")
+@hydra.main(version_base=None, config_path="../configs/hi", config_name="tokenizer")
 def main(cfg: DictConfig) -> None:
     tokenizer_cfg = load_tokenizer_config(cfg)
     eval_cfg = load_eval_config(cfg, "intrinsic")

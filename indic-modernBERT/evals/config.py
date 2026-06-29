@@ -183,7 +183,7 @@ class EvalSuiteConfig(BaseModel):
     model: ModelEvalConfig
     models: list[ModelEvalConfig] = Field(default_factory=list)
     context_modes: list[ContextMode] | None = None
-    output_dir: Path = Path("artifacts/evals")
+    output_dir: Path = Path("artifacts/evals/hi")
     seed: int = 17
     device: Literal["auto", "cpu", "cuda"] = "auto"
     tasks: list[str] = Field(default_factory=lambda: ["sentiment", "ner", "qa", "copa"])

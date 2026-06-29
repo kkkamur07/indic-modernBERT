@@ -55,7 +55,7 @@ class PipelineContext:
 
     @property
     def tokenizer_path(self) -> Path:
-        return self.repo / "artifacts/tokenizer/bpe_vs50368"
+        return self.repo / "artifacts/tokenizer/hi/bpe_vs50368"
 
     @property
     def train_data(self) -> Path:
@@ -71,7 +71,7 @@ class PipelineContext:
 
     @property
     def pretrain_config_dir(self) -> Path:
-        return self.repo / "configs/pretrain"
+        return self.repo / "configs/hi/pretrain"
 
     def has_tokenizer(self) -> bool:
         return (self.tokenizer_path / "tokenizer.json").is_file()

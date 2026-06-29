@@ -90,7 +90,7 @@ class RetrievalFinetuneConfig:
     selection_batch_size: int = 32
     selection_corpus_chunk_size: int = 50_000
 
-    output_dir: str = "artifacts/retrieval_finetune"
+    output_dir: str = "artifacts/retrieval_finetune/hi"
     seed: int = 17
     eval_config: str = "hindi_retrieval"
 

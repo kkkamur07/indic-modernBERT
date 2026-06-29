@@ -3,9 +3,8 @@
 The Hugging Face ``unicamp-dl/mmarco`` builder loads the full collection/query
 maps before yielding its first text triplet. For fixed 100k Optuna subsets and
 1.25M full-budget DPR runs, that is unnecessarily slow and can make each run see
-different streamed rows. This script samples triplet IDs first, then streams the
-query/collection TSVs once and resolves only the IDs needed for the local JSONL
-split.
+different streamed rows. This script downloads the raw TSV files once, samples
+triplet IDs locally, then resolves only the IDs needed for the local JSONL split.
 """
 
 from __future__ import annotations
@@ -15,8 +14,7 @@ import json
 import random
 from pathlib import Path
 
-import requests
-from huggingface_hub import hf_hub_url
+from huggingface_hub import hf_hub_download
 
 DATASET_REPO = "unicamp-dl/mmarco"
 COLLECTION_PATH = "data/google/collections/hindi_collection.tsv"
@@ -35,9 +33,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--progress-every", type=int, default=100_000)
     parser.add_argument(
+        "--download-dir",
+        default="artifacts/retrieval_finetune/hi/raw/unicamp-dl_mmarco",
+        help="Directory for the downloaded raw mMARCO TSV files.",
+    )
+    parser.add_argument(
         "--output",
         default=(
-            "artifacts/retrieval_finetune/subsets/"
+            "artifacts/retrieval_finetune/hi/subsets/"
             "mmarco_hindi_train100k_eval1k_seed17.jsonl"
         ),
     )
@@ -66,16 +69,17 @@ def main() -> None:
     if tmp_output.exists():
         tmp_output.unlink()
 
-    triples_url = hf_hub_url(DATASET_REPO, TRIPLES_PATH, repo_type="dataset")
-    queries_url = hf_hub_url(DATASET_REPO, QUERIES_PATH, repo_type="dataset")
-    collection_url = hf_hub_url(DATASET_REPO, COLLECTION_PATH, repo_type="dataset")
+    download_dir = Path(args.download_dir)
+    triples_path = _download_dataset_file(TRIPLES_PATH, download_dir)
+    queries_path = _download_dataset_file(QUERIES_PATH, download_dir)
+    collection_path = _download_dataset_file(COLLECTION_PATH, download_dir)
 
     print(
         f"Sampling {total} ID triples from first {args.candidate_triples} rows",
         flush=True,
     )
     triples = _sample_triples(
-        triples_url,
+        triples_path,
         total=total,
         candidate_triples=args.candidate_triples,
         rng=rng,
@@ -86,7 +90,7 @@ def main() -> None:
 
     print(f"Resolving {len(qids)} queries", flush=True)
     queries = _resolve_tsv_ids(
-        queries_url,
+        queries_path,
         wanted_ids=qids,
         label="queries",
         progress_every=args.progress_every,
@@ -94,7 +98,7 @@ def main() -> None:
 
     print(f"Resolving {len(pids)} passages from Hindi collection", flush=True)
     collection = _resolve_tsv_ids(
-        collection_url,
+        collection_path,
         wanted_ids=pids,
         label="collection",
         progress_every=args.progress_every,
@@ -125,16 +129,31 @@ def _count_lines(path: Path) -> int:
         return sum(1 for _ in handle)
 
 
-def _iter_url_lines(url: str):
-    with requests.get(url, stream=True, timeout=60) as response:
-        response.raise_for_status()
-        for line in response.iter_lines(decode_unicode=False):
+def _download_dataset_file(filename: str, download_dir: Path) -> Path:
+    path = download_dir / filename
+    if path.exists():
+        print(f"Using downloaded file: {path}", flush=True)
+        return path
+
+    print(f"Downloading {DATASET_REPO}/{filename} to {download_dir}", flush=True)
+    downloaded = hf_hub_download(
+        repo_id=DATASET_REPO,
+        filename=filename,
+        repo_type="dataset",
+        local_dir=download_dir,
+    )
+    return Path(downloaded)
+
+
+def _iter_file_lines(path: Path):
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
             if line:
-                yield line.decode("utf-8")
+                yield line.rstrip("\n")
 
 
 def _sample_triples(
-    url: str,
+    path: Path,
     *,
     total: int,
     candidate_triples: int,
@@ -146,7 +165,7 @@ def _sample_triples(
 
     reservoir: list[tuple[str, str, str]] = []
     seen = 0
-    for line in _iter_url_lines(url):
+    for line in _iter_file_lines(path):
         if seen >= candidate_triples:
             break
         parts = line.rstrip().split("\t")
@@ -173,7 +192,7 @@ def _sample_triples(
 
 
 def _resolve_tsv_ids(
-    url: str,
+    path: Path,
     *,
     wanted_ids: set[str],
     label: str,
@@ -182,7 +201,7 @@ def _resolve_tsv_ids(
     resolved: dict[str, str] = {}
     scanned = 0
 
-    for line in _iter_url_lines(url):
+    for line in _iter_file_lines(path):
         scanned += 1
         if "\t" not in line:
             continue

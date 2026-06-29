@@ -1,0 +1,82 @@
+[2026-06-27 20:52:59,640][datasets][INFO] - PyTorch version 2.7.0+cu126 available.
+[2026-06-27 20:52:59,640][datasets][INFO] - Polars version 1.42.0 available.
+[2026-06-27 20:53:03,351][sentence_transformers.base.model][INFO] - No device provided, using cuda:0
+[2026-06-27 20:53:03,511][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/modules.json "HTTP/1.1 404 Not Found"
+[2026-06-27 20:53:03,511][sentence_transformers.base.model][INFO] - No modules.json found for ai4bharat/IndicBERTv2-MLM-only, initializing a new SentenceTransformer model.
+[2026-06-27 20:53:03,639][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 20:53:03,760][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 20:53:03,773][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/config.json "HTTP/1.1 200 OK"
+[2026-06-27 20:53:03,917][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+[2026-06-27 20:53:04,040][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only "HTTP/1.1 200 OK"
+[2026-06-27 20:53:04,126][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/processor_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 20:53:04,181][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/commits/main "HTTP/1.1 200 OK"
+[2026-06-27 20:53:04,244][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 20:53:04,336][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/discussions?p=0 "HTTP/1.1 200 OK"
+[2026-06-27 20:53:04,377][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/video_preprocessor_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 20:53:04,473][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/commits/refs%2Fpr%2F2 "HTTP/1.1 200 OK"
+[2026-06-27 20:53:04,499][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/preprocessor_config.json "HTTP/1.1 404 Not Found"
+[2026-06-27 20:53:04,597][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/refs%2Fpr%2F2/model.safetensors.index.json "HTTP/1.1 404 Not Found"
+[2026-06-27 20:53:04,619][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 20:53:04,631][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-27 20:53:04,752][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 20:53:04,765][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/config.json "HTTP/1.1 200 OK"
+[2026-06-27 20:53:04,784][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/refs%2Fpr%2F2/model.safetensors "HTTP/1.1 302 Found"
+[2026-06-27 20:53:04,888][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 20:53:04,902][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/config.json "HTTP/1.1 200 OK"
+[2026-06-27 20:53:05,123][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 20:53:05,137][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-27 20:53:05,256][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/ai4bharat/IndicBERTv2-MLM-only/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+[2026-06-27 20:53:05,269][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/ai4bharat/IndicBERTv2-MLM-only/8598f13fe52443bc3fc054fcd665944560145b5c/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-06-27 20:53:05,391][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+[2026-06-27 20:53:05,513][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+[2026-06-27 20:53:06,042][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only "HTTP/1.1 200 OK"
+[2026-06-27 20:53:06,193][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/ai4bharat/IndicBERTv2-MLM-only "HTTP/1.1 200 OK"
+[2026-06-27 20:53:06,748][sentence_transformers.base.training_args][WARNING] - The `warmup_ratio` argument is deprecated in Transformers v5+, and will also be removed from Sentence Transformers once support for Transformers v4 is dropped. Since you're using Transformers v5+, please use `warmup_steps` (as a float) to specify the warmup ratio instead.
+[2026-06-27 20:53:06,763][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset:
+[2026-06-27 20:53:08,701][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	70.80%
+[2026-06-27 21:20:31,920][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 0.2047921359819783 after 500 steps:
+[2026-06-27 21:20:33,306][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	96.20%
+[2026-06-27 21:20:33,306][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-500
+[2026-06-27 21:20:33,306][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-500
+[2026-06-27 21:48:02,369][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 0.4095842719639566 after 1000 steps:
+[2026-06-27 21:48:03,729][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	97.40%
+[2026-06-27 21:48:03,730][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-1000
+[2026-06-27 21:48:03,730][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-1000
+[2026-06-27 22:15:34,905][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 0.6143764079459348 after 1500 steps:
+[2026-06-27 22:15:36,280][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	97.20%
+[2026-06-27 22:15:36,281][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-1500
+[2026-06-27 22:15:36,281][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-1500
+[2026-06-27 22:43:06,086][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 0.8191685439279132 after 2000 steps:
+[2026-06-27 22:43:07,451][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	98.00%
+[2026-06-27 22:43:07,451][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-2000
+[2026-06-27 22:43:07,451][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-2000
+[2026-06-27 23:07:22,522][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 1.0 after 2442 steps:
+[2026-06-27 23:07:23,892][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	98.00%
+[2026-06-27 23:07:23,893][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-2442
+[2026-06-27 23:07:23,893][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-2442
+[2026-06-27 23:07:26,739][sentence_transformers.base.trainer][INFO] - Loading best model from artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-2000 (score: 0.9800000190734863).
+[2026-06-27 23:07:26,740][sentence_transformers.base.model][INFO] - No device provided, using cuda:0
+[2026-06-27 23:07:26,741][sentence_transformers.base.model][INFO] - Loading SentenceTransformer model from artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/checkpoint-2000.
+[2026-06-27 23:07:27,364][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset:
+[2026-06-27 23:07:28,746][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	98.00%
+[2026-06-27 23:07:28,746][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/final
+[2026-06-27 23:07:29,666][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-27 23:07:30,121][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-27 23:07:30,372][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi/revision/06da6e6ff28670b6959ef3af2f94b6a6f93b3dbd "HTTP/1.1 200 OK"
+[2026-06-27 23:07:30,515][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi/tree/06da6e6ff28670b6959ef3af2f94b6a6f93b3dbd?recursive=false&expand=false "HTTP/1.1 200 OK"
+[2026-06-27 23:07:30,857][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi/tree/06da6e6ff28670b6959ef3af2f94b6a6f93b3dbd/qrels?recursive=false&expand=false "HTTP/1.1 200 OK"
+[2026-06-27 23:07:31,105][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-27 23:07:31,540][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-27 23:07:31,904][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-27 23:07:32,403][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-27 23:09:19,084][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Information Retrieval Evaluation of the model on the selection dataset:
+[2026-06-27 23:09:34,208][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Queries: 500
+[2026-06-27 23:09:34,208][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Corpus: 50530
+
+[2026-06-27 23:09:34,215][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Score-Function: cosine
+[2026-06-27 23:09:34,215][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Accuracy@10: 88.80%
+[2026-06-27 23:09:34,215][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Precision@10: 9.42%
+[2026-06-27 23:09:34,215][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Recall@10: 88.57%
+[2026-06-27 23:09:34,215][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - MRR@10: 0.7942
+[2026-06-27 23:09:34,215][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - NDCG@10: 0.8144
+[2026-06-27 23:09:34,215][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - MAP@10: 0.7894

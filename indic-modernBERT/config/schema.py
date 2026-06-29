@@ -401,7 +401,7 @@ class PretrainConfig(BaseModel):
     data_root: Path
     eval_data_root: Path | None = None
     tokenizer_path: Path
-    output_dir: Path = Path("artifacts/model/modernbert")
+    output_dir: Path = Path("artifacts/model/modernbert/hi")
     max_seq_len: int = Field(default=1024, ge=1)
     mlm_probability: float = Field(default=0.3, gt=0.0, lt=1.0)
     eval_mlm_probability: float = Field(
@@ -422,7 +422,7 @@ class PretrainConfig(BaseModel):
         default=None,
         description="Composer run name; required by Composer when autoresume=True.",
     )
-    save_folder: Path = Path("artifacts/model/modernbert/checkpoints")
+    save_folder: Path = Path("artifacts/model/modernbert/hi/checkpoints")
     save_interval: str = Field(
         default="1000ba",
         description="Composer checkpoint save interval (e.g. 4000ba).",
@@ -615,7 +615,7 @@ def load_pretrain_config(cfg: DictConfig) -> PretrainConfig:
     if "pretrain" not in cfg:
         raise ValueError(
             "Hydra config must contain a top-level 'pretrain' key "
-            "(e.g. configs/pretrain/hindi_mlm.yaml or configs/sweep/hindi_mlm_lr_sweep.yaml)."
+            "(e.g. configs/hi/pretrain/hindi_mlm.yaml or configs/hi/sweep/hindi_mlm_lr_sweep.yaml)."
         )
 
     container = OmegaConf.to_container(cfg, resolve=True)

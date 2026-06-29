@@ -1,0 +1,7 @@
+- retrieval_ft.backbone=artifacts/model/modernbert/hf_export/phase2_latest_ba1157
+- retrieval_ft.max_seq_length=8192
+- retrieval_ft.train_local_path=artifacts/retrieval_finetune/subsets/mmarco_hindi_train1250k_eval1k_seed17.jsonl
+- retrieval_ft.max_train_samples=1250000
+- retrieval_ft.eval_split_size=1000
+- retrieval_ft.learning_rate=0.00010972521281842244
+- retrieval_ft.output_dir=artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs

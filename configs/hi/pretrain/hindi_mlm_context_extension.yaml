@@ -1,0 +1,74 @@
+# Phase-2 context extension — mirrors upstream modernbert-base-context-extension.yaml
+#
+# RUN
+#   Foreground: make train-phase2
+#   Background: make train-phase2-nohup   # logs/hi/pretrain/phase2/nohup.log, autoresumes on restart
+#
+# CORPUS — IndicCorp V2 ONLY (phase-2 trains the long-context pass on IndicCorp).
+#   IndicCorp V2 (hi-1+hi-3): 4,851,132,363 tok  (70,923,978 docs, 356 shards, 68.4 tok/row)
+#   Measured: one_shard_extrapolation @ bpe_vs50368 (13,679,809 tok / 200k-row shard).
+#   (Sangraha 23.617B is phase-1's pool; not counted here.)
+#
+# DURATION — use ALL IndicCorp tokens (one full pass).
+#   max_duration = 4,851,132,363 tok
+#
+# STEP MATH  (seq=8192, packed — every window is full; tokens/step = global_batch × 8192)
+#   global_train_batch_size MUST be set here: base hindi_mlm is 8 and is NOT what we want.
+#   global_batch=512 -> tokens/step = 4,194,304 -> 4.851e9 / 4.194e6 ≈ 1,156 ba
+#   eval/save @ 15ba -> 1,156 / 15 ≈ 77 evals.
+#
+# EVAL COST — ~77 evals × eval_subset_num_batches costs ~fixed extra compute
+#   (eval work is fixed; training work = fixed tokens). At subset=50 that's ~54% overhead,
+#   so subset is dropped to 10 (~11%) to keep 100 evals affordable.
+#
+# SCHEDULER / LR (verified vs upstream)
+#   Upstream phase-2 uses constant_with_warmup with t_warmup=0tok (no warmup; the 3B-tok
+#   warmup is phase-1 only). Upstream LR: phase-1 8e-4, phase-2 3e-4 (lower).
+#   We instead reuse phase-1's Optuna-optimized lr 4.88e-4 (validated on this model+data).
+defaults:
+  - hindi_mlm
+  - _self_
+
+pretrain:
+  run_name: hindi_modernbert_context_extension  # required by Composer when autoresume=true
+  max_seq_len: 8192
+  arch_config_path: configs/model/modernbert_context_extension.yaml
+  save_folder: artifacts/model/modernbert/hi/checkpoints/context_extension
+  data_root: data/indiccorp_v2/parquet/hi  # context-extension pass trains on IndicCorp V2
+  max_duration: 4851132363tok            # ALL IndicCorp V2 tokens. 
+  load_path: artifacts/model/modernbert/hi/checkpoints/phase1/latest-rank0.pt
+  reset_time: true
+  restart_override: true
+  sequence_packing: true
+  eval_sequence_packing: false
+  # Batch size is NOT inherited safely: hindi_mlm base = 8. Set explicitly for seq=8192.
+  global_train_batch_size: 512           # effective optim batch; grad-accum = 512 / microbatch
+  device_train_microbatch_size: 2       # RTX 4090 24GB: 2 fits @ 8192 (256 accum steps); try 4
+  global_eval_batch_size: 64
+  device_eval_microbatch_size: 8
+  eval_subset_num_batches: 10            # was 50; keeps 100 evals to ~11% compute overhead
+  eval_interval: 15ba                    # ~77 evals over ~1,156 ba
+  save_interval: 15ba
+  # Disk retention: 1 rolling "latest" for autoresume + top-3 best by eval loss (pruned).
+  save_num_checkpoints_to_keep: 1
+  autoresume: true
+  loggers:
+    tensorboard:
+      log_dir: artifacts/model/modernbert/hi/tensorboard/context_extension
+  callbacks:
+    save_best_checkpoints:
+      num_checkpoints: 3
+  scheduler:
+    name: constant_with_warmup
+    t_warmup: 0tok                      # matches upstream phase-2 (no warmup); unit MUST match max_duration (tok)
+    alpha_f: 0.0
+    t_decay: 0tok
+  optimizer:
+    name: decoupled_stableadamw
+    lr: 0.0004884555511755356             # phase-1 Optuna-optimized lr (was upstream 3e-4)
+    beta1: 0.9
+    beta2: 0.98
+    eps: 1.0e-6
+    weight_decay: 1.0e-5
+    filter_bias_norm_wd: true
+    log_grad_norm: true

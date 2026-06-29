@@ -71,7 +71,7 @@ Prepare the fixed full-budget local training split separately:
 make retrieval-prepare-full-subset-nohup ARGS="--overwrite"
 ```
 
-This writes `artifacts/retrieval_finetune/subsets/mmarco_hindi_train1250k_eval1k_seed17.jsonl`
+This writes `artifacts/retrieval_finetune/hi/subsets/mmarco_hindi_train1250k_eval1k_seed17.jsonl`
 with 1.25M train rows plus the 1k held-out triplet dev split used during
 training. The downloader streams mMARCO TSV bytes and decodes UTF-8 explicitly
 to avoid mojibake in Hindi text.

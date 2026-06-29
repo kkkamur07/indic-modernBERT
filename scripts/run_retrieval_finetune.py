@@ -44,7 +44,7 @@ def _parse_config(cfg: DictConfig) -> RetrievalFinetuneConfig:
 
 @hydra.main(
     version_base=None,
-    config_path="../configs/retrieval_finetune",
+    config_path="../configs/hi/retrieval_finetune",
     config_name="hindi_dpr",
 )
 def main(cfg: DictConfig) -> float | None:

@@ -137,7 +137,7 @@ def step_backward(
 def run_pipeline_trace(
     *,
     arch_config: Path = Path("configs/model/modernbert_base.yaml"),
-    tokenizer_path: Path = Path("artifacts/tokenizer/bpe_vs50368"),
+    tokenizer_path: Path = Path("artifacts/tokenizer/hi/bpe_vs50368"),
     max_seq_len: int = 1024,
     microbatch_size: int | None = 16,
 ) -> list[StepResult]:
@@ -178,7 +178,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arch-config", type=Path, default=Path("configs/model/modernbert_base.yaml"))
-    parser.add_argument("--tokenizer", type=Path, default=Path("artifacts/tokenizer/bpe_vs50368"))
+    parser.add_argument("--tokenizer", type=Path, default=Path("artifacts/tokenizer/hi/bpe_vs50368"))
     parser.add_argument("--max-seq-len", type=int, default=1024)
     parser.add_argument("--microbatch-size", type=int, default=16)
     args = parser.parse_args()

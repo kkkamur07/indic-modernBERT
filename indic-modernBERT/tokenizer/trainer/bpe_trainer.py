@@ -57,7 +57,7 @@ def train_bpe(
     return save_tokenizer(tokenizer, output_dir)
 
 
-@hydra.main(version_base=None, config_path="../../../configs", config_name="tokenizer")
+@hydra.main(version_base=None, config_path="../../../configs/hi", config_name="tokenizer")
 def main(cfg: DictConfig) -> None:
 
     config = load_tokenizer_config(cfg)

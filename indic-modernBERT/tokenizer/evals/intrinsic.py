@@ -21,7 +21,7 @@ from .common import (
 )
 
 
-@hydra.main(version_base=None, config_path="../../../configs", config_name="tokenizer")
+@hydra.main(version_base=None, config_path="../../../configs/hi", config_name="tokenizer")
 def main(cfg: DictConfig) -> None:
     eval_cfg = load_eval_config(cfg, "intrinsic")
     tokenizer_cfg = load_tokenizer_config(cfg)

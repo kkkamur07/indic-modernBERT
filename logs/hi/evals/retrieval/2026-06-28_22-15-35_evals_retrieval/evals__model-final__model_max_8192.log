@@ -1,0 +1,7 @@
+2026-06-28 22:15:36 | INFO | Evaluating model 1/1: artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/mmBERT-small/mmBERT-small-DPR-0.00010972521281842244/final | context_mode=model_max | active_context_length=8192 | max_sequence_length=8192
+2026-06-28 22:15:36 | INFO | Selected supervised tasks: []
+2026-06-28 22:15:36 | INFO | Evaluation output directory: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals_retrieval/final__model_max_8192
+2026-06-28 22:15:36 | INFO | Running retrieval evaluation
+2026-06-28 22:20:46 | INFO | Retrieval mldr_hi | nDCG@10: 0.2337 | recall@10: 0.3250 | MRR@10: 0.2056
+2026-06-29 08:56:23 | INFO | Retrieval mmarco_hindi | nDCG@10: 0.2714 | recall@10: 0.4231 | MRR@10: 0.2276
+2026-06-29 08:56:23 | INFO | Wrote reports: {'json': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals_retrieval/final__model_max_8192/suite_summary.json', 'csv': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals_retrieval/final__model_max_8192/suite_metrics.csv', 'markdown': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals_retrieval/final__model_max_8192/suite_report.md'}

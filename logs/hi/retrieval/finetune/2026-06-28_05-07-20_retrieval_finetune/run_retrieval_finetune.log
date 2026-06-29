@@ -1,0 +1,56 @@
+[2026-06-28 05:07:20,374][datasets][INFO] - PyTorch version 2.7.0+cu126 available.
+[2026-06-28 05:07:20,374][datasets][INFO] - Polars version 1.42.0 available.
+[2026-06-28 05:07:24,146][sentence_transformers.base.model][INFO] - No device provided, using cuda:0
+[2026-06-28 05:07:24,146][sentence_transformers.base.model][INFO] - No modules.json found for artifacts/model/modernbert/hf_export/phase2_latest_ba1157, initializing a new SentenceTransformer model.
+[2026-06-28 05:07:24,900][sentence_transformers.base.training_args][WARNING] - The `warmup_ratio` argument is deprecated in Transformers v5+, and will also be removed from Sentence Transformers once support for Transformers v4 is dropped. Since you're using Transformers v5+, please use `warmup_steps` (as a float) to specify the warmup ratio instead.
+[2026-06-28 05:07:24,915][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset:
+[2026-06-28 05:07:28,110][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	68.30%
+[2026-06-28 05:47:12,936][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 0.2047921359819783 after 500 steps:
+[2026-06-28 05:47:15,202][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	97.10%
+[2026-06-28 05:47:15,203][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-500
+[2026-06-28 05:47:15,203][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-500
+[2026-06-28 05:47:15,796][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/hf_export/phase2_latest_ba1157 "HTTP/1.1 404 Not Found"
+[2026-06-28 05:47:15,914][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/phase2/latest_ba1157 "HTTP/1.1 404 Not Found"
+[2026-06-28 05:47:16,032][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/phase2_latest/ba1157 "HTTP/1.1 404 Not Found"
+[2026-06-28 06:27:01,680][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 0.4095842719639566 after 1000 steps:
+[2026-06-28 06:27:03,937][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	98.00%
+[2026-06-28 06:27:03,938][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-1000
+[2026-06-28 06:27:03,938][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-1000
+[2026-06-28 07:06:55,583][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 0.6143764079459348 after 1500 steps:
+[2026-06-28 07:06:57,850][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	98.60%
+[2026-06-28 07:06:57,851][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-1500
+[2026-06-28 07:06:57,851][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-1500
+[2026-06-28 07:46:48,745][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 0.8191685439279132 after 2000 steps:
+[2026-06-28 07:46:51,021][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	98.80%
+[2026-06-28 07:46:51,022][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-2000
+[2026-06-28 07:46:51,022][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-2000
+[2026-06-28 08:22:03,112][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset in epoch 1.0 after 2442 steps:
+[2026-06-28 08:22:05,376][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	99.10%
+[2026-06-28 08:22:05,377][sentence_transformers.base.trainer][INFO] - Saving model checkpoint to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-2442
+[2026-06-28 08:22:05,377][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-2442
+[2026-06-28 08:22:06,958][sentence_transformers.base.trainer][INFO] - Loading best model from artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-2442 (score: 0.9909999966621399).
+[2026-06-28 08:22:06,959][sentence_transformers.base.model][INFO] - No device provided, using cuda:0
+[2026-06-28 08:22:06,959][sentence_transformers.base.model][INFO] - Loading SentenceTransformer model from artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/checkpoint-2442.
+[2026-06-28 08:22:07,249][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - TripletEvaluator: Evaluating the model on the train-dev dataset:
+[2026-06-28 08:22:09,513][sentence_transformers.sentence_transformer.evaluation.triplet][INFO] - Accuracy Cosine Similarity:	99.10%
+[2026-06-28 08:22:09,513][sentence_transformers.base.model][INFO] - Saving model to artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/final
+[2026-06-28 08:22:10,148][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:22:10,598][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:22:10,718][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi/revision/06da6e6ff28670b6959ef3af2f94b6a6f93b3dbd "HTTP/1.1 200 OK"
+[2026-06-28 08:22:10,858][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi/tree/06da6e6ff28670b6959ef3af2f94b6a6f93b3dbd?recursive=false&expand=false "HTTP/1.1 200 OK"
+[2026-06-28 08:22:11,374][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi/tree/06da6e6ff28670b6959ef3af2f94b6a6f93b3dbd/qrels?recursive=false&expand=false "HTTP/1.1 200 OK"
+[2026-06-28 08:22:11,543][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:22:12,045][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:22:12,332][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:22:12,807][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:23:59,965][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Information Retrieval Evaluation of the model on the selection dataset:
+[2026-06-28 08:24:26,212][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Queries: 500
+[2026-06-28 08:24:26,212][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Corpus: 50530
+
+[2026-06-28 08:24:26,218][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Score-Function: cosine
+[2026-06-28 08:24:26,218][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Accuracy@10: 90.40%
+[2026-06-28 08:24:26,218][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Precision@10: 9.52%
+[2026-06-28 08:24:26,218][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Recall@10: 89.87%
+[2026-06-28 08:24:26,218][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - MRR@10: 0.7980
+[2026-06-28 08:24:26,218][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - NDCG@10: 0.8191
+[2026-06-28 08:24:26,218][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - MAP@10: 0.7913
