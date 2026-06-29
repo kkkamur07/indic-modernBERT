@@ -29,3 +29,4 @@ _support_repo/**/target/
 _support_repo/**/tokenizer_json/
 # Artifacts — ignore all except tensorboard event logs
 artifacts/
+/_support_repo/

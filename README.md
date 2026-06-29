@@ -1,15 +1,17 @@
 # Indic ModernBERT
 
 [![Model Size](https://img.shields.io/badge/model_size-188M-blue)](#model-summary)
-[![Language](https://img.shields.io/badge/language-Hindi-orange)](#data)
+[![Language](https://img.shields.io/badge/language-Hindi-orange)](#hindi)
 [![License](https://img.shields.io/badge/license-Apache_2.0-lightgrey)](LICENSE)
 [![Hugging Face](https://huggingface.co/datasets/huggingface/badges/raw/main/model-on-hf-md.svg)](https://huggingface.co/kkkamur07/hindi-modernbert)
 
+**Goal:** ModernBERT extension for Indic languages. Prove the recipe on Hindi first, then scale to ModernBERT architectures for more than 5 Indic languages that each have substantial (>5B token) corpora available.
+
+## Hindi
+
 **TL;DR:** hindi-modernBERT is a **pretrained base MLM checkpoint**: a Hindi extension of the ModernBERT architecture, trained from scratch on Hindi text. The base model is competitive with other models across tasks, and it outperforms them on retrieval after DPR fine-tuning. Checkpoint **ba1157**, 22 layers, 8192 context, ~188M params, trained on 1× RTX 4090 in **5 days**.
 
-This release uses the [ModernBERT](https://arxiv.org/abs/2412.13663) architecture and training recipe, adapted for Hindi with a new tokenizer and ~28B tokens of Hindi pretraining.
-
-The goal is to prove the recipe on Hindi first, then scale to ModernBERT architectures for more than 5 Indic languages that each have substantial (>5B token) corpora available.
+This release uses the [ModernBERT](https://arxiv.org/abs/2412.13663) architecture and training recipe ([View on alphaXiv](https://www.alphaxiv.org/abs/2412.13663)), adapted for Hindi with a new tokenizer and ~28B tokens of Hindi pretraining.
 
 **Checkpoint folders on the Hub:**
 
