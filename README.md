@@ -13,14 +13,6 @@
 
 This release uses the [ModernBERT](https://arxiv.org/abs/2412.13663) architecture and training recipe ([View on alphaXiv](https://www.alphaxiv.org/abs/2412.13663)), adapted for Hindi with a new tokenizer and ~28B tokens of Hindi pretraining.
 
-**Checkpoint folders on the Hub:**
-
-| Hub path | What it contains |
-| --- | --- |
-| `.` | Main release, ba1157, 8192 context |
-| `checkpoints/phase1` | Phase 1 Sangraha checkpoint, 1024 context |
-| `checkpoints/phase2_ba135` | Phase 2 lowest MLM-loss checkpoint, 8192 context |
-
 ## Model summary
 
 | | |
@@ -39,6 +31,27 @@ This release uses the [ModernBERT](https://arxiv.org/abs/2412.13663) architectur
 | Hardware | 1× NVIDIA RTX 4090 (24 GB) |
 | Training time | **5 days** |
 | Transformers | `>=5.12.0` |
+
+### Eval summary
+
+hindi-modernBERT is competitive on supervised Hindi understanding tasks and is the strongest model in this comparison on retrieval after DPR fine-tuning.
+
+| Area | Benchmark | Score |
+| --- | --- | ---: |
+| NER | Naamapadam Hindi F1 | 0.8001 |
+| Intent | MASSIVE Hindi Macro-F1 | 0.4731 |
+| Retrieval | mMARCO Hindi nDCG@10 | **0.2825** |
+| Retrieval | MLDR hi nDCG@10 | **0.2635** |
+
+Full report: [`artifacts/results/hi/eval_summary_report.md`](artifacts/results/hi/eval_summary_report.md).
+
+**Checkpoint folders on the Hub:**
+
+| Hub path | What it contains |
+| --- | --- |
+| `.` | Main release, ba1157, 8192 context |
+| `checkpoints/phase1` | Phase 1 Sangraha checkpoint, 1024 context |
+| `checkpoints/phase2_ba135` | Phase 2 lowest MLM-loss checkpoint, 8192 context |
 
 ---
 
@@ -248,17 +261,6 @@ Key architectural choices:
 | `configs/model/modernbert_tiny.yaml` | 4 layers, fast GPU smoke tests |
 
 > **Note on alternating attention:** we only use FA2 in production because FA3 is not available on RTX 4090 (Ampere). FA3 requires Hopper-class GPUs (H100). The H100s we have access to also lack the storage headroom for 100GB-scale training runs.
-
-### Eval summary
-
-hindi-modernBERT is competitive on supervised Hindi understanding tasks and is the strongest model in this comparison on retrieval after DPR fine-tuning.
-
-| Area | Benchmark | Score |
-| --- | --- | ---: |
-| NER | Naamapadam Hindi F1 | 0.8001 |
-| Intent | MASSIVE Hindi Macro-F1 | 0.4731 |
-| Retrieval | mMARCO Hindi nDCG@10 | **0.2825** |
-| Retrieval | MLDR hi nDCG@10 | **0.2635** |
 
 ---
 
