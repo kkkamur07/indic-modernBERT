@@ -1,0 +1,1 @@
+- eval.models=[{model_name_or_path:artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/final,tokenizer_name_or_path:null,trust_remote_code:false,max_sequence_length:512,context_mode:model_max}]

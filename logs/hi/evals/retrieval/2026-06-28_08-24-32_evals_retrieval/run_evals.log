@@ -1,0 +1,36 @@
+[2026-06-28 08:24:32,393][sentence_transformers.base.model][INFO] - Loading SentenceTransformer model from artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/phase2_latest_ba1157/phase2_latest_ba1157-DPR-0.00010972521281842244/final.
+[2026-06-28 08:24:33,135][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/Shitao/MLDR "HTTP/1.1 200 OK"
+[2026-06-28 08:24:34,101][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/Shitao/MLDR/revision/main "HTTP/1.1 200 OK"
+[2026-06-28 08:24:34,234][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/Shitao/MLDR/tree/main?recursive=false&expand=false "HTTP/1.1 200 OK"
+[2026-06-28 08:24:34,373][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/Shitao/MLDR "HTTP/1.1 200 OK"
+[2026-06-28 08:24:35,503][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Information Retrieval Evaluation of the model on the mldr_hi dataset:
+[2026-06-28 08:32:23,148][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Queries: 200
+[2026-06-28 08:32:23,148][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Corpus: 3806
+
+[2026-06-28 08:32:23,151][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Score-Function: cosine
+[2026-06-28 08:32:23,151][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Accuracy@10: 39.00%
+[2026-06-28 08:32:23,151][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Precision@10: 3.90%
+[2026-06-28 08:32:23,151][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Recall@10: 39.00%
+[2026-06-28 08:32:23,151][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - MRR@10: 0.2252
+[2026-06-28 08:32:23,151][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - NDCG@10: 0.2635
+[2026-06-28 08:32:23,151][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - MAP@10: 0.2252
+[2026-06-28 08:32:23,304][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:32:23,766][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:32:23,908][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi/revision/06da6e6ff28670b6959ef3af2f94b6a6f93b3dbd "HTTP/1.1 200 OK"
+[2026-06-28 08:32:24,038][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi/tree/06da6e6ff28670b6959ef3af2f94b6a6f93b3dbd?recursive=false&expand=false "HTTP/1.1 200 OK"
+[2026-06-28 08:32:24,462][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi/tree/06da6e6ff28670b6959ef3af2f94b6a6f93b3dbd/qrels?recursive=false&expand=false "HTTP/1.1 200 OK"
+[2026-06-28 08:32:24,636][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:32:25,083][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:32:25,370][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:32:25,803][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/datasets/AIhnIndicRag/mmarco_hindi "HTTP/1.1 200 OK"
+[2026-06-28 08:34:25,134][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Information Retrieval Evaluation of the model on the mmarco_hindi dataset:
+[2026-06-28 19:14:48,057][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Queries: 6980
+[2026-06-28 19:14:48,057][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Corpus: 8841823
+
+[2026-06-28 19:14:48,150][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Score-Function: cosine
+[2026-06-28 19:14:48,150][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Accuracy@10: 44.99%
+[2026-06-28 19:14:48,150][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Precision@10: 4.58%
+[2026-06-28 19:14:48,150][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - Recall@10: 43.98%
+[2026-06-28 19:14:48,150][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - MRR@10: 0.2368
+[2026-06-28 19:14:48,150][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - NDCG@10: 0.2825
+[2026-06-28 19:14:48,150][sentence_transformers.sentence_transformer.evaluation.information_retrieval][INFO] - MAP@10: 0.2317

@@ -1,0 +1,6 @@
+2026-06-26 14:39:05 | INFO | Evaluating model 1/2: artifacts/model/modernbert/hf_export/phase2_best_ba135 | context_mode=common_128 | active_context_length=128 | max_sequence_length=8192
+2026-06-26 14:39:05 | INFO | Selected supervised tasks: ['ner', 'massive_intent']
+2026-06-26 14:39:05 | INFO | Evaluation output directory: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals_phase2/phase2_best_ba135__common_128
+2026-06-26 14:39:05 | INFO | Running supervised task: ner (Naamapadam Hindi NER)
+2026-06-26 15:04:09 | INFO | Running supervised task: massive_intent (MASSIVE Hindi Intent)
+2026-06-26 15:04:18 | INFO | Wrote reports: {'json': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals_phase2/phase2_best_ba135__common_128/suite_summary.json', 'csv': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals_phase2/phase2_best_ba135__common_128/suite_metrics.csv', 'markdown': '/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/evals_phase2/phase2_best_ba135__common_128/suite_report.md'}

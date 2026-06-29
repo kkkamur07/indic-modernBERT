@@ -1,0 +1,86 @@
+# Phase-2 selected checkpoint — full-corpus ba1157.
+#
+# Run:
+#   make run-evals-phase2
+#
+# FOCUS — downstream signal only. NER + MASSIVE intent fine-tuning is the
+# selection gate that showed ba1157 generalizes better.
+#
+# MLM holdout is DISABLED: phase-2 training already logged eval/loss +
+# masked_accuracy at 8192 per checkpoint (see logs/hi/pretrain/phase2/nohup.log), so an MLM
+# holdout here would just re-measure what we already have.
+#
+# Efficiency sweep is DISABLED here. Run hindi_phase1.yaml-style efficiency once
+# if you want a standalone phase-2 throughput number.
+#
+# CONTEXT — supervised fine-tuning ignores context_mode and runs at
+# eval.supervised.max_seq_length=128 (same gate as hindi_phase1.yaml, aligned
+# with how upstream ModernBERT evaluates short NLU/NER tasks). max_sequence_length
+# below is kept at 8192 only as accurate metadata for this long-context export.
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: logs/hi/evals/${now:%Y-%m-%d}_${now:%H-%M-%S}_phase2
+
+eval:
+  models:
+    - model_name_or_path: artifacts/model/modernbert/hi/hf_export/phase2_latest_ba1157
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 8192
+
+  output_dir: artifacts/evals/hi/phase2
+  seed: 17
+  device: auto
+
+  tasks:
+    - ner
+    - massive_intent
+
+  supervised:
+    do_train: true
+    do_eval: true
+    # null means full available split; for this gate that is full Naamapadam
+    # train/eval and full MASSIVE intent train/eval.
+    max_train_samples: null
+    max_eval_samples: null
+    num_train_epochs: 1.0
+    learning_rate: 3.0e-5
+    weight_decay: 0.01
+    warmup_ratio: 0.1
+    # Conservative fine-tune batch; matches hindi_phase1.yaml so phase-2 numbers
+    # are directly comparable to the phase-1 gate.
+    per_device_train_batch_size: 128
+    per_device_eval_batch_size: 256
+    # Gate supervised tasks (NER + MASSIVE intent) stay at 128; their inputs are
+    # short (NER max ~146 tok, intent max ~41 tok) so longer caps add nothing.
+    max_seq_length: 128
+    fp16: false
+    bf16: true
+    save_total_limit: 1
+    report_to: []
+
+  task_overrides:
+    qa:
+      max_seq_length: 384
+      per_device_train_batch_size: 32
+      per_device_eval_batch_size: 64
+    copa:
+      max_seq_length: 512
+      per_device_train_batch_size: 16
+      per_device_eval_batch_size: 32
+
+  # Already measured during phase-2 training (MLM) / identical across checkpoints
+  # (efficiency). Both off so this run is purely downstream signal.
+  mlm:
+    enabled: false
+
+  efficiency:
+    enabled: false
+
+  reporting:
+    write_json: true
+    write_csv: true
+    write_markdown: true

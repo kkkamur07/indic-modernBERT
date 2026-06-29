@@ -14,9 +14,9 @@ Pretrain Hydra configs:
 
 | File | Phase |
 |------|-------|
-| `configs/pretrain/hindi_mlm.yaml` | Default smoke / dev |
-| `configs/pretrain/hindi_mlm_phase1.yaml` | Seq 1024, base arch |
-| `configs/pretrain/hindi_mlm_context_extension.yaml` | Seq 8192, extension arch |
+| `configs/hi/pretrain/hindi_mlm.yaml` | Default smoke / dev |
+| `configs/hi/pretrain/hindi_mlm_phase1.yaml` | Seq 1024, base arch |
+| `configs/hi/pretrain/hindi_mlm_context_extension.yaml` | Seq 8192, extension arch |
 
 Hardware alignment is validated by `compute_hardware_alignment()` / `validate_hardware_alignment()` when enabled in the model config.
 

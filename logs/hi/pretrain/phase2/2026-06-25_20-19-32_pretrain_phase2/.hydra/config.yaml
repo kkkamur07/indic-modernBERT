@@ -1,0 +1,74 @@
+pretrain:
+  data_root: data/indiccorp_v2/parquet/hi
+  eval_data_root: data/eval/hi
+  tokenizer_path: artifacts/tokenizer/bpe_vs50368
+  output_dir: artifacts/model/modernbert
+  save_folder: artifacts/model/modernbert/checkpoints/context_extension
+  text_column: text
+  max_seq_len: 8192
+  mlm_probability: 0.3
+  eval_mlm_probability: 0.15
+  pretrained_model_name: bert-base-uncased
+  arch_config_path: configs/model/modernbert_context_extension.yaml
+  gradient_checkpointing: false
+  disable_train_metrics: true
+  global_train_batch_size: 512
+  device_train_microbatch_size: 2
+  num_workers: 2
+  dataloader_prefetch_factor: 4
+  eval_num_workers: 3
+  max_duration: 4851132363tok
+  save_overwrite: false
+  sequence_packing: true
+  eval_sequence_packing: false
+  count_padding_tokens: false
+  packing_prefetch_factor: 5
+  batch_size_warmup_min_size: ${pretrain.device_train_microbatch_size}
+  shuffle_seed: 42
+  drop_last: true
+  seed: 17
+  precision: amp_bf16
+  log_to_console: true
+  console_log_interval: 5ba
+  optimizer:
+    name: decoupled_stableadamw
+    lr: 0.0004884555511755356
+    beta1: 0.9
+    beta2: 0.98
+    eps: 1.0e-06
+    weight_decay: 1.0e-05
+    filter_bias_norm_wd: true
+    log_grad_norm: true
+  scheduler:
+    name: constant_with_warmup
+    t_warmup: 0tok
+    alpha_f: 0.0
+    t_decay: 0tok
+  callbacks:
+    speed_monitor:
+      window_size: 100
+    lr_monitor: {}
+    log_grad_norm:
+      batch_log_interval: 10
+    packing_efficiency:
+      log_interval: 10
+    train_step_logger:
+      log_every_micro: false
+      micro_log_interval: 16
+      log_eval_batches: true
+    save_best_checkpoints:
+      num_checkpoints: 3
+  run_name: hindi_modernbert_context_extension
+  load_path: artifacts/model/modernbert/checkpoints/phase1/latest-rank0.pt
+  reset_time: true
+  restart_override: true
+  global_eval_batch_size: 64
+  device_eval_microbatch_size: 8
+  eval_subset_num_batches: 10
+  eval_interval: 15ba
+  save_interval: 15ba
+  save_num_checkpoints_to_keep: 1
+  autoresume: true
+  loggers:
+    tensorboard:
+      log_dir: artifacts/model/modernbert/tensorboard/context_extension

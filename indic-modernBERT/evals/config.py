@@ -131,6 +131,44 @@ class EfficiencyConfig(BaseModel):
         return value
 
 
+class RetrievalDatasetConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    kind: Literal["hf_beir", "mldr"]
+    dataset_name: str
+    enabled: bool = True
+    corpus_config: str | None = None
+    corpus_split: str = "corpus"
+    queries_config: str | None = None
+    queries_split: str = "queries"
+    qrels_config: str | None = None
+    qrels_split: str = "test"
+    language: str | None = None
+    max_corpus_docs: int | None = Field(default=None, ge=1)
+    max_queries: int | None = Field(default=None, ge=1)
+    trust_remote_code: bool = False
+
+
+class RetrievalConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # We are not exposing some of the configs here. 
+    enabled: bool = False
+    datasets: list[RetrievalDatasetConfig] = Field(default_factory=list)
+    max_seq_length: int | None = Field(default=None, ge=1)
+    batch_size: int = Field(default=32, ge=1)
+    corpus_chunk_size: int = Field(default=50_000, ge=1)
+    top_k: int = Field(default=10, ge=1)
+    trust_remote_code: bool | None = None
+
+    @model_validator(mode="after")
+    def validate_datasets(self) -> RetrievalConfig:
+        if self.enabled and not self.datasets:
+            raise ValueError("eval.retrieval.datasets must contain at least one dataset when retrieval is enabled")
+        return self
+
+
 class ReportingConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -145,7 +183,7 @@ class EvalSuiteConfig(BaseModel):
     model: ModelEvalConfig
     models: list[ModelEvalConfig] = Field(default_factory=list)
     context_modes: list[ContextMode] | None = None
-    output_dir: Path = Path("artifacts/evals")
+    output_dir: Path = Path("artifacts/evals/hi")
     seed: int = 17
     device: Literal["auto", "cpu", "cuda"] = "auto"
     tasks: list[str] = Field(default_factory=lambda: ["sentiment", "ner", "qa", "copa"])
@@ -153,6 +191,7 @@ class EvalSuiteConfig(BaseModel):
     task_overrides: dict[str, TaskOverrideConfig] = Field(default_factory=dict)
     mlm: MlmEvalConfig = Field(default_factory=MlmEvalConfig)
     efficiency: EfficiencyConfig = Field(default_factory=EfficiencyConfig)
+    retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
     reporting: ReportingConfig = Field(default_factory=ReportingConfig)
 
     @field_validator("output_dir", mode="before")

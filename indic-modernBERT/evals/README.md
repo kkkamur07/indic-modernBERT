@@ -2,7 +2,7 @@
 
 This package contains the first Hindi-only evaluation suite for phase-1 Indic ModernBERT checkpoints. It is meant to answer a practical checkpoint question: is the model learning useful Hindi representations yet?
 
-The suite is Hydra-driven through `configs/evals/hindi_phase1.yaml`. Change `eval.model.model_name_or_path` to point at any Hugging Face Hub model ID or local HF export directory, then run the same pipeline against that model.
+The suite is Hydra-driven through `configs/hi/evals/hindi_phase1.yaml`. Change `eval.model.model_name_or_path` to point at any Hugging Face Hub model ID or local HF export directory, then run the same pipeline against that model.
 
 ## What It Runs
 
@@ -11,6 +11,7 @@ The runner combines three evaluation layers:
 - **MLM holdout**: evaluates masked-language-model loss and masked accuracy on `data/eval/hi`.
 - **Supervised Hindi gate**: fine-tunes and evaluates one representative task per major downstream task type.
 - **Efficiency smoke**: measures a small single-GPU/CPU inference path over Hindi inputs. Broaden it manually for dedicated profiling runs.
+- **Retrieval benchmark**: optional, separate `nDCG@10` evaluation for retrieval-finetuned checkpoints.
 
 The supervised gate starts with:
 
@@ -19,7 +20,7 @@ The supervised gate starts with:
 - **IndicQA** for question answering.
 - **IndicCOPA** for multiple-choice commonsense reasoning.
 
-Retrieval is intentionally deferred for now. During phase 1, the model has only MLM pretraining, so retrieval scores would mostly reflect an untuned pooling/indexing choice rather than the mature retrieval strength ModernBERT is known for.
+Retrieval is intentionally separate from the phase-1/phase-2 checkpoint gates. During MLM-only phases, retrieval scores mostly reflect an untuned pooling/indexing choice rather than the mature retrieval strength ModernBERT is known for. For fair benchmarking, first fine-tune each backbone with the same retrieval recipe, select the best checkpoint/hyperparameters, and then run `configs/hi/evals/hindi_retrieval.yaml`.
 
 ## Why This Shape
 
@@ -32,7 +33,7 @@ The suite is intentionally small and repeatable. A phase-1 checkpoint may change
 - COPA checks sentence-pair reasoning and commonsense plausibility.
 - Efficiency sweep checks whether the architecture is preserving ModernBERT's practical speed and memory advantages as sequence length grows.
 
-Everything is config-first because model comparison should not require code edits. The intended workflow is to swap `eval.model.model_name_or_path`, choose task subsets with Hydra overrides, and compare outputs under `artifacts/evals/`.
+Everything is config-first because model comparison should not require code edits. The intended workflow is to swap `eval.model.model_name_or_path`, choose task subsets with Hydra overrides, and compare outputs under `artifacts/evals/hi/`.
 
 ## Inspirations
 
@@ -65,9 +66,10 @@ make run-evals ARGS="eval.model.model_name_or_path=<model> eval.tasks='[sentimen
 make run-evals ARGS="eval.model.model_name_or_path=<model> eval.efficiency.sequence_lengths='[128,1024]'"
 make run-evals ARGS="eval.model.model_name_or_path=<model> eval.efficiency.measure_power=true"
 make run-evals ARGS="eval.model.model_name_or_path=<model> eval.model.context_mode=model_max eval.model.max_sequence_length=1024"
+make run-evals-retrieval ARGS="eval.models.0.model_name_or_path=<retrieval-finetuned-checkpoint>"
 ```
 
-Outputs are written under `artifacts/evals/<model-slug>__<context>/`, for example
+Outputs are written under `artifacts/evals/hi/<suite>/<model-slug>__<context>/`, for example
 `xlm-roberta-base__common_128` followed by `xlm-roberta-base__model_max_512`:
 
 - `suite_summary.json`
@@ -75,6 +77,7 @@ Outputs are written under `artifacts/evals/<model-slug>__<context>/`, for exampl
 - `suite_report.md`
 - per-task supervised metrics
 - `efficiency_metrics.json`
+- `retrieval_metrics.json` for retrieval runs
 
 ## Benchmark Policy
 
@@ -83,9 +86,9 @@ Use HF-native ModernBERT checkpoints for benchmark runs. With `transformers>=4.5
 Local Composer checkpoints should be exported before evaluation. The current export entry point is:
 
 ```bash
-python scripts/export_hf.py <composer-checkpoint.pt> <hf-export-dir> \
+python scripts/export_hf.py <composer-checkpoint.pt> artifacts/model/modernbert/hi/hf_export/<checkpoint-name> \
   --config configs/model/modernbert_base.yaml \
-  --tokenizer artifacts/tokenizer/bpe_vs50368
+  --tokenizer artifacts/tokenizer/hi/bpe_vs50368
 ```
 
 The exporter writes HF-native ModernBERT artifacts and verifies that `<hf-export-dir>/config.json` has `"model_type": "modernbert"` before returning.
@@ -107,6 +110,13 @@ When `eval.efficiency.sequence_lengths: null`, the efficiency sweep uses the act
 
 The current phase-1 suite keeps efficiency as smoke coverage, not a final benchmark. TODOs that can be done sometime reporting: add multi-seed averaging and optional hyperparameter optimization.
 
+Retrieval follows the upstream ModernBERT evaluation policy:
+
+- Train/fine-tune every backbone with the same retrieval recipe before comparing scores.
+- Report `nDCG@10` as the headline metric.
+- Use `AIhnIndicRag/mmarco_hindi` for Hindi MS-MARCO-style retrieval quality.
+- Use `Shitao/MLDR` with `language=hi` for long-document retrieval capacity at 8192 context.
+
 
 ### Learnings and checks : 
 
@@ -116,7 +126,7 @@ Query : `_support_repo/IndicBERT` has this sub-project commit and it has a commi
 
 Hydra : 
 
-It has the log directory as  `dir: logs/${now:%Y-%m-%d}_${now:%H-%M-%S}_evals` which means that it will store the logs as something like logs/2026-04-20_time which as I realize typing this that is all good because all the evals will be container there but one major concern will be that there is a chance that in `supervised` we don't have the tuned evals but due to time constraints have to keep that as it is ( maybe latter we do hyper-parameter optimization )
+It has the log directory as `logs/hi/evals/...`, which keeps Hindi eval logs separate from future language runs. One remaining concern is that `supervised` does not yet include tuned eval hyperparameters, but due to time constraints we keep that as is for now (maybe later we do hyper-parameter optimization).
 
 Also huggingface would probably put you in error when you have `trust_remote_code:false` and the code should have a fallback when `tokenizer_name_or_path:null` should resolve to taking the tokenizer of that particular model, it can be resolved with `autoTokenizer.from_model()` don't really know the exact method but this should be good. 
 

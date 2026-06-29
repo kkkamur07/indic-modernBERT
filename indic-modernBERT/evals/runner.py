@@ -13,6 +13,7 @@ from evals.efficiency import run_efficiency_sweep
 from evals.mlm import run_mlm_eval
 from evals.registry import get_task_spec
 from evals.reporting import write_reports
+from evals.retrieval import run_retrieval_eval
 from evals.runtime import checkpoint_output_dir
 from evals.supervised import run_supervised_task
 
@@ -36,6 +37,10 @@ def run_eval_suite(cfg: EvalSuiteConfig) -> dict[str, Any]:
             return task_result
 
         results.append(_safe_layer(task_name, _run_task))
+
+    if cfg.retrieval.enabled:
+        logger.info("Running retrieval evaluation")
+        results.append(_safe_layer("retrieval", lambda: run_retrieval_eval(cfg, output_dir)))
 
     if cfg.efficiency.enabled:
         logger.info("Running efficiency sweep")

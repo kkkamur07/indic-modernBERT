@@ -1,0 +1,49 @@
+eval:
+  models:
+  - model_name_or_path: artifacts/retrieval_finetune/full_local_jsonl_train_eval_runs/IndicBERTv2-MLM-only/IndicBERTv2-MLM-only-DPR-0.00010972521281842244/final
+    tokenizer_name_or_path: null
+    trust_remote_code: false
+    max_sequence_length: 512
+    context_mode: model_max
+  output_dir: artifacts/evals_retrieval
+  seed: 17
+  device: auto
+  tasks: []
+  mlm:
+    enabled: false
+  efficiency:
+    enabled: false
+  retrieval:
+    enabled: true
+    max_seq_length: null
+    batch_size: 2
+    corpus_chunk_size: 50000
+    top_k: 10
+    datasets:
+    - name: mldr_hi
+      enabled: true
+      kind: mldr
+      dataset_name: Shitao/MLDR
+      trust_remote_code: true
+      language: hi
+      corpus_split: corpus
+      qrels_split: test
+      max_corpus_docs: null
+      max_queries: null
+    - name: mmarco_hindi
+      enabled: true
+      kind: hf_beir
+      dataset_name: AIhnIndicRag/mmarco_hindi
+      trust_remote_code: false
+      corpus_config: corpus
+      corpus_split: corpus
+      queries_config: queries
+      queries_split: queries
+      qrels_config: default
+      qrels_split: test
+      max_corpus_docs: null
+      max_queries: null
+  reporting:
+    write_json: true
+    write_csv: true
+    write_markdown: true

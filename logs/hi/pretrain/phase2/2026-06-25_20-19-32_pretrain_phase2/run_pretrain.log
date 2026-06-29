@@ -1,0 +1,14 @@
+[2026-06-25 20:19:38,683][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/bert-base-uncased/resolve/main/config.json "HTTP/1.1 200 OK"
+[2026-06-25 20:19:40,902][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-25 20:19:40,953][composer.trainer.trainer][INFO] - Run name: hindi_modernbert_context_extension
+[2026-06-25 20:19:41,042][composer.trainer.trainer][INFO] - Stepping schedulers every batch. To step schedulers every epoch, set `step_schedulers_every_batch=False`.
+[2026-06-25 20:19:41,042][composer.trainer.trainer][INFO] - Searching for a previous checkpoint to autoresume
+[2026-06-25 20:19:41,042][composer.trainer.trainer][INFO] - Looking for autoresume checkpoint: /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/context_extension/latest-rank0.pt (remote), /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/context_extension/latest-rank0.pt (local)
+[2026-06-25 20:19:41,042][composer.trainer.trainer][INFO] - Checkpoint not found in: <composer.loggers.tensorboard_logger.TensorboardLogger object at 0x7f549c3cedd0>
+[2026-06-25 20:19:41,042][composer.trainer.trainer][INFO] - Checkpoint not found in: <composer.loggers.console_logger.ConsoleLogger object at 0x7f549c21e210>
+[2026-06-25 20:19:41,042][composer.trainer.trainer][INFO] - No previous autoresume checkpoint found
+[2026-06-25 20:19:41,042][composer.trainer.trainer][INFO] - Loading checkpoint from /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/phase1/ep1-ba46102-rank0.pt
+[2026-06-25 20:19:41,850][composer.utils.checkpoint][INFO] - Trainer checkpoint loaded from /home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/phase1/ep1-ba46102-rank0.pt
+[2026-06-25 20:19:41,856][composer.trainer.trainer][INFO] - Setting seed to 17
+[2026-06-25 20:19:41,856][composer.utils.reproducibility][INFO] - Setting seed to 17
+[2026-06-25 20:19:41,857][composer.trainer.trainer][INFO] - Using precision Precision.AMP_BF16

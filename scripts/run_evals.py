@@ -21,7 +21,7 @@ from evals.runner import run_eval_suite
 from utils.log_helpers import setup_run_log
 
 
-@hydra.main(version_base=None, config_path="../configs/evals", config_name="hindi_phase1")
+@hydra.main(version_base=None, config_path="../configs/hi/evals", config_name="hindi_phase1")
 def main(cfg: DictConfig) -> None:
     eval_cfg = load_eval_suite_config(cfg)
     summaries = []

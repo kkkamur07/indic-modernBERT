@@ -1,0 +1,73 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase-1 pretrain — ModernBERT-base, seq=1024, RoPE base 10k.
+#
+# CORPUS
+#   23,617,204,995 tok  (1 epoch)
+#   Source: artifacts/corpus_stats/hi/hindi_training_schedule.json
+#
+# STEP MATH  (global_batch=512, seq=1024, packed — every window is full)
+#   tok / step  = 512 × 1024            = 524,288 tok
+#   total steps = 23,617,204,995 / 524,288 ≈ 45,046 ba   (1 epoch)
+#   evals       = 45,046 / 450          ≈ 100  per epoch
+#
+# DURATION UNITS
+#   max_duration is token-scoped (tok); Composer's DataSpec counts non-pad
+#   tokens via attention_mask.sum() (count_padding_tokens=false).
+#   WSD scheduler requires t_warmup/t_decay to share max_duration's unit:
+#     t_warmup = 50,000,000 tok  ≈ 95 ba  (warmup-only; no decay in phase-1)
+#     t_decay  = 0tok            (decay deferred to context-extension phase)
+#   eval_interval / save_interval are batch-scoped (450ba); Composer allows
+#   interval units to differ from max_duration.
+#
+# BATCH-SIZE WARMUP
+#   batch_size_warmup_tokens = 500,000,000 tok ≈ 954 ba
+#   Ramps the packer from device_train_microbatch_size → full device batch
+#   over the first ~1% of training (upstream: 500M / 23.6B ≈ 2.1%).
+#
+# EVAL DATA
+#   eval_data_root: data/eval/hi  (4 holdout shards, verified/hin/*.parquet)
+#   Completely separate from the 274 training shards in data/sangrah_dataset.
+#   Padded MLM, shuffle=False, mlm_probability=0.15 (vs 0.30 train).
+#
+# LEARNING RATE
+#   lr = 0.0004884555511755356  from Optuna TPE sweep (8 trials, 1000ba each)
+#   Best trial: eval loss 2.3911 @ ba=1000
+#   Sweep config: configs/hi/sweep/hindi_mlm_lr_sweep.yaml
+#   Results:      multirun/2026-06-15/14-01-20/optimization_results.yaml
+#
+# CHECKPOINTS
+#   See hindi_mlm.yaml header for why .pt files are ~1.8 GB (weights + optimizer).
+#   Best-by-eval-loss live in save_folder/best/; manifest.json lists top-3.
+#   Export for inference: make export-hf ARGS=".../best/best-ba<N>-rank0 out/ --tokenizer ..."
+# ─────────────────────────────────────────────────────────────────────────────
+defaults:
+  - hindi_mlm
+  - _self_
+
+pretrain:
+  run_name: hindi_modernbert_phase1            # required by Composer when autoresume=true
+  save_folder: artifacts/model/modernbert/hi/checkpoints/phase1
+  max_duration: 23617204995tok                # 1 epoch ≈ 45,046 ba
+  global_train_batch_size: 512
+  device_train_microbatch_size: 8
+  global_eval_batch_size: 64
+  device_eval_microbatch_size: 8
+  eval_subset_num_batches: 50                 # cap eval at 50 batches (speed)
+  eval_interval: 450ba                        # ~100 evals / epoch
+  save_interval: 450ba
+  save_num_checkpoints_to_keep: 1
+  autoresume: true
+  progress_bar: true
+  batch_size_warmup_tokens: 500000000tok      # ≈ 954 ba ramp
+  loggers:
+    tensorboard:
+      log_dir: artifacts/model/modernbert/hi/tensorboard/phase1
+  optimizer:
+    lr: 0.0004884555511755356                 # Optuna sweep best (eval loss 2.39)
+  scheduler:
+    # Inherited from hindi_mlm: warmup_stable_decay, alpha_f=0.0, t_decay=0tok.
+    # Phase-1 is warmup + stable only; decay fires in context extension.
+    t_warmup: 50000000tok                     # ≈ 95 ba
+  callbacks:
+    save_best_checkpoints:
+      num_checkpoints: 3

@@ -28,7 +28,7 @@ Helpers: [`pipeline_steps.py`](pipeline_steps.py) (`detect_repo`, `ensure_src_on
 
 ## Requirements
 
-- Steps 3–9 need `artifacts/tokenizer/bpe_vs50368/`
+- Steps 3–9 need `artifacts/tokenizer/hi/bpe_vs50368/`
 - Steps 2, 7–9 need `data/sangrah_dataset/` parquet and tokenizer artifact
 - Steps 5–9 need GPU + `flash-attn` for sliding-window attention
 - Step 9 needs `uv sync --extra pretrain` (Composer)

@@ -1,0 +1,143 @@
+# IndicXTREME-compatible Hindi transfer evaluation.
+#
+# This is intentionally separate from hindi_phase1.yaml. The phase-1 gate measures
+# Hindi MLM + Hindi NER + efficiency. This config follows the IndicBERT/IndicXTREME
+# transfer pattern for tasks whose Hindi target datasets are eval-only:
+# train on English/source task data, then evaluate zero-shot on Hindi target data.
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: logs/hi/evals/${now:%Y-%m-%d}_${now:%H-%M-%S}_transfer
+
+eval:
+  # Full comparison matrix for transfer tasks. Per-model batch_size is kept in
+  # sync with hindi_phase1.yaml for optional MLM/efficiency overrides, but this
+  # config disables both layers and uses supervised/task_overrides batch sizes.
+  #
+  # Pre-flight checks verified 2026-06-22:
+  # - This expands to 9 unique model/context output slugs.
+  # - All unique model configs/tokenizers load with trust_remote_code=false.
+  # - All tokenizers expose pad and mask tokens; MLM is disabled here, but this
+  #   keeps the matrix compatible with optional overrides.
+  # - Configured max_sequence_length values are within each model's advertised
+  #   context limit: IndicBERTv2=128, MuRIL=512, XLM-R=512, phase1=1024,
+  #   mmBERT-small=8192.
+  # - The local phase1 HF export has model_type=modernbert and max_position_embeddings=1024.
+  models:
+    - model_name_or_path: ai4bharat/IndicBERTv2-MLM-only
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 128
+      batch_size: 64
+    - model_name_or_path: google/muril-base-cased
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 512
+      context_mode: common_128
+      batch_size: 96
+    - model_name_or_path: google/muril-base-cased
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 512
+      context_mode: model_max
+      batch_size: 24
+    - model_name_or_path: xlm-roberta-base
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 512
+      context_mode: common_128
+      batch_size: 64
+    - model_name_or_path: xlm-roberta-base
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 512
+      context_mode: model_max
+      batch_size: 16
+    - model_name_or_path: artifacts/model/modernbert/hi/hf_export/phase1
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 1024
+      context_mode: common_128
+      batch_size: 256
+    - model_name_or_path: artifacts/model/modernbert/hi/hf_export/phase1
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 1024
+      context_mode: model_max
+      batch_size: 32
+    - model_name_or_path: jhu-clsp/mmBERT-small
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 8192
+      context_mode: common_128
+      batch_size: 64
+    - model_name_or_path: jhu-clsp/mmBERT-small
+      tokenizer_name_or_path: null
+      trust_remote_code: false
+      max_sequence_length: 8192
+      context_mode: model_max
+      batch_size: 1
+
+  output_dir: artifacts/evals/hi/transfer
+  seed: 17
+  device: auto
+
+  tasks:
+    # Source train -> Hindi target eval:
+    # - sentiment: buruzaemon/amazon_reviews_multi en train=200000, validation=5000
+    #              -> ai4bharat/IndicSentiment translation-hi validation=156/test=1000
+    # - qa: google/xtreme SQuAD train=87599, validation=10570
+    #       -> ai4bharat/IndicQA indicqa.hi test=1547
+    # - copa: allenai/social_i_qa train=33410, validation=1954
+    #         -> ai4bharat/IndicCOPA translation-hi test=449
+    - sentiment
+    - qa
+    - copa
+
+  supervised:
+    do_train: true
+    do_eval: true
+    max_train_samples: null
+    max_eval_samples: null
+    # Official IndicBERT scripts use 5 epochs for these tasks. Keep this at 1.0
+    # for a practical phase-1 transfer pass; raise to 5.0 for closer reproduction.
+    num_train_epochs: 1.0
+    learning_rate: 3.0e-5
+    weight_decay: 0.01
+    warmup_ratio: 0.1
+    # Conservative full-matrix fine-tune batch. Increase only for targeted
+    # single-model transfer runs after confirming memory headroom.
+    per_device_train_batch_size: 128
+    per_device_eval_batch_size: 256
+    max_seq_length: 128
+    fp16: false
+    bf16: true
+    save_total_limit: 1
+    report_to: []
+
+  task_overrides:
+    qa:
+      max_seq_length: 384
+      # QA creates overflowed context features, so keep train batches lower than
+      # sentence classification.
+      per_device_train_batch_size: 32
+      per_device_eval_batch_size: 64
+    copa:
+      max_seq_length: 512
+      # Multiple-choice batches are effectively multiplied by the number of choices.
+      per_device_train_batch_size: 16
+      per_device_eval_batch_size: 32
+
+  mlm:
+    # Transfer pass is supervised-only; keep MLM holdout in hindi_phase1.yaml.
+    enabled: false
+
+  efficiency:
+    enabled: false
+
+  reporting:
+    write_json: true
+    write_csv: true
+    write_markdown: true

@@ -1,0 +1,23 @@
+2026-06-25 20:19:38 | INFO | Architecture config: /home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_context_extension.yaml
+2026-06-25 20:19:38 | INFO | Training data: 356 parquet shard(s) under /home/krrish/Desktop/Programming/indic-modernBERT/data/indiccorp_v2/parquet/hi
+2026-06-25 20:19:38 | INFO | Pretrain | global_batch=512 | microbatch=2 | grad_accum=256 | max_duration=4851132363tok | checkpoints=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/context_extension | save_interval=15ba | save_keep=1 | autoresume=True | eval_interval=15ba | eval_batch=64 | save_best={'num_checkpoints': 3} | loggers=['tensorboard'] | load_path=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/phase1/ep1-ba46102-rank0.pt | reset_time=True | restart_override=True
+2026-06-25 20:19:38 | INFO | MLM pretrain | global_batch=512 | microbatch=2 | grad_accum=256 | train_packing=True | eval_packing=False | max_duration=4851132363tok | seq=8192 | arch=/home/krrish/Desktop/Programming/indic-modernBERT/configs/model/modernbert_context_extension.yaml | eval_interval=15ba | save_interval=15ba | save_best={'num_checkpoints': 3} | load_path=/home/krrish/Desktop/Programming/indic-modernBERT/artifacts/model/modernbert/checkpoints/phase1/ep1-ba46102-rank0.pt | device=cuda:0 name=NVIDIA GeForce RTX 4090 cc=(8, 9) mem=25.4GB bf16=True
+2026-06-25 20:19:40 | INFO | Production kernels OK | FA2 installed | compile_model=true | attention layers FA3=0 FA2=22 | loss=fa_cross_entropy
+2026-06-25 20:19:40 | INFO | model | compile_model=true | 22 compiled layers + compiled embeddings/head | torch.compile runs on first forward
+2026-06-25 20:19:40 | INFO | data | train dataloader ready | ParquetMLMDataset(text) -> TokenizeCollator -> GreedyBestFitSequencePacker -> BufferedIterable
+2026-06-25 20:19:41 | INFO | restart_override: applying optimizer LR/WD and scheduler base_lrs from config (scheduler=constant_with_warmup)
+2026-06-25 20:19:41 | INFO | Starting trainer.fit() | progress_bar=False | log_to_console=True | console_log_interval=5ba | train_step_logger=True — first batch may take minutes (torch.compile + grad accum)
+2026-06-25 20:19:51 | INFO | model | torch.compile start | first forward compiles embeddings + layers + head (may take several minutes; CPU-heavy)
+2026-06-25 20:19:59 | INFO | model | torch.compile done | first forward finished in 7.7s
+2026-06-25 20:31:38 | INFO | saved best checkpoint ba=15 loss=1.2142 acc=0.7258 → best-ba15-rank0 (keeping 1)
+2026-06-25 20:43:02 | INFO | saved best checkpoint ba=30 loss=1.2140 acc=0.7236 → best-ba30-rank0 (keeping 2)
+2026-06-25 20:54:27 | INFO | saved best checkpoint ba=45 loss=1.2100 acc=0.7265 → best-ba45-rank0 (keeping 3)
+2026-06-25 21:05:53 | INFO | saved best checkpoint ba=60 loss=1.2133 acc=0.7260 → best-ba60-rank0 (keeping 3)
+2026-06-25 21:17:17 | INFO | saved best checkpoint ba=75 loss=1.1960 acc=0.7324 → best-ba75-rank0 (keeping 3)
+2026-06-25 21:28:40 | INFO | saved best checkpoint ba=90 loss=1.2061 acc=0.7294 → best-ba90-rank0 (keeping 3)
+2026-06-25 21:51:27 | INFO | saved best checkpoint ba=120 loss=1.2039 acc=0.7266 → best-ba120-rank0 (keeping 3)
+2026-06-25 22:02:50 | INFO | saved best checkpoint ba=135 loss=1.1796 acc=0.7320 → best-ba135-rank0 (keeping 3)
+2026-06-25 22:59:51 | INFO | saved best checkpoint ba=210 loss=1.1991 acc=0.7280 → best-ba210-rank0 (keeping 3)
+2026-06-25 23:11:17 | INFO | saved best checkpoint ba=225 loss=1.1953 acc=0.7316 → best-ba225-rank0 (keeping 3)
+2026-06-25 23:22:43 | INFO | saved best checkpoint ba=240 loss=1.1943 acc=0.7283 → best-ba240-rank0 (keeping 3)
+2026-06-26 11:05:52 | INFO | Pretrain complete | best_eval_loss=1.1796

@@ -60,6 +60,8 @@ class SaveBestCheckpoints(Callback):
         self._ranked: list[tuple[float, float, int, Path]] = []
 
     def _qualifies(self, loss: float) -> bool:
+        if self.num_checkpoints <= 0:
+            return False
         if len(self._ranked) < self.num_checkpoints:
             return True
         return loss < max(row[0] for row in self._ranked)

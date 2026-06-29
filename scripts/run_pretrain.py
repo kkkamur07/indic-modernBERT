@@ -54,7 +54,7 @@ def _suffix_multirun_paths(cfg: DictConfig) -> DictConfig:
     return cfg
 
 
-@hydra.main(version_base=None, config_path="../configs/pretrain", config_name="hindi_mlm")
+@hydra.main(version_base=None, config_path="../configs/hi/pretrain", config_name="hindi_mlm")
 def main(cfg: DictConfig) -> float:
     cfg = _suffix_multirun_paths(cfg)
     pretrain_cfg = load_pretrain_config(cfg)
